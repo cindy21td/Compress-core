@@ -49,7 +49,7 @@ public class AssetLoader {
         //three = new TextureRegion(texture, 80, 72, 28, 36);
         //three.flip(false, true);
 
-        
+        // Texture
         TextureRegion[] runningHero = { hero, heroRun, hero };
         heroRunAnimation = new Animation(0.1f, runningHero);
         heroRunAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
