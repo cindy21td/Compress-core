@@ -76,8 +76,7 @@ public class GameRenderer {
 		enemyBlobBody = AssetLoader.enemyBlob;
 		
 		heroRunAnimation = AssetLoader.heroRunAnimation;
-		//two = AssetLoader.two;
-		//three = AssetLoader.three;
+
 	}
 	
 	// runTime is for animation (determining which frame to render);
@@ -93,7 +92,7 @@ public class GameRenderer {
         
         // Draw Ground
         shapeRenderer.setColor(0, 0, 0, 1);
-        shapeRenderer.rect(0, 126, 204, 10);
+        shapeRenderer.rect(0, 120, 204, 16);
         
         // End ShapeRenderer
         shapeRenderer.end();
@@ -105,8 +104,8 @@ public class GameRenderer {
         // This is good for performance when drawing images that do not require
         // transparency.
         batcher.disableBlending();
-        batcher.draw(bgFrontBody, bgFront.getX(), 0, 204, 126);
-        batcher.draw(bgBackBody, bgBack.getX(), 0, 204, 126);
+        batcher.draw(bgFrontBody, bgFront.getX(), 0, 204, 120);
+        batcher.draw(bgBackBody, bgBack.getX(), 0, 204, 120);
         
         batcher.enableBlending();
         
@@ -130,8 +129,7 @@ public class GameRenderer {
             		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
             		hero.getWidth(), hero.getHeight(), 1, 1, 0);
         }
-
-        
+                
         // Draw enemy
         batcher.draw(enemyBlobBody, enemyBlob.getX(), enemyBlob.getY(), 15, 15);
         

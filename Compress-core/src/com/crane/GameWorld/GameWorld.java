@@ -9,7 +9,7 @@ public class GameWorld {
 	private ScrollHandler scroller;
 
 	public GameWorld(int midPointY) {
-		hero = new Hero(30, 106, 15, 23);
+		hero = new Hero(30, 97, 32, 32);
 		scroller = new ScrollHandler(midPointY);
 	}
 	

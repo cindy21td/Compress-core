@@ -37,7 +37,7 @@ public class Hero {
 			jumped = false;
 			acceleration.y = 0;
 			velocity.y = 0;
-			position.y = 106;
+			position.y = 97;
 			
 		}
 		
@@ -49,7 +49,7 @@ public class Hero {
 	public void onClick() {
 		if(!jumped) {
 			jumped = true;
-			velocity.y = -140;
+			velocity.y = -200;
 			acceleration.y = 460;
 		}
 	}

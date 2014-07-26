@@ -15,7 +15,10 @@ public class AssetLoader {
     public static TextureRegion enemyBlob;
 
     public static Animation heroRunAnimation;
-    public static TextureRegion hero, heroRun;
+    public static TextureRegion heroRunOne, heroRunTwo, heroRunThree, heroRunFour;
+    
+    public static TextureRegion testOne, testTwo, testThree, testFour;
+    public static Animation testRun;
     
     // Placeholder for Sounds
     // public static Sound example;
@@ -31,28 +34,34 @@ public class AssetLoader {
         
         bg = new TextureRegion(texture, 0, 40, 204, 136);
         bg.flip(false, true);
-
-        hero = new TextureRegion(texture, 0, 0, 15, 23);
-        hero.flip(false, true);
-        
-        heroRun = new TextureRegion(texture, 70, 0, 15, 23);
-        heroRun.flip(false, true);
-
         
         heroSwipe = new TextureRegion(texture, 40, 0 , 20, 20);
         heroSwipe.flip(false, true);
+        
+        
+        Texture hero = new Texture(Gdx.files.internal("Hero Sprite.png"));
+        hero.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
+        
+        heroRunOne = new TextureRegion(hero, 300, 0, 100, 100);
+        heroRunOne.flip(false, true);
+        
+        heroRunTwo = new TextureRegion(hero, 200, 0, 100, 100);
+        heroRunTwo.flip(false, true);
+        
+        heroRunThree = new TextureRegion(hero, 100, 0, 100, 100);
+        heroRunThree.flip(false, true);
+        
+        heroRunFour = new TextureRegion(hero, 0, 0, 100, 100);
+        heroRunFour.flip(false, true);
+        
+        TextureRegion[] runningHero = {heroRunOne, heroRunTwo, heroRunThree, heroRunFour};
+        heroRunAnimation = new Animation(0.1f, runningHero);
+        heroRunAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
+        
 
         enemyBlob = new TextureRegion(texture, 20, 0, 15, 15);
         enemyBlob.flip(false, true);
 
-        
-        //three = new TextureRegion(texture, 80, 72, 28, 36);
-        //three.flip(false, true);
-
-        // Texture
-        TextureRegion[] runningHero = { hero, heroRun, hero };
-        heroRunAnimation = new Animation(0.1f, runningHero);
-        heroRunAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
         
         
         //example = Gdx.audio.newSound(Gdx.files.internal("path/to/sound/file");
