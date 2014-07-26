@@ -38,6 +38,12 @@ public class GameRenderer {
 	private TextureRegion enemyBlobBody;
 	private Animation heroRunAnimation;
 	
+	private Animation handAnimation;
+	
+	private TextureRegion heroJump, armJump;
+	
+	private Animation attackAnimation;
+	
 	//private TextureRegion one, two, three;
 
 	public GameRenderer(GameWorld world, int gameHeight, int midPointY) {
@@ -76,7 +82,13 @@ public class GameRenderer {
 		enemyBlobBody = AssetLoader.enemyBlob;
 		
 		heroRunAnimation = AssetLoader.heroRunAnimation;
+		
+		handAnimation = AssetLoader.handAnimation;
+		
+		heroJump = AssetLoader.heroJump;
+		armJump = AssetLoader.armJump;
 
+		attackAnimation = AssetLoader.armAttack;
 	}
 	
 	// runTime is for animation (determining which frame to render);
@@ -120,7 +132,59 @@ public class GameRenderer {
         batcher.draw(drawHero, hero.getX(), hero.getY(), 15, 23);
         */
         
-        if (hero.isAttacking()) {
+        int val = 0;
+        if(hero.isJumping() && hero.isAttacking()) {
+        	val = 1;
+        } else if(hero.isJumping()){
+        	val = 2;
+        } else if(hero.isAttacking()) {
+        	val = 3;
+        }
+        
+        switch(val) {
+        case 0:
+        	batcher.draw(heroRunAnimation.getKeyFrame(runTime), hero.getX(), hero.getY(), 
+            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
+            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
+            
+            batcher.draw(handAnimation.getKeyFrame(runTime), hero.getX(), hero.getY(), 
+            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
+            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
+            break;
+            
+        case 1:
+        	batcher.draw(heroJump, hero.getX(), hero.getY(), 
+            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
+            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
+        	
+        	batcher.draw(attackAnimation.getKeyFrame(runTime), hero.getX() - 2, hero.getY(), 
+            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
+            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
+        	
+        	break;
+        	
+        case 2:
+        	batcher.draw(heroJump, hero.getX(), hero.getY(), 
+            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
+            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
+        	
+        	batcher.draw(armJump, hero.getX(), hero.getY(), 
+            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
+            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
+
+        	break;
+        case 3:
+        	batcher.draw(heroRunAnimation.getKeyFrame(runTime), hero.getX(), hero.getY(), 
+            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
+            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
+            
+            batcher.draw(attackAnimation.getKeyFrame(runTime), hero.getX(), hero.getY(), 
+            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
+            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
+        	break;
+        }
+        
+        /*if (hero.isAttacking()) {
             batcher.draw(heroBodySwipe, hero.getX(), hero.getY(), 
             		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
             		hero.getWidth(), hero.getHeight(), 1, 1, 0);
@@ -128,7 +192,12 @@ public class GameRenderer {
             batcher.draw(heroRunAnimation.getKeyFrame(runTime), hero.getX(), hero.getY(), 
             		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
             		hero.getWidth(), hero.getHeight(), 1, 1, 0);
-        }
+            
+            batcher.draw(handAnimation.getKeyFrame(runTime), hero.getX(), hero.getY(), 
+            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
+            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
+        }*/
+        
                 
         // Draw enemy
         batcher.draw(enemyBlobBody, enemyBlob.getX(), enemyBlob.getY(), 15, 15);

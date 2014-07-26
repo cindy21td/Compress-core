@@ -55,11 +55,17 @@ public class Hero {
 	}
 	
 	public void onSwipe() {
-		attackTime = 0;
+		if(!isAttacking()) {
+			attackTime = 0;
+		}
 	}
 	
 	public boolean isAttacking() {
-		return attackTime < 0.1;
+		return attackTime < 0.20f;
+	}
+	
+	public boolean isJumping() {
+		return jumped;
 	}
 	
 	public int getWidth() {
