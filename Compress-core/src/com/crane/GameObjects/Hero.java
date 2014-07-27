@@ -15,8 +15,9 @@ public class Hero {
 	private float centerY;
 	
 	private boolean jumped;
-	private float attackTime;
-	private boolean attackDisabled;
+	private boolean doubleJumped;
+	private float dodgeTime;
+	private boolean dodgeDisabled;
 	
 	public Hero(float x, float y, int width, int height) {
 		this.setWidth(width);
@@ -30,24 +31,31 @@ public class Hero {
 		setCenterY(y + height / 2);
 		
 		jumped = false;
-		attackDisabled = false;
+		doubleJumped = false;
+		dodgeDisabled = false;
 	}
 	
 	public void update(float delta) {
-		attackTime += delta;
+		dodgeTime += delta;
 		if(jumped && position.y + height / 2 > centerY) {
 			jumped = false;
+			doubleJumped = false;
 			acceleration.y = 0;
+			acceleration.x = 0;
 			velocity.y = 0;
+			velocity.x = 0;
 			position.y = 97;
 			
 		}
 		
-		if(!isAttacking() && attackDisabled && position.x + width / 2 <= centerX) {
-			acceleration.x = 0;
-			velocity.x = 0;
-			position.x = 30;
-			attackDisabled = false;
+		if(!isDodging() && dodgeDisabled) {
+			if((isDodgingRight() && position.x + width / 2 <= centerX) || 
+					(!isDodgingRight() && position.x + width / 2 >= centerX)) {
+				acceleration.x = 0;
+				velocity.x = 0;
+				position.x = 30;
+				dodgeDisabled = false;
+			} 
 		}
 		
 		velocity.add(acceleration.cpy().scl(delta));
@@ -56,24 +64,36 @@ public class Hero {
 	}
 	
 	public void onClick() {
-		if(!jumped) {
+		if(jumped && !doubleJumped) {
+			doubleJumped = true;
+			velocity.y = -200;
+		} else if(!jumped) {
 			jumped = true;
 			velocity.y = -200;
 			acceleration.y = 460;
 		}
 	}
 	
-	public void onSwipe() {
-		if(!attackDisabled && !isAttacking()) {
-			attackTime = 0;
-			velocity.x = 140;
-			acceleration.x = -460;
-			attackDisabled = true;
+	public void onSwipe(boolean right) {
+		if(!jumped && !dodgeDisabled && !isDodging()) {
+			dodgeTime = 0;
+			if(right) {
+				velocity.x = 140;
+				acceleration.x = -460;
+			} else {
+				velocity.x = -140;
+				acceleration.x = 460;
+			}
+			dodgeDisabled = true;
 		}
 	}
+			
+	public boolean isDodging() {
+		return dodgeTime < 0.20f;
+	}
 	
-	public boolean isAttacking() {
-		return attackTime < 0.20f;
+	public boolean isDodgingRight() {
+		return acceleration.x < 0;
 	}
 	
 	public boolean isJumping() {

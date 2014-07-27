@@ -10,7 +10,6 @@ public class AssetLoader {
 	
 	public static Texture texture;
 	public static TextureRegion bg;
-    public static TextureRegion heroSwipe;
     
     public static TextureRegion enemyBlob;
 
@@ -20,15 +19,10 @@ public class AssetLoader {
     public static Animation handAnimation;
     public static TextureRegion handOne, handTwo, handThree, handFour;
     
-    public static TextureRegion testOne, testTwo, testThree, testFour;
-    public static Animation testRun;
-    
     public static TextureRegion heroJump, armJump;
     
     public static TextureRegion heroDash;
     
-    public static TextureRegion armAttackOne, armAttackTwo, armAttackThree, armAttackFour;
-    public static Animation armAttack;
     
     // Placeholder for Sounds
     // public static Sound example;
@@ -44,9 +38,6 @@ public class AssetLoader {
         
         bg = new TextureRegion(texture, 0, 40, 204, 136);
         bg.flip(false, true);
-        
-        heroSwipe = new TextureRegion(texture, 40, 0 , 20, 20);
-        heroSwipe.flip(false, true);
         
         
         Texture hero = new Texture(Gdx.files.internal("Hero Sprite.png"));
@@ -92,21 +83,6 @@ public class AssetLoader {
         armJump = new TextureRegion(hero, 100, 200, 100, 100);
         armJump.flip(false, true);
         
-        
-        armAttackOne = new TextureRegion(hero, 0, 300, 100, 100);
-        armAttackOne.flip(false, true);
-        
-        armAttackTwo = new TextureRegion(hero, 100, 300, 100, 100);
-        armAttackTwo.flip(false, true);
-        
-        armAttackThree = new TextureRegion(hero, 200, 300, 100, 100);
-        armAttackThree.flip(false, true);
-        
-
-        TextureRegion[] attackHero = {armAttackOne, armAttackTwo, armAttackThree, armAttackTwo};
-        armAttack = new Animation(0.05f, attackHero);
-        armAttack.setPlayMode(Animation.PlayMode.LOOP);
-
         
         heroDash = new TextureRegion(hero, 200, 200, 100, 100);
         heroDash.flip(false, true);

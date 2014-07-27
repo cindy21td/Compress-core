@@ -33,7 +33,6 @@ public class GameRenderer {
 
 	// Game Assets
 	private TextureRegion bg;
-	private TextureRegion heroBodySwipe;
 	private TextureRegion bgFrontBody, bgBackBody;
 	private TextureRegion enemyBlobBody;
 	private Animation heroRunAnimation;
@@ -41,8 +40,6 @@ public class GameRenderer {
 	private Animation handAnimation;
 	
 	private TextureRegion heroJump, armJump, heroDash;
-	
-	private Animation attackAnimation;
 	
 	//private TextureRegion one, two, three;
 
@@ -78,7 +75,6 @@ public class GameRenderer {
 		bg = AssetLoader.bg;
 		bgFrontBody = bg;
 		bgBackBody = bg;
-		heroBodySwipe = AssetLoader.heroSwipe;
 		enemyBlobBody = AssetLoader.enemyBlob;
 		
 		heroRunAnimation = AssetLoader.heroRunAnimation;
@@ -87,8 +83,6 @@ public class GameRenderer {
 		
 		heroJump = AssetLoader.heroJump;
 		armJump = AssetLoader.armJump;
-
-		attackAnimation = AssetLoader.armAttack;
 		
 		heroDash = AssetLoader.heroDash;
 	}
@@ -135,12 +129,10 @@ public class GameRenderer {
         */
         
         int val = 0;
-        if(hero.isJumping() && hero.isAttacking()) {
+        if(hero.isJumping()) {
         	val = 1;
-        } else if(hero.isJumping()){
+        } else if(hero.isDodging()) {
         	val = 2;
-        } else if(hero.isAttacking()) {
-        	val = 3;
         }
         
         switch(val) {
@@ -159,27 +151,22 @@ public class GameRenderer {
             		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
             		hero.getWidth(), hero.getHeight(), 1, 1, 0);
         	
-        	batcher.draw(attackAnimation.getKeyFrame(runTime), hero.getX() - 2, hero.getY(), 
+        	batcher.draw(armJump, hero.getX(), hero.getY(), 
             		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
             		hero.getWidth(), hero.getHeight(), 1, 1, 0);
         	
         	break;
         	
         case 2:
-        	batcher.draw(heroJump, hero.getX(), hero.getY(), 
-            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
-            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
+        	float rotation = 0;
+        	if(!hero.isDodgingRight()) {
+        		rotation = -45;
+        	}
         	
-        	batcher.draw(armJump, hero.getX(), hero.getY(), 
-            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
-            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
-
-        	break;
-        case 3:
         	batcher.draw(heroDash, hero.getX(), hero.getY(), 
             		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
-            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
-            
+            		hero.getWidth(), hero.getHeight(), 1, 1, rotation);
+
         	break;
         }
         
