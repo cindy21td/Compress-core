@@ -40,7 +40,7 @@ public class GameRenderer {
 	
 	private Animation handAnimation;
 	
-	private TextureRegion heroJump, armJump;
+	private TextureRegion heroJump, armJump, heroDash;
 	
 	private Animation attackAnimation;
 	
@@ -89,6 +89,8 @@ public class GameRenderer {
 		armJump = AssetLoader.armJump;
 
 		attackAnimation = AssetLoader.armAttack;
+		
+		heroDash = AssetLoader.heroDash;
 	}
 	
 	// runTime is for animation (determining which frame to render);
@@ -174,13 +176,10 @@ public class GameRenderer {
 
         	break;
         case 3:
-        	batcher.draw(heroRunAnimation.getKeyFrame(runTime), hero.getX(), hero.getY(), 
+        	batcher.draw(heroDash, hero.getX(), hero.getY(), 
             		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
             		hero.getWidth(), hero.getHeight(), 1, 1, 0);
             
-            batcher.draw(attackAnimation.getKeyFrame(runTime), hero.getX(), hero.getY(), 
-            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
-            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
         	break;
         }
         

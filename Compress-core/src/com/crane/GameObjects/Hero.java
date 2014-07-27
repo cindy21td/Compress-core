@@ -16,6 +16,7 @@ public class Hero {
 	
 	private boolean jumped;
 	private float attackTime;
+	private boolean attackDisabled;
 	
 	public Hero(float x, float y, int width, int height) {
 		this.setWidth(width);
@@ -29,6 +30,7 @@ public class Hero {
 		setCenterY(y + height / 2);
 		
 		jumped = false;
+		attackDisabled = false;
 	}
 	
 	public void update(float delta) {
@@ -39,6 +41,13 @@ public class Hero {
 			velocity.y = 0;
 			position.y = 97;
 			
+		}
+		
+		if(!isAttacking() && attackDisabled && position.x + width / 2 <= centerX) {
+			acceleration.x = 0;
+			velocity.x = 0;
+			position.x = 30;
+			attackDisabled = false;
 		}
 		
 		velocity.add(acceleration.cpy().scl(delta));
@@ -55,8 +64,11 @@ public class Hero {
 	}
 	
 	public void onSwipe() {
-		if(!isAttacking()) {
+		if(!attackDisabled && !isAttacking()) {
 			attackTime = 0;
+			velocity.x = 140;
+			acceleration.x = -460;
+			attackDisabled = true;
 		}
 	}
 	

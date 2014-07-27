@@ -25,6 +25,8 @@ public class AssetLoader {
     
     public static TextureRegion heroJump, armJump;
     
+    public static TextureRegion heroDash;
+    
     public static TextureRegion armAttackOne, armAttackTwo, armAttackThree, armAttackFour;
     public static Animation armAttack;
     
@@ -105,6 +107,10 @@ public class AssetLoader {
         armAttack = new Animation(0.05f, attackHero);
         armAttack.setPlayMode(Animation.PlayMode.LOOP);
 
+        
+        heroDash = new TextureRegion(hero, 200, 200, 100, 100);
+        heroDash.flip(false, true);
+        
         
         enemyBlob = new TextureRegion(texture, 20, 0, 15, 15);
         enemyBlob.flip(false, true);
