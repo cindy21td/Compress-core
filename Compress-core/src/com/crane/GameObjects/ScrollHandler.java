@@ -2,12 +2,14 @@ package com.crane.GameObjects;
 
 public class ScrollHandler {
 	
-	private Enemy enemyBlob;
+	private Enemy enemyBlob, enemyBat;
 	private Background bgFront, bgBack;
 	public static final int SCROLL_SPEED = -59;
 	
 	public ScrollHandler(float yPos) {
-		enemyBlob = new Enemy(150, 111, 15, 15, SCROLL_SPEED);
+		enemyBlob = new Enemy(204, 111, 15, 15, SCROLL_SPEED - 30);
+		enemyBat = new Enemy(204, 50, 15, 15, SCROLL_SPEED - 15);
+		
 		bgFront = new Background(0, 0, 204, 126, SCROLL_SPEED);
 		bgBack = new Background(204, 0, 204, 126, SCROLL_SPEED);
     }
@@ -27,10 +29,31 @@ public class ScrollHandler {
         if (enemyBlob.isScrolledLeft()) {
             enemyBlob.reset(204);
         }
-    }
+        
+        enemyBat.update(delta);
+        if (enemyBat.isScrolledLeft()) {
+            enemyBat.reset(204);
+        }
 
-    public Enemy getEnemy() {
+    }
+    
+    public void stop() {
+    	enemyBlob.stop();
+    	enemyBat.stop();
+    	bgFront.stop();
+    	bgBack.stop();
+    }
+    
+    public boolean collides(Hero hero) {
+   		return (enemyBlob.collides(hero) || enemyBat.collides(hero));
+	}
+    
+    public Enemy getEnemyBlob() {
         return enemyBlob;
+    }
+    
+    public Enemy getEnemyBat() {
+    	return enemyBat;
     }
     
     public Background getBgFront() {

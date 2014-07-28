@@ -1,5 +1,7 @@
 package com.crane.GameObjects;
 
+import com.badlogic.gdx.math.Circle;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 
 public class Hero {
@@ -19,6 +21,13 @@ public class Hero {
 	private float dodgeTime;
 	private boolean dodgeDisabled;
 	
+	private boolean alive;
+	
+	// Collision object
+	private Circle boundingHead;
+	private Rectangle boundingBody;
+	private Rectangle boundingFeet;
+	
 	public Hero(float x, float y, int width, int height) {
 		this.setWidth(width);
 		this.setHeight(height);
@@ -33,6 +42,13 @@ public class Hero {
 		jumped = false;
 		doubleJumped = false;
 		dodgeDisabled = false;
+		
+		alive = true;
+		
+		// Collision object
+		boundingHead = new Circle();
+		boundingBody = new Rectangle();
+		boundingFeet = new Rectangle();
 	}
 	
 	public void update(float delta) {
@@ -61,6 +77,25 @@ public class Hero {
 		velocity.add(acceleration.cpy().scl(delta));
 		
 		position.add(velocity.cpy().scl(delta));
+		
+		
+		// Collision
+		if(jumped) {
+			boundingHead.set(position.x + 18, position.y + 12, 5f);
+		} else if(isDodging()){
+			if(isDodgingRight()) {
+				boundingHead.set(position.x + 26, position.y + 12, 5f);
+			} else {
+				boundingHead.set(position.x + 21, position.y + 8, 5f);
+			}
+		} else {
+			boundingHead.set(position.x + 24, position.y + 12, 5f);
+		}
+		
+		
+		boundingBody.set(position.x + 10, position.y + 16, 13f, 10f);
+		
+		boundingFeet.set(position.x + 10, position.y + 26, 10f, 4f);
 	}
 	
 	public void onClick() {
@@ -98,6 +133,14 @@ public class Hero {
 	
 	public boolean isJumping() {
 		return jumped;
+	}
+	
+	public boolean isAlive() {
+		return alive;
+	}
+	
+	public void isDead(boolean isDead) {
+		alive = !isDead;
 	}
 	
 	public int getWidth() {
@@ -138,5 +181,17 @@ public class Hero {
 
 	public void setCenterY(float centerY) {
 		this.centerY = centerY;
+	}
+	
+	public Circle getBoundingHead() {
+		return boundingHead;
+	}
+	
+	public Rectangle getBoundingBody() {
+		return boundingBody;
+	}
+	
+	public Rectangle getBoundingFeet() {
+		return boundingFeet;
 	}
 }

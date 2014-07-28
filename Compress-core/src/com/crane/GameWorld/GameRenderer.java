@@ -1,6 +1,7 @@
 package com.crane.GameWorld;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.Animation;
@@ -29,17 +30,21 @@ public class GameRenderer {
 	private Hero hero;
 	private ScrollHandler scroller;
 	private Background bgFront, bgBack;
-	private Enemy enemyBlob;
+	private Enemy enemyBlob, enemyBat;
 
 	// Game Assets
 	private TextureRegion bg;
 	private TextureRegion bgFrontBody, bgBackBody;
-	private TextureRegion enemyBlobBody;
+	
+	private Animation enemyBlobAnimation, enemyBatAnimation;
+	
 	private Animation heroRunAnimation;
 	
 	private Animation handAnimation;
 	
 	private TextureRegion heroJump, armJump, heroDash;
+	
+	private TextureRegion smoke;
 	
 	//private TextureRegion one, two, three;
 
@@ -68,14 +73,14 @@ public class GameRenderer {
 		scroller = myWorld.getScroller();
 		bgFront = scroller.getBgFront();
 		bgBack = scroller.getBgBack();
-		enemyBlob = scroller.getEnemy();
+		enemyBlob = scroller.getEnemyBlob();
+		enemyBat = scroller.getEnemyBat();
 	}
 	
 	public void initAssets() {
 		bg = AssetLoader.bg;
 		bgFrontBody = bg;
 		bgBackBody = bg;
-		enemyBlobBody = AssetLoader.enemyBlob;
 		
 		heroRunAnimation = AssetLoader.heroRunAnimation;
 		
@@ -85,6 +90,12 @@ public class GameRenderer {
 		armJump = AssetLoader.armJump;
 		
 		heroDash = AssetLoader.heroDash;
+		
+		
+		enemyBlobAnimation = AssetLoader.enemyBlobAnimation;
+		enemyBatAnimation = AssetLoader.enemyBatAnimation;
+		
+		smoke = AssetLoader.smoke;
 	}
 	
 	// runTime is for animation (determining which frame to render);
@@ -101,6 +112,9 @@ public class GameRenderer {
         // Draw Ground
         shapeRenderer.setColor(0, 0, 0, 1);
         shapeRenderer.rect(0, 120, 204, 16);
+        
+        
+        
         
         // End ShapeRenderer
         shapeRenderer.end();
@@ -129,7 +143,9 @@ public class GameRenderer {
         */
         
         int val = 0;
-        if(hero.isJumping()) {
+        if(!hero.isAlive()) {
+        	val = 3;
+		} else if(hero.isJumping()) {
         	val = 1;
         } else if(hero.isDodging()) {
         	val = 2;
@@ -168,6 +184,13 @@ public class GameRenderer {
             		hero.getWidth(), hero.getHeight(), 1, 1, rotation);
 
         	break;
+        	
+        case 3:
+        	batcher.draw(smoke, hero.getX(), hero.getY(), 
+            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
+            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
+        	
+        	break;
         }
         
         /*if (hero.isAttacking()) {
@@ -186,7 +209,14 @@ public class GameRenderer {
         
                 
         // Draw enemy
-        batcher.draw(enemyBlobBody, enemyBlob.getX(), enemyBlob.getY(), 15, 15);
+        batcher.draw(enemyBlobAnimation.getKeyFrame(runTime), enemyBlob.getX(), enemyBlob.getY(), 
+        		enemyBlob.getWidth() / 2.0f, enemyBlob.getHeight() / 2.0f,
+        		enemyBlob.getWidth(), enemyBlob.getHeight(), 1, 1, 0);
+        
+        batcher.draw(enemyBatAnimation.getKeyFrame(runTime), enemyBat.getX(), enemyBat.getY(), 
+        		enemyBat.getWidth() / 2.0f, enemyBat.getHeight() / 2.0f,
+        		enemyBat.getWidth(), enemyBat.getHeight(), 1, 1, 0);
+
         
         /* Draw bird at its coordinates. Retrieve the Animation object from AssetLoader
         // Pass in the runTime variable to get the current frame.
@@ -211,7 +241,27 @@ public class GameRenderer {
         batcher.end();
         
 
-		
+        /*
+        // Draw bounding collision
+        shapeRenderer.begin(ShapeType.Filled);
+        shapeRenderer.setColor(Color.RED);
+        shapeRenderer.circle(hero.getBoundingHead().x, hero.getBoundingHead().y, hero.getBoundingHead().radius);
+        shapeRenderer.rect(hero.getBoundingBody().x, hero.getBoundingBody().y, hero.getBoundingBody().getWidth(), hero.getBoundingBody().getHeight());
+        
+        if(hero.isJumping()) {
+        	shapeRenderer.setColor(Color.BLUE);
+        	shapeRenderer.rect(hero.getBoundingFeet().x, hero.getBoundingFeet().y, hero.getBoundingFeet().getWidth(), hero.getBoundingFeet().getHeight());
+        }
+        
+        shapeRenderer.rect(enemyBlob.getBoundingCollision().x, enemyBlob.getBoundingCollision().y, 
+        		enemyBlob.getBoundingCollision().getWidth(), enemyBlob.getBoundingCollision().getHeight());
+        
+        shapeRenderer.rect(enemyBat.getBoundingCollision().x, enemyBat.getBoundingCollision().y, 
+        		enemyBat.getBoundingCollision().getWidth(), enemyBat.getBoundingCollision().getHeight());
+
+        
+        shapeRenderer.end();
+         */
 	}
 
 }

@@ -1,5 +1,7 @@
 package com.crane.GameObjects;
 
+import com.badlogic.gdx.math.Intersector;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 
 public class Enemy extends Scrollable {
@@ -11,6 +13,8 @@ public class Enemy extends Scrollable {
 	
 	private boolean jumped;
 	
+	private Rectangle boundingCollision;
+	
 	public Enemy(float x, float y, int width, int height, float scrollSpeed) {
 		super(x, y, width, height, scrollSpeed);
 		
@@ -19,11 +23,17 @@ public class Enemy extends Scrollable {
 		this.centerY = y + height / 2;
 		
 		jumped = false;
+		
+		boundingCollision = new Rectangle();
+		
 	}
 	
 	public void update(float delta) {
-		//velocity.add(acceleration.cpy().scl(delta));
+		velocity.add(acceleration.cpy().scl(delta));
 		super.update(delta);
+		
+		// Collision
+		boundingCollision.set(position.x + 2, position.y + 3, 10f, 10f);
 	}
 	
 	@Override
@@ -31,6 +41,14 @@ public class Enemy extends Scrollable {
         // Call the reset method in the superclass (Scrollable)
         super.reset(newX);
 
+    }
+	
+	public boolean collides(Hero hero) {
+        if (position.x < hero.getX() + hero.getWidth()) {
+            return (Intersector.overlaps(hero.getBoundingHead(), boundingCollision)
+                    || Intersector.overlaps(hero.getBoundingBody(), boundingCollision));
+        }
+        return false;
     }
 
 	public float getCenterX() {
@@ -55,6 +73,10 @@ public class Enemy extends Scrollable {
 
 	public void setJumped(boolean jumped) {
 		this.jumped = jumped;
+	}
+	
+	public Rectangle getBoundingCollision() {
+		return boundingCollision;
 	}
 
 }

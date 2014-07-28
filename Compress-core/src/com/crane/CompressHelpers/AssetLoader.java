@@ -11,7 +11,6 @@ public class AssetLoader {
 	public static Texture texture;
 	public static TextureRegion bg;
     
-    public static TextureRegion enemyBlob;
 
     public static Animation heroRunAnimation;
     public static TextureRegion heroRunOne, heroRunTwo, heroRunThree, heroRunFour;
@@ -22,6 +21,15 @@ public class AssetLoader {
     public static TextureRegion heroJump, armJump;
     
     public static TextureRegion heroDash;
+    
+    
+    public static TextureRegion enemyBlobOne, enemyBlobTwo, enemyBlobThree;
+    public static Animation enemyBlobAnimation;
+    
+    public static TextureRegion enemyBatOne, enemyBatTwo, enemyBatThree;
+    public static Animation enemyBatAnimation;
+    
+    public static TextureRegion smoke;
     
     
     // Placeholder for Sounds
@@ -88,9 +96,41 @@ public class AssetLoader {
         heroDash.flip(false, true);
         
         
-        enemyBlob = new TextureRegion(texture, 20, 0, 15, 15);
-        enemyBlob.flip(false, true);
+        Texture enemy = new Texture(Gdx.files.internal("Enemy Sprite.png"));
+        enemy.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
+        
+        enemyBlobOne = new TextureRegion(enemy, 0, 0, 100, 100);
+        enemyBlobOne.flip(false, true);
+        
+        enemyBlobTwo = new TextureRegion(enemy, 100, 0, 100, 100);
+        enemyBlobTwo.flip(false, true);
+        
+        enemyBlobThree = new TextureRegion(enemy, 200, 0, 100, 100);
+        enemyBlobThree.flip(false, true);
+        
+        TextureRegion[] blob = {enemyBlobOne, enemyBlobTwo, enemyBlobThree};
+        enemyBlobAnimation = new Animation(0.2f, blob);
+        enemyBlobAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
 
+        
+        enemyBatOne = new TextureRegion(enemy, 0, 100, 100, 100);
+        enemyBatOne.flip(false, true);
+        
+        enemyBatTwo = new TextureRegion(enemy, 100, 100, 100, 100);
+        enemyBatTwo.flip(false, true);
+        
+        enemyBatThree = new TextureRegion(enemy, 200, 100, 100, 100);
+        enemyBatThree.flip(false, true);
+        
+        TextureRegion[] bat = {enemyBatOne, enemyBatTwo, enemyBatThree};
+        enemyBatAnimation = new Animation(0.2f, bat);
+        enemyBatAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
+        
+
+        
+        // Effect
+        smoke = new TextureRegion(enemy, 300, 100, 100, 100);
+        smoke.flip(false, true);
         
         
         //example = Gdx.audio.newSound(Gdx.files.internal("path/to/sound/file");

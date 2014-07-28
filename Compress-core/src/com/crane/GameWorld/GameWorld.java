@@ -16,6 +16,16 @@ public class GameWorld {
 	public void update(float delta) {
 		hero.update(delta);
 		scroller.update(delta);
+		
+		// Collision
+		if (scroller.collides(hero)) {
+	        // Clean up on game over
+	        scroller.stop();
+	        hero.isDead(true);
+	    }
+
+		
+		
 		// Sound Play
 		// AssetLoader.example.play();
 	}
