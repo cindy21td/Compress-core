@@ -48,6 +48,10 @@ public class ScrollHandler {
    		return (enemyBlob.collides(hero) || enemyBat.collides(hero));
 	}
     
+    public boolean enemyIsHit(Hero hero) {
+    	return (enemyBlob.isHit(hero) || enemyBat.isHit(hero));
+    }
+    
     public Enemy getEnemyBlob() {
         return enemyBlob;
     }

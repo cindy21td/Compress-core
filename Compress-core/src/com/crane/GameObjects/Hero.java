@@ -122,6 +122,10 @@ public class Hero {
 			dodgeDisabled = true;
 		}
 	}
+	
+	public void hitEnemy() {
+		velocity.y = -200;
+	}
 			
 	public boolean isDodging() {
 		return dodgeTime < 0.20f;

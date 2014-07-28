@@ -40,9 +40,7 @@ public class GameRenderer {
 	
 	private Animation heroRunAnimation;
 	
-	private Animation handAnimation;
-	
-	private TextureRegion heroJump, armJump, heroDash;
+	private TextureRegion heroJump, heroDash;
 	
 	private TextureRegion smoke;
 	
@@ -84,10 +82,7 @@ public class GameRenderer {
 		
 		heroRunAnimation = AssetLoader.heroRunAnimation;
 		
-		handAnimation = AssetLoader.handAnimation;
-		
 		heroJump = AssetLoader.heroJump;
-		armJump = AssetLoader.armJump;
 		
 		heroDash = AssetLoader.heroDash;
 		
@@ -157,20 +152,13 @@ public class GameRenderer {
             		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
             		hero.getWidth(), hero.getHeight(), 1, 1, 0);
             
-            batcher.draw(handAnimation.getKeyFrame(runTime), hero.getX(), hero.getY(), 
-            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
-            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
             break;
             
         case 1:
         	batcher.draw(heroJump, hero.getX(), hero.getY(), 
             		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
             		hero.getWidth(), hero.getHeight(), 1, 1, 0);
-        	
-        	batcher.draw(armJump, hero.getX(), hero.getY(), 
-            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
-            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
-        	
+        	        	
         	break;
         	
         case 2:
@@ -209,13 +197,27 @@ public class GameRenderer {
         
                 
         // Draw enemy
-        batcher.draw(enemyBlobAnimation.getKeyFrame(runTime), enemyBlob.getX(), enemyBlob.getY(), 
+        if(!enemyBlob.isAlive()) {
+        	batcher.draw(smoke, enemyBlob.getX(), enemyBlob.getY(), 
+            		enemyBlob.getWidth() / 2.0f, enemyBlob.getHeight() / 2.0f,
+            		enemyBlob.getWidth(), enemyBlob.getHeight(), 1, 1, 0);
+
+        } else {
+        	batcher.draw(enemyBlobAnimation.getKeyFrame(runTime), enemyBlob.getX(), enemyBlob.getY(), 
         		enemyBlob.getWidth() / 2.0f, enemyBlob.getHeight() / 2.0f,
         		enemyBlob.getWidth(), enemyBlob.getHeight(), 1, 1, 0);
+        }
         
-        batcher.draw(enemyBatAnimation.getKeyFrame(runTime), enemyBat.getX(), enemyBat.getY(), 
+        if(!enemyBat.isAlive()) {
+        	batcher.draw(smoke, enemyBat.getX(), enemyBat.getY(), 
+            		enemyBat.getWidth() / 2.0f, enemyBat.getHeight() / 2.0f,
+            		enemyBat.getWidth(), enemyBat.getHeight(), 1, 1, 0);
+
+        } else {
+        	batcher.draw(enemyBatAnimation.getKeyFrame(runTime), enemyBat.getX(), enemyBat.getY(), 
         		enemyBat.getWidth() / 2.0f, enemyBat.getHeight() / 2.0f,
         		enemyBat.getWidth(), enemyBat.getHeight(), 1, 1, 0);
+        }
 
         
         /* Draw bird at its coordinates. Retrieve the Animation object from AssetLoader

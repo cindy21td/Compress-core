@@ -18,7 +18,7 @@ public class GameWorld {
 		scroller.update(delta);
 		
 		// Collision
-		if (scroller.collides(hero)) {
+		if (!scroller.enemyIsHit(hero) && scroller.collides(hero)) {
 	        // Clean up on game over
 	        scroller.stop();
 	        hero.isDead(true);

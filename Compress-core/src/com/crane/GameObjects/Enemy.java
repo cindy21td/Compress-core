@@ -12,6 +12,7 @@ public class Enemy extends Scrollable {
 	private float centerY;
 	
 	private boolean jumped;
+	private boolean alive;
 	
 	private Rectangle boundingCollision;
 	
@@ -23,6 +24,7 @@ public class Enemy extends Scrollable {
 		this.centerY = y + height / 2;
 		
 		jumped = false;
+		alive = true;
 		
 		boundingCollision = new Rectangle();
 		
@@ -39,6 +41,7 @@ public class Enemy extends Scrollable {
 	@Override
     public void reset(float newX) {
         // Call the reset method in the superclass (Scrollable)
+		alive = true;
         super.reset(newX);
 
     }
@@ -50,6 +53,22 @@ public class Enemy extends Scrollable {
         }
         return false;
     }
+	
+	public boolean isHit(Hero hero) {
+		if(hero.isJumping() && (position.x < hero.getX() + hero.getWidth())) {
+			if(Intersector.overlaps(hero.getBoundingFeet(), boundingCollision)) {
+				alive = false;
+				hero.hitEnemy();
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	public boolean isAlive() {
+		return alive;
+	}
 
 	public float getCenterX() {
 		return centerX;

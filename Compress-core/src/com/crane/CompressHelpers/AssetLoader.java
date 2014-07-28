@@ -15,10 +15,7 @@ public class AssetLoader {
     public static Animation heroRunAnimation;
     public static TextureRegion heroRunOne, heroRunTwo, heroRunThree, heroRunFour;
     
-    public static Animation handAnimation;
-    public static TextureRegion handOne, handTwo, handThree, handFour;
-    
-    public static TextureRegion heroJump, armJump;
+    public static TextureRegion heroJump;
     
     public static TextureRegion heroDash;
     
@@ -51,48 +48,27 @@ public class AssetLoader {
         Texture hero = new Texture(Gdx.files.internal("Hero Sprite.png"));
         hero.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
         
-        heroRunOne = new TextureRegion(hero, 300, 0, 100, 100);
+        heroRunOne = new TextureRegion(hero, 0, 0, 100, 100);
         heroRunOne.flip(false, true);
         
-        heroRunTwo = new TextureRegion(hero, 200, 0, 100, 100);
+        heroRunTwo = new TextureRegion(hero, 100, 0, 100, 100);
         heroRunTwo.flip(false, true);
         
-        heroRunThree = new TextureRegion(hero, 100, 0, 100, 100);
+        heroRunThree = new TextureRegion(hero, 200, 0, 100, 100);
         heroRunThree.flip(false, true);
         
-        heroRunFour = new TextureRegion(hero, 0, 0, 100, 100);
+        heroRunFour = new TextureRegion(hero, 300, 0, 100, 100);
         heroRunFour.flip(false, true);
         
         TextureRegion[] runningHero = {heroRunOne, heroRunTwo, heroRunThree, heroRunFour};
         heroRunAnimation = new Animation(0.1f, runningHero);
         heroRunAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
-        
-        
-        handOne = new TextureRegion(hero, 300, 100, 100, 100);
-        handOne.flip(false, true);
-        
-        handTwo = new TextureRegion(hero, 200, 100, 100, 100);
-        handTwo.flip(false, true);
-        
-        handThree = new TextureRegion(hero, 100, 100, 100, 100);
-        handThree.flip(false, true);
-        
-        handFour = new TextureRegion(hero, 0, 100, 100, 100);
-        handFour.flip(false, true);
-
-        TextureRegion[] handHero = {handOne, handTwo, handThree, handFour};
-        handAnimation = new Animation(0.1f, handHero);
-        handAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
 
         
-        heroJump = new TextureRegion(hero, 0, 200, 100, 100);
-        heroJump.flip(false, true);
+        heroJump = new TextureRegion(hero, 0, 100, 100, 100);
+        heroJump.flip(false, true);        
         
-        armJump = new TextureRegion(hero, 100, 200, 100, 100);
-        armJump.flip(false, true);
-        
-        
-        heroDash = new TextureRegion(hero, 200, 200, 100, 100);
+        heroDash = new TextureRegion(hero, 100, 100, 100, 100);
         heroDash.flip(false, true);
         
         
@@ -129,7 +105,7 @@ public class AssetLoader {
 
         
         // Effect
-        smoke = new TextureRegion(enemy, 300, 100, 100, 100);
+        smoke = new TextureRegion(enemy, 300, 0, 100, 100);
         smoke.flip(false, true);
         
         
