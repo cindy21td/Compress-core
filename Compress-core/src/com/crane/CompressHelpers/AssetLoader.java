@@ -28,6 +28,8 @@ public class AssetLoader {
     
     public static TextureRegion smoke;
     
+    public static TextureRegion elementTest;
+    
     
     // Placeholder for Sounds
     // public static Sound example;
@@ -107,6 +109,12 @@ public class AssetLoader {
         // Effect
         smoke = new TextureRegion(enemy, 300, 0, 100, 100);
         smoke.flip(false, true);
+        
+        Texture element = new Texture(Gdx.files.internal("Element Sprite.png"));
+        element.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
+        
+        elementTest = new TextureRegion(element, 0, 0, 100, 100);
+        elementTest.flip(false, true);
         
         
         //example = Gdx.audio.newSound(Gdx.files.internal("path/to/sound/file");

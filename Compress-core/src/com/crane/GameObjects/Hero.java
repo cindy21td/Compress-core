@@ -99,10 +99,10 @@ public class Hero {
 	}
 	
 	public void onClick() {
-		if(jumped && !doubleJumped) {
+		if(alive && jumped && !doubleJumped) {
 			doubleJumped = true;
 			velocity.y = -200;
-		} else if(!jumped) {
+		} else if(alive && !jumped) {
 			jumped = true;
 			velocity.y = -200;
 			acceleration.y = 460;
@@ -110,7 +110,7 @@ public class Hero {
 	}
 	
 	public void onSwipe(boolean right) {
-		if(!jumped && !dodgeDisabled && !isDodging()) {
+		if(alive && !jumped && !dodgeDisabled && !isDodging()) {
 			dodgeTime = 0;
 			if(right) {
 				velocity.x = 140;
@@ -124,7 +124,13 @@ public class Hero {
 	}
 	
 	public void hitEnemy() {
-		velocity.y = -200;
+		if(alive) {
+			velocity.y = -100;
+		}
+	}
+	
+	public void takeElement() {
+		
 	}
 			
 	public boolean isDodging() {

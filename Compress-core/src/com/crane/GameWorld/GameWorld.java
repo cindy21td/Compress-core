@@ -17,6 +17,9 @@ public class GameWorld {
 		hero.update(delta);
 		scroller.update(delta);
 		
+		// Element
+		scroller.elementIsTaken(hero);
+		
 		// Collision
 		if (!scroller.enemyIsHit(hero) && scroller.collides(hero)) {
 	        // Clean up on game over

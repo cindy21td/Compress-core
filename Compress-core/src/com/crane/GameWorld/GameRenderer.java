@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.crane.CompressHelpers.AssetLoader;
 import com.crane.GameObjects.Background;
+import com.crane.GameObjects.Element;
 import com.crane.GameObjects.Enemy;
 import com.crane.GameObjects.Hero;
 import com.crane.GameObjects.ScrollHandler;
@@ -31,6 +32,7 @@ public class GameRenderer {
 	private ScrollHandler scroller;
 	private Background bgFront, bgBack;
 	private Enemy enemyBlob, enemyBat;
+	private Element elementTest;
 
 	// Game Assets
 	private TextureRegion bg;
@@ -43,6 +45,8 @@ public class GameRenderer {
 	private TextureRegion heroJump, heroDash;
 	
 	private TextureRegion smoke;
+	
+	private TextureRegion elementTestBody;
 	
 	//private TextureRegion one, two, three;
 
@@ -73,6 +77,8 @@ public class GameRenderer {
 		bgBack = scroller.getBgBack();
 		enemyBlob = scroller.getEnemyBlob();
 		enemyBat = scroller.getEnemyBat();
+		
+		elementTest = scroller.getElement();
 	}
 	
 	public void initAssets() {
@@ -91,6 +97,8 @@ public class GameRenderer {
 		enemyBatAnimation = AssetLoader.enemyBatAnimation;
 		
 		smoke = AssetLoader.smoke;
+		
+		elementTestBody = AssetLoader.elementTest;
 	}
 	
 	// runTime is for animation (determining which frame to render);
@@ -220,24 +228,18 @@ public class GameRenderer {
         }
 
         
-        /* Draw bird at its coordinates. Retrieve the Animation object from AssetLoader
-        // Pass in the runTime variable to get the current frame.
-        batcher.draw(AssetLoader.birdAnimation.getKeyFrame(runTime),
-                bird.getX(), bird.getY(), bird.getWidth(), bird.getHeight());
-                
-                if (bird.shouldntFlap()) {
-            batcher.draw(birdMid, bird.getX(), bird.getY(),
-                    bird.getWidth() / 2.0f, bird.getHeight() / 2.0f,
-                    bird.getWidth(), bird.getHeight(), 1, 1, bird.getRotation());
-
+        // Element
+        if(!elementTest.isTaken()) {
+        	batcher.draw(elementTestBody, elementTest.getX(), elementTest.getY(), 
+        		elementTest.getWidth() / 2.0f, elementTest.getHeight() / 2.0f,
+        		elementTest.getWidth(), elementTest.getHeight(), 1, 1, 0);
         } else {
-            batcher.draw(birdAnimation.getKeyFrame(runTime), bird.getX(),
-                    bird.getY(), bird.getWidth() / 2.0f,
-                    bird.getHeight() / 2.0f, bird.getWidth(), bird.getHeight(),
-                    1, 1, bird.getRotation());
+        	batcher.draw(smoke, elementTest.getX(), elementTest.getY(), 
+            		elementTest.getWidth() / 2.0f, elementTest.getHeight() / 2.0f,
+            		elementTest.getWidth(), elementTest.getHeight(), 1, 1, 0);
+
         }
-        */
-        
+
         
         // End SpriteBatch
         batcher.end();
@@ -262,8 +264,11 @@ public class GameRenderer {
         		enemyBat.getBoundingCollision().getWidth(), enemyBat.getBoundingCollision().getHeight());
 
         
+        shapeRenderer.circle(elementTest.getBoundingCollision().x, elementTest.getBoundingCollision().y, elementTest.getBoundingCollision().radius);
+
+        
         shapeRenderer.end();
-         */
+        */
 	}
 
 }
