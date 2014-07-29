@@ -1,6 +1,7 @@
 package com.crane.GameObjects;
 
 import com.badlogic.gdx.math.Intersector;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 
@@ -38,11 +39,11 @@ public class Enemy extends Scrollable {
 		boundingCollision.set(position.x + 2, position.y + 3, 10f, 10f);
 	}
 	
-	// Special for enemy
-	public void reset(Vector2 newPosition) {
-		position.y = newPosition.y;
+	public void reset(float newX, float newY, float newVelX) {
+		position.y = newY;
+		velocity.x = -59 - newVelX;
 		alive = true;
-		super.reset(newPosition.x);
+		super.reset(newX);
 	}
 	
 		
@@ -65,7 +66,7 @@ public class Enemy extends Scrollable {
 		
 		return false;
 	}
-	
+		
 	public boolean isAlive() {
 		return alive;
 	}
@@ -98,8 +99,4 @@ public class Enemy extends Scrollable {
 		return boundingCollision;
 	}
 	
-	public Vector2 getPosition() {
-		return position;
-	}
-
 }

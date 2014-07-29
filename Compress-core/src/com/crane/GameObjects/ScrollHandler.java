@@ -1,6 +1,7 @@
 package com.crane.GameObjects;
 
-import com.crane.CompressHelpers.Randomizer;
+import com.badlogic.gdx.math.MathUtils;
+
 
 public class ScrollHandler {
 	
@@ -9,30 +10,17 @@ public class ScrollHandler {
 	
 	private Element elementTest;
 	
-	private Randomizer r;
-	
 	public static final int SCROLL_SPEED = -59;
 	
 	public ScrollHandler(float yPos) {
-		//r = new Randomizer();
 		
-		
-		/*enemyBlob = new Enemy(r.getEnemyOnePosition().x, r.getEnemyOnePosition().y, 
-				15, 15, SCROLL_SPEED - r.getEnemyOneVelocity().x);
-		enemyBat = new Enemy(r.getEnemyTwoPosition().x, r.getEnemyTwoPosition().y,
-				15, 15, SCROLL_SPEED - r.getEnemyTwoVelocity().x);
-		enemyGoblin = new Enemy(r.getEnemyThreePosition().x, r.getEnemyThreePosition().y,
-				15, 15, SCROLL_SPEED - r.getEnemyThreeVelocity().x);
-		*/
-		
-		enemyBlob = new Enemy(204, 111, 15, 15, SCROLL_SPEED - 30);
-		enemyBat = new Enemy(204, 50, 15, 15, SCROLL_SPEED - 15);
-		enemyGoblin = new Enemy(204, 105, 15, 15, SCROLL_SPEED - 20);
-		
-		//enemyBlob = new Enemy(204, 111, 15, 15, SCROLL_SPEED - 30);
-		//enemyBat = new Enemy(204, 50, 15, 15, SCROLL_SPEED - 15);
-		//enemyGoblin = new Enemy(204, 105, 15, 15, SCROLL_SPEED - 20);
-		
+		enemyBlob = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 
+				15, 15, SCROLL_SPEED - getEnemyRanVelX());
+		enemyBat = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 
+				15, 15, SCROLL_SPEED - getEnemyRanVelX());
+		enemyGoblin = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 
+				15, 15, SCROLL_SPEED - getEnemyRanVelX());
+				
 		bgFront = new Background(0, 0, 204, 126, SCROLL_SPEED);
 		bgBack = new Background(204, 0, 204, 126, SCROLL_SPEED);
 		
@@ -53,28 +41,22 @@ public class ScrollHandler {
         enemyBlob.update(delta);
         if (enemyBlob.isScrolledLeft()) {
         	
-        	r.resetEnemyOne(enemyBat.getPosition(), enemyGoblin.getPosition());
-        	enemyBlob.reset(r.getEnemyOnePosition());
+        	enemyBlob.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
         	
-            //enemyBlob.reset(204);
         }
         
         enemyBat.update(delta);
         if (enemyBat.isScrolledLeft()) {
             
-        	r.resetEnemyTwo(enemyBlob.getPosition(), enemyGoblin.getPosition());
-        	enemyBlob.reset(r.getEnemyTwoPosition());
+        	enemyBat.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
         	
-        	//enemyBat.reset(204);
         }
         
         enemyGoblin.update(delta);
         if(enemyGoblin.isScrolledLeft()) {
         	
-        	r.resetEnemyThree(enemyBat.getPosition(), enemyBlob.getPosition());
-        	enemyBlob.reset(r.getEnemyThreePosition());
+        	enemyGoblin.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
         	
-        	//enemyGoblin.reset(204);
         }
         
         elementTest.update(delta);;
@@ -107,6 +89,18 @@ public class ScrollHandler {
     	return elementTest.collides(hero);
     }
     
+    public float getEnemyRanPosX() {
+		return MathUtils.random(204, 235);
+	}
+	
+	public float getEnemyRanPosY() {
+		return MathUtils.random(50, 112);
+	}
+	
+	public float getEnemyRanVelX() {
+		return MathUtils.random(0, 41);
+	}
+
     
     public Enemy getEnemyBlob() {
         return enemyBlob;
