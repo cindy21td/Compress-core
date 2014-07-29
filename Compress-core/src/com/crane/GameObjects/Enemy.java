@@ -38,14 +38,14 @@ public class Enemy extends Scrollable {
 		boundingCollision.set(position.x + 2, position.y + 3, 10f, 10f);
 	}
 	
-	@Override
-    public void reset(float newX) {
-        // Call the reset method in the superclass (Scrollable)
+	// Special for enemy
+	public void reset(Vector2 newPosition) {
+		position.y = newPosition.y;
 		alive = true;
-        super.reset(newX);
-
-    }
+		super.reset(newPosition.x);
+	}
 	
+		
 	public boolean collides(Hero hero) {
         if (position.x < hero.getX() + hero.getWidth()) {
             return (Intersector.overlaps(hero.getBoundingHead(), boundingCollision)
@@ -96,6 +96,10 @@ public class Enemy extends Scrollable {
 	
 	public Rectangle getBoundingCollision() {
 		return boundingCollision;
+	}
+	
+	public Vector2 getPosition() {
+		return position;
 	}
 
 }

@@ -26,6 +26,9 @@ public class AssetLoader {
     public static TextureRegion enemyBatOne, enemyBatTwo, enemyBatThree;
     public static Animation enemyBatAnimation;
     
+    public static TextureRegion enemyGoblinOne, enemyGoblinTwo, enemyGoblinThree;
+    public static Animation enemyGoblinAnimation;
+    
     public static TextureRegion smoke;
     
     public static TextureRegion elementTest;
@@ -40,10 +43,10 @@ public class AssetLoader {
   
     public static void load() {
 
-        texture = new Texture(Gdx.files.internal("SpriteTexture.png"));
+        texture = new Texture(Gdx.files.internal("Background Sprite.png"));
         texture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
         
-        bg = new TextureRegion(texture, 0, 40, 204, 136);
+        bg = new TextureRegion(texture, 0, 0, 204, 136);
         bg.flip(false, true);
         
         
@@ -104,6 +107,19 @@ public class AssetLoader {
         enemyBatAnimation = new Animation(0.2f, bat);
         enemyBatAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
         
+        
+        enemyGoblinOne = new TextureRegion(enemy, 0, 200, 100, 100);
+        enemyGoblinOne.flip(false, true);
+        
+        enemyGoblinTwo = new TextureRegion(enemy, 100, 200, 100, 100);
+        enemyGoblinTwo.flip(false, true);
+        
+        enemyGoblinThree = new TextureRegion(enemy, 200, 200, 100, 100);
+        enemyGoblinThree.flip(false, true);
+        
+        TextureRegion[] goblin = {enemyGoblinOne, enemyGoblinTwo, enemyGoblinThree};
+        enemyGoblinAnimation = new Animation(0.2f, goblin);
+        enemyGoblinAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
 
         
         // Effect

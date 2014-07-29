@@ -31,14 +31,14 @@ public class GameRenderer {
 	private Hero hero;
 	private ScrollHandler scroller;
 	private Background bgFront, bgBack;
-	private Enemy enemyBlob, enemyBat;
+	private Enemy enemyBlob, enemyBat, enemyGoblin;
 	private Element elementTest;
 
 	// Game Assets
 	private TextureRegion bg;
 	private TextureRegion bgFrontBody, bgBackBody;
 	
-	private Animation enemyBlobAnimation, enemyBatAnimation;
+	private Animation enemyBlobAnimation, enemyBatAnimation, enemyGoblinAnimation;
 	
 	private Animation heroRunAnimation;
 	
@@ -77,6 +77,7 @@ public class GameRenderer {
 		bgBack = scroller.getBgBack();
 		enemyBlob = scroller.getEnemyBlob();
 		enemyBat = scroller.getEnemyBat();
+		enemyGoblin = scroller.getEnemyGoblin();
 		
 		elementTest = scroller.getElement();
 	}
@@ -95,6 +96,7 @@ public class GameRenderer {
 		
 		enemyBlobAnimation = AssetLoader.enemyBlobAnimation;
 		enemyBatAnimation = AssetLoader.enemyBatAnimation;
+		enemyGoblinAnimation = AssetLoader.enemyGoblinAnimation;
 		
 		smoke = AssetLoader.smoke;
 		
@@ -226,8 +228,20 @@ public class GameRenderer {
         		enemyBat.getWidth() / 2.0f, enemyBat.getHeight() / 2.0f,
         		enemyBat.getWidth(), enemyBat.getHeight(), 1, 1, 0);
         }
-
         
+        if(!enemyGoblin.isAlive()) {
+        	batcher.draw(smoke, enemyGoblin.getX(), enemyGoblin.getY(), 
+            		enemyGoblin.getWidth() / 2.0f, enemyGoblin.getHeight() / 2.0f,
+            		enemyGoblin.getWidth(), enemyGoblin.getHeight(), 1, 1, 0);
+
+        } else {
+        	batcher.draw(enemyGoblinAnimation.getKeyFrame(runTime), enemyGoblin.getX(), enemyGoblin.getY(), 
+        		enemyGoblin.getWidth() / 2.0f, enemyGoblin.getHeight() / 2.0f,
+        		enemyGoblin.getWidth(), enemyGoblin.getHeight(), 1, 1, 0);
+        }
+
+
+        /*
         // Element
         if(!elementTest.isTaken()) {
         	batcher.draw(elementTestBody, elementTest.getX(), elementTest.getY(), 
@@ -239,7 +253,7 @@ public class GameRenderer {
             		elementTest.getWidth(), elementTest.getHeight(), 1, 1, 0);
 
         }
-
+		*/
         
         // End SpriteBatch
         batcher.end();
@@ -263,6 +277,8 @@ public class GameRenderer {
         shapeRenderer.rect(enemyBat.getBoundingCollision().x, enemyBat.getBoundingCollision().y, 
         		enemyBat.getBoundingCollision().getWidth(), enemyBat.getBoundingCollision().getHeight());
 
+        shapeRenderer.rect(enemyGoblin.getBoundingCollision().x, enemyGoblin.getBoundingCollision().y, 
+        		enemyGoblin.getBoundingCollision().getWidth(), enemyGoblin.getBoundingCollision().getHeight());
         
         shapeRenderer.circle(elementTest.getBoundingCollision().x, elementTest.getBoundingCollision().y, elementTest.getBoundingCollision().radius);
 
