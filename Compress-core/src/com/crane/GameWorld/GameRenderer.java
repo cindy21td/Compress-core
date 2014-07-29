@@ -255,6 +255,53 @@ public class GameRenderer {
         }
 		*/
         
+        
+        // TEMPORARY CODE! We will fix this section later:
+        
+        if (myWorld.isReady()) {
+        	// Draw text
+            AssetLoader.font.draw(batcher, "Touch me", 100, 75);
+        } else {
+
+        	if (myWorld.isGameOver() || myWorld.isHighScore()) {
+
+                if (myWorld.isGameOver()) {
+                    AssetLoader.font.draw(batcher, "Game Over", 100, 55);
+
+                    AssetLoader.font.draw(batcher, "High Score:", 100, 75);
+
+                    String highScore = AssetLoader.getHighScore() + "";
+
+                    // Draw text
+                    AssetLoader.font.draw(batcher, highScore, 150, 75);
+                } else {
+                    AssetLoader.font.draw(batcher, "High Score!", 100, 55);
+                }
+
+                AssetLoader.font.draw(batcher, "Try again?", 100, 95);
+
+                // Convert integer into String
+                String score = myWorld.getScore() + "";
+
+                // Draw text
+                AssetLoader.font.draw(batcher, score, 100, 115);
+        	}
+        	            
+            // Draw score and distance
+            AssetLoader.font.draw(batcher, "" + myWorld.getScore(), 10, 5);
+            AssetLoader.font.draw(batcher, "" + myWorld.getDistance(), 10, 15);
+
+        }
+
+        
+        
+        /*
+        // Draw score and distance
+        AssetLoader.font.draw(batcher, "" + myWorld.getScore(), 10, 5);
+        AssetLoader.font.draw(batcher, "" + myWorld.getDistance(), 10, 15);
+        */
+        
+        
         // End SpriteBatch
         batcher.end();
         

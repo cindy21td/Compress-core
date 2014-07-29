@@ -1,14 +1,16 @@
 package com.crane.CompressHelpers;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 public class AssetLoader {
 	
-	public static Texture texture;
+	public static Texture texture, hero, enemy, element;
 	public static TextureRegion bg;
     
 
@@ -34,8 +36,15 @@ public class AssetLoader {
     public static TextureRegion elementTest;
     
     
+    // Font
+    public static BitmapFont font;
+    
     // Placeholder for Sounds
     // public static Sound example;
+    
+    // Storing Scores
+    public static Preferences prefs;
+    
 
     public AssetLoader() {
 		// TODO Auto-generated constructor stub
@@ -50,7 +59,7 @@ public class AssetLoader {
         bg.flip(false, true);
         
         
-        Texture hero = new Texture(Gdx.files.internal("Hero Sprite.png"));
+        hero = new Texture(Gdx.files.internal("Hero Sprite.png"));
         hero.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
         
         heroRunOne = new TextureRegion(hero, 0, 0, 100, 100);
@@ -77,7 +86,7 @@ public class AssetLoader {
         heroDash.flip(false, true);
         
         
-        Texture enemy = new Texture(Gdx.files.internal("Enemy Sprite.png"));
+        enemy = new Texture(Gdx.files.internal("Enemy Sprite.png"));
         enemy.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
         
         enemyBlobOne = new TextureRegion(enemy, 0, 0, 100, 100);
@@ -126,21 +135,61 @@ public class AssetLoader {
         smoke = new TextureRegion(enemy, 300, 0, 100, 100);
         smoke.flip(false, true);
         
-        Texture element = new Texture(Gdx.files.internal("Element Sprite.png"));
+        element = new Texture(Gdx.files.internal("Element Sprite.png"));
         element.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
         
         elementTest = new TextureRegion(element, 0, 0, 100, 100);
         elementTest.flip(false, true);
         
         
+        // Font
+        font = new BitmapFont(Gdx.files.internal("text.fnt"));
+        font.setScale(.1f, -.1f);
+        
+        
         //example = Gdx.audio.newSound(Gdx.files.internal("path/to/sound/file");
         
 
+     // Create (or retrieve existing) preferences file
+        prefs = Gdx.app.getPreferences("Compress");
+
+        if (!prefs.contains("highScore")) {
+            prefs.putInteger("highScore", 0);
+        }
+        
+        if (!prefs.contains("longestDistance")) {
+            prefs.putInteger("longestDistance", 0);
+        }
     }
+
+    public static void setHighScore(int val) {
+        prefs.putInteger("highScore", val);
+        prefs.flush();
+    }
+
+    public static int getHighScore() {
+        return prefs.getInteger("highScore");
+    }
+    
+    public static void setLongestDistance(int val) {
+        prefs.putInteger("longestDistance", val);
+        prefs.flush();
+    }
+
+    public static int getLongestDistance() {
+        return prefs.getInteger("longestDistance");
+    }
+
     
     public static void dispose() {
         // We must dispose of the texture when we are finished.
         texture.dispose();
+        hero.dispose();
+        enemy.dispose();
+        element.dispose();
+        
+        font.dispose();
+        
     }
 	
 }

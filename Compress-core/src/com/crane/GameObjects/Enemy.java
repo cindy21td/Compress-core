@@ -56,7 +56,7 @@ public class Enemy extends Scrollable {
     }
 	
 	public boolean isHit(Hero hero) {
-		if(hero.isJumping() && (position.x < hero.getX() + hero.getWidth())) {
+		if(hero.isJumping() && hero.isAlive() && alive && (position.x < hero.getX() + hero.getWidth())) {
 			if(Intersector.overlaps(hero.getBoundingFeet(), boundingCollision)) {
 				alive = false;
 				hero.hitEnemy();

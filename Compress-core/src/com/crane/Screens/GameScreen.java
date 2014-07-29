@@ -27,7 +27,7 @@ public class GameScreen implements Screen {
 		renderer = new GameRenderer(world, (int) gameHeight, midPointY);			// Initializes GameRenderer
 		
 		//Gdx.input.setInputProcessor(new InputHandler(world.getBody(), world.getGauge()));
-		GestureDetector gestureDetect = new GestureDetector(new GestureHandler(world.getHero()));
+		GestureDetector gestureDetect = new GestureDetector(new GestureHandler(world));
 		Gdx.input.setInputProcessor(gestureDetect);
 	}
 

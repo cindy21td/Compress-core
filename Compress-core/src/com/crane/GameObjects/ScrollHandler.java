@@ -1,9 +1,12 @@
 package com.crane.GameObjects;
 
 import com.badlogic.gdx.math.MathUtils;
+import com.crane.GameWorld.GameWorld;
 
 
 public class ScrollHandler {
+	
+	private GameWorld gameWorld;
 	
 	private Enemy enemyBlob, enemyBat, enemyGoblin;
 	private Background bgFront, bgBack;
@@ -12,7 +15,9 @@ public class ScrollHandler {
 	
 	public static final int SCROLL_SPEED = -59;
 	
-	public ScrollHandler(float yPos) {
+	public ScrollHandler(GameWorld world, float yPos) {
+		
+		this.gameWorld = world;
 		
 		enemyBlob = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 
 				15, 15, SCROLL_SPEED - getEnemyRanVelX());
@@ -77,12 +82,29 @@ public class ScrollHandler {
     	elementTest.stop();
     }
     
+    public void onRestart() {
+    	enemyBlob.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
+    	enemyBat.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
+    	enemyGoblin.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
+    	
+    	bgFront.onRestart();
+    	bgBack.onRestart();
+    }
+    
     public boolean collides(Hero hero) {
    		return (enemyBlob.collides(hero) || enemyBat.collides(hero) || enemyGoblin.collides(hero));
 	}
     
     public boolean enemyIsHit(Hero hero) {
-    	return (enemyBlob.isHit(hero) || enemyBat.isHit(hero) || enemyGoblin.isHit(hero));
+    	
+    	if (enemyBlob.isHit(hero) || enemyBat.isHit(hero) || enemyGoblin.isHit(hero)) {
+    		// Add Score
+    		gameWorld.addScore(1);
+    		
+    		return true;
+    	}
+    	
+    	return false;
     }
     
     public boolean elementIsTaken(Hero hero) {

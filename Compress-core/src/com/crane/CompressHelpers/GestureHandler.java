@@ -3,18 +3,37 @@ package com.crane.CompressHelpers;
 import com.badlogic.gdx.input.GestureDetector.GestureListener;
 import com.badlogic.gdx.math.Vector2;
 import com.crane.GameObjects.Hero;
+import com.crane.GameWorld.GameWorld;
 
 public class GestureHandler implements GestureListener {
 
+	private GameWorld myWorld;
 	private Hero hero;
 	
-	public GestureHandler(Hero hero) {
-		this.hero = hero;
+	public GestureHandler(GameWorld world) {
+		this.myWorld = world;
+		this.hero = myWorld.getHero();
 	}
 
 	@Override
 	public boolean tap(float x, float y, int count, int button) {
-		hero.onClick();
+		if(myWorld.isReady()) {
+			
+			myWorld.start();
+			
+		} 
+		
+		if(myWorld.isRunning()) {
+			hero.onClick();
+		}
+		
+		if(myWorld.isGameOver() || myWorld.isHighScore()) {
+			
+			myWorld.restart();
+			
+		} 
+		
+		
 		return true;
 	}
 	

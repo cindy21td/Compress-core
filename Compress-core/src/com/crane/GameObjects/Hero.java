@@ -98,6 +98,18 @@ public class Hero {
 		boundingFeet.set(position.x + 10, position.y + 26, 10f, 4f);
 	}
 	
+	public void onRestart() {
+		position.x = 30;
+		position.y = 97;
+		
+		
+		jumped = false;
+		doubleJumped = false;
+		dodgeDisabled = false;
+		
+		alive = true;
+	}
+	
 	public void onClick() {
 		if(alive && jumped && !doubleJumped) {
 			doubleJumped = true;
@@ -126,6 +138,9 @@ public class Hero {
 	public void hitEnemy() {
 		if(alive) {
 			velocity.y = -100;
+			if(doubleJumped) {
+				doubleJumped = false;
+			}
 		}
 	}
 	
