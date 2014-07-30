@@ -110,6 +110,8 @@ public class GameRenderer {
         Gdx.gl.glClearColor(255, 255, 255, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
+        
+        /*
         // Begin ShapeRenderer
         shapeRenderer.begin(ShapeType.Filled);
         
@@ -123,6 +125,7 @@ public class GameRenderer {
         
         // End ShapeRenderer
         shapeRenderer.end();
+        */
         
 
         // Begin SpriteBatch
@@ -131,8 +134,8 @@ public class GameRenderer {
         // This is good for performance when drawing images that do not require
         // transparency.
         batcher.disableBlending();
-        batcher.draw(bgFrontBody, bgFront.getX(), 0, 204, 120);
-        batcher.draw(bgBackBody, bgBack.getX(), 0, 204, 120);
+        batcher.draw(bgFrontBody, bgFront.getX(), 0, 204, 136);
+        batcher.draw(bgBackBody, bgBack.getX(), 0, 204, 136);
         
         batcher.enableBlending();
         

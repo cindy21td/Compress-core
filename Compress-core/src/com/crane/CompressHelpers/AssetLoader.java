@@ -51,16 +51,19 @@ public class AssetLoader {
     }
   
     public static void load() {
-
-        texture = new Texture(Gdx.files.internal("Background Sprite.png"));
+    	
+    	
+    	// Background testing
+        texture = new Texture(Gdx.files.internal("Background Sprite ver two.png"));
         texture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
         
         bg = new TextureRegion(texture, 0, 0, 204, 136);
         bg.flip(false, true);
         
         
-        hero = new Texture(Gdx.files.internal("Hero Sprite.png"));
+        hero = new Texture(Gdx.files.internal("Hero Sprite ver Three.png"));
         hero.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
+        
         
         heroRunOne = new TextureRegion(hero, 0, 0, 100, 100);
         heroRunOne.flip(false, true);
@@ -74,6 +77,25 @@ public class AssetLoader {
         heroRunFour = new TextureRegion(hero, 300, 0, 100, 100);
         heroRunFour.flip(false, true);
         
+        /*
+        //Testing
+        Texture heroTest = new Texture(Gdx.files.internal("Hero Sprite ver Two.png"));
+        hero.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
+        
+        heroRunOne = new TextureRegion(heroTest, 0, 0, 100, 100);
+        heroRunOne.flip(false, true);
+        
+        heroRunTwo = new TextureRegion(heroTest, 100, 0, 100, 100);
+        heroRunTwo.flip(false, true);
+        
+        heroRunThree = new TextureRegion(heroTest, 200, 0, 100, 100);
+        heroRunThree.flip(false, true);
+        
+        heroRunFour = new TextureRegion(heroTest, 300, 0, 100, 100);
+        heroRunFour.flip(false, true);
+		*/
+        
+        
         TextureRegion[] runningHero = {heroRunOne, heroRunTwo, heroRunThree, heroRunFour};
         heroRunAnimation = new Animation(0.1f, runningHero);
         heroRunAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
@@ -86,7 +108,7 @@ public class AssetLoader {
         heroDash.flip(false, true);
         
         
-        enemy = new Texture(Gdx.files.internal("Enemy Sprite.png"));
+        enemy = new Texture(Gdx.files.internal("Enemy Sprite ver Two.png"));
         enemy.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
         
         enemyBlobOne = new TextureRegion(enemy, 0, 0, 100, 100);
