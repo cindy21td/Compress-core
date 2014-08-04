@@ -12,15 +12,23 @@ public class GameWorld {
 	private int score = 0;
 	private int distance = 0;
 	
+	private int rushDistance = 0;
+	
 	private GameState currentState;
+	private RunningState stage;
 	
 	public enum GameState {
 		READY, RUNNING, GAMEOVER, HIGHSCORE;
 	}
 	
+	public enum RunningState {
+		NORMAL, RUSH, BOSS;
+	}
+	
 
 	public GameWorld(int midPointY) {
 		currentState = GameState.READY;
+		stage = RunningState.NORMAL;
 		
 		hero = new Hero(30, 97, 32, 32);
 		scroller = new ScrollHandler(this, midPointY);
@@ -55,12 +63,23 @@ public class GameWorld {
             delta = .15f;
         }
 
-		
-		hero.update(delta);
+        if((rushDistance != 0) && (distance / 8 - rushDistance > 30)) {
+        	stage = RunningState.NORMAL;
+        	scroller.changeStage(RunningState.NORMAL);
+        	
+        	rushDistance = 0;
+        } else if((distance / 8 != 0) && (distance / 8 % 50 == 0)) {
+        	stage = RunningState.RUSH;
+        	scroller.changeStage(RunningState.RUSH);
+        	
+        	rushDistance = distance / 8;
+        }
+        		
+        hero.update(delta);
 		scroller.update(delta);
 		
 		// Element
-		scroller.elementIsTaken(hero);
+		// scroller.elementIsTaken(hero);
 		
 		// Collision
 		if (!scroller.enemyIsHit(hero) && scroller.collides(hero)) {
@@ -123,11 +142,13 @@ public class GameWorld {
 
     public void restart() {
         currentState = GameState.READY;
+        stage = RunningState.NORMAL;
+        scroller.changeStage(RunningState.NORMAL);
+        
         score = 0;
         distance = 0;
         hero.onRestart();
         scroller.onRestart();
-        currentState = GameState.READY;
     }
     
     public boolean isRunning() {
@@ -140,6 +161,10 @@ public class GameWorld {
 
     public boolean isHighScore() {
         return currentState == GameState.HIGHSCORE;
+    }
+    
+    public RunningState getStage() {
+    	return stage;
     }
 
 

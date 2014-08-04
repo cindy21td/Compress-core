@@ -1,9 +1,9 @@
 package com.crane.GameObjects;
 
 import com.badlogic.gdx.math.Intersector;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+import com.crane.GameObjects.ScrollHandler.EnemyType;
 
 public class Enemy extends Scrollable {
 	
@@ -17,7 +17,10 @@ public class Enemy extends Scrollable {
 	
 	private Rectangle boundingCollision;
 	
-	public Enemy(float x, float y, int width, int height, float scrollSpeed) {
+	private EnemyType type;
+	
+		
+	public Enemy(float x, float y, int width, int height, float scrollSpeed, EnemyType type) {
 		super(x, y, width, height, scrollSpeed);
 		
 		this.acceleration = new Vector2(0,0);
@@ -26,6 +29,8 @@ public class Enemy extends Scrollable {
 		
 		jumped = false;
 		alive = true;
+		
+		this.type = type;
 		
 		boundingCollision = new Rectangle();
 		
@@ -36,7 +41,7 @@ public class Enemy extends Scrollable {
 		super.update(delta);
 		
 		// Collision
-		boundingCollision.set(position.x + 2, position.y + 3, 10f, 10f);
+		setBoundingCollision();
 	}
 	
 	public void reset(float newX, float newY, float newVelX) {
@@ -65,6 +70,28 @@ public class Enemy extends Scrollable {
 		}
 		
 		return false;
+	}
+	
+	public void setBoundingCollision() {
+		switch(type) {
+		
+		case BLOB:
+			
+			boundingCollision.set(position.x + 1, position.y + 5, 13f, 10f);
+			break;
+			
+		case BAT:
+			
+			boundingCollision.set(position.x + 2, position.y + 3, 11f, 9.5f);
+			break;
+			
+		case GOBLIN:
+			
+			boundingCollision.set(position.x + 2, position.y + 3, 10f, 11f);
+			break;
+		
+		}
+			
 	}
 		
 	public boolean isAlive() {

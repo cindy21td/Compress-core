@@ -2,29 +2,48 @@ package com.crane.GameObjects;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.crane.GameWorld.GameWorld;
+import com.crane.GameWorld.GameWorld.RunningState;
 
 
 public class ScrollHandler {
 	
 	private GameWorld gameWorld;
 	
-	private Enemy enemyBlob, enemyBat, enemyGoblin;
+	private Enemy enemyOne, enemyTwo, enemyThree, enemyFour, enemyFive, enemySix;
 	private Background bgFront, bgBack;
 	
 	private Element elementTest;
 	
+	private RunningState stage;
+	
 	public static final int SCROLL_SPEED = -59;
+	
+	public enum EnemyType {
+		BLOB, BAT, GOBLIN;
+	}
+
 	
 	public ScrollHandler(GameWorld world, float yPos) {
 		
 		this.gameWorld = world;
+		this.stage = RunningState.NORMAL;
 		
-		enemyBlob = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 
-				15, 15, SCROLL_SPEED - getEnemyRanVelX());
-		enemyBat = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 
-				15, 15, SCROLL_SPEED - getEnemyRanVelX());
-		enemyGoblin = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 
-				15, 15, SCROLL_SPEED - getEnemyRanVelX());
+		
+		enemyOne = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 
+				15, 15, SCROLL_SPEED - getEnemyRanVelX(), EnemyType.BLOB);
+		enemyTwo = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 
+				15, 15, SCROLL_SPEED - getEnemyRanVelX(), EnemyType.BAT);
+		enemyThree = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 
+				15, 15, SCROLL_SPEED - getEnemyRanVelX(), EnemyType.GOBLIN);
+		
+		
+		enemyFour = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 
+				15, 15, SCROLL_SPEED - getEnemyRanVelX(), EnemyType.BLOB);
+		enemyFive = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 
+				15, 15, SCROLL_SPEED - getEnemyRanVelX(), EnemyType.BAT);
+		enemySix = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 
+				15, 15, SCROLL_SPEED - getEnemyRanVelX(), EnemyType.GOBLIN);
+		
 				
 		bgFront = new Background(0, 0, 204, 126, SCROLL_SPEED);
 		bgBack = new Background(204, 0, 204, 126, SCROLL_SPEED);
@@ -43,38 +62,40 @@ public class ScrollHandler {
         }
 
     	
-        enemyBlob.update(delta);
-        if (enemyBlob.isScrolledLeft()) {
+        enemyOne.update(delta);
+        if (enemyOne.isScrolledLeft()) {
         	
-        	enemyBlob.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
+        	enemyOne.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
         	
         }
         
-        enemyBat.update(delta);
-        if (enemyBat.isScrolledLeft()) {
+        enemyTwo.update(delta);
+        if (enemyTwo.isScrolledLeft()) {
             
-        	enemyBat.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
+        	enemyTwo.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
         	
         }
         
-        enemyGoblin.update(delta);
-        if(enemyGoblin.isScrolledLeft()) {
+        enemyThree.update(delta);
+        if(enemyThree.isScrolledLeft()) {
         	
-        	enemyGoblin.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
+        	enemyThree.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
         	
         }
+        
         
         elementTest.update(delta);;
         if(elementTest.isScrolledLeft()) {
         	elementTest.reset(204);
         }
+        
 
     }
     
     public void stop() {
-    	enemyBlob.stop();
-    	enemyBat.stop();
-    	enemyGoblin.stop();
+    	enemyOne.stop();
+    	enemyTwo.stop();
+    	enemyThree.stop();
     	
     	bgFront.stop();
     	bgBack.stop();
@@ -83,21 +104,21 @@ public class ScrollHandler {
     }
     
     public void onRestart() {
-    	enemyBlob.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
-    	enemyBat.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
-    	enemyGoblin.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
+    	enemyOne.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
+    	enemyTwo.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
+    	enemyThree.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
     	
     	bgFront.onRestart();
     	bgBack.onRestart();
     }
     
     public boolean collides(Hero hero) {
-   		return (enemyBlob.collides(hero) || enemyBat.collides(hero) || enemyGoblin.collides(hero));
+   		return (enemyOne.collides(hero) || enemyTwo.collides(hero) || enemyThree.collides(hero));
 	}
     
     public boolean enemyIsHit(Hero hero) {
     	
-    	if (enemyBlob.isHit(hero) || enemyBat.isHit(hero) || enemyGoblin.isHit(hero)) {
+    	if (enemyOne.isHit(hero) || enemyTwo.isHit(hero) || enemyThree.isHit(hero)) {
     		// Add Score
     		gameWorld.addScore(1);
     		
@@ -106,7 +127,7 @@ public class ScrollHandler {
     	
     	return false;
     }
-    
+        
     public boolean elementIsTaken(Hero hero) {
     	return elementTest.collides(hero);
     }
@@ -120,20 +141,40 @@ public class ScrollHandler {
 	}
 	
 	public float getEnemyRanVelX() {
-		return MathUtils.random(0, 41);
+		switch(stage) {
+		
+		case NORMAL:
+			return MathUtils.random(0, 41);
+			
+			
+		case RUSH:
+			return MathUtils.random(40, 81);
+			
+			
+		case BOSS:
+			return MathUtils.random(0, 21);
+			
+		default:
+			return MathUtils.random(0, 41);
+			
+		}
+		
 	}
 
+	public void changeStage(RunningState newStage) {
+		stage = newStage;
+	}
     
-    public Enemy getEnemyBlob() {
-        return enemyBlob;
+    public Enemy getEnemyOne() {
+        return enemyOne;
     }
     
-    public Enemy getEnemyBat() {
-    	return enemyBat;
+    public Enemy getEnemyTwo() {
+    	return enemyTwo;
     }
     
-    public Enemy getEnemyGoblin() {
-    	return enemyGoblin;
+    public Enemy getEnemyThree() {
+    	return enemyThree;
     }
     
     public Background getBgFront() {

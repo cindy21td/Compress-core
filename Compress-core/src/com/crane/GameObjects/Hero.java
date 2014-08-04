@@ -18,8 +18,6 @@ public class Hero {
 	
 	private boolean jumped;
 	private boolean doubleJumped;
-	private float dodgeTime;
-	private boolean dodgeDisabled;
 	
 	private boolean alive;
 	
@@ -41,7 +39,6 @@ public class Hero {
 		
 		jumped = false;
 		doubleJumped = false;
-		dodgeDisabled = false;
 		
 		alive = true;
 		
@@ -52,7 +49,6 @@ public class Hero {
 	}
 	
 	public void update(float delta) {
-		dodgeTime += delta;
 		if(jumped && position.y + height / 2 > centerY) {
 			jumped = false;
 			doubleJumped = false;
@@ -63,17 +59,7 @@ public class Hero {
 			position.y = 97;
 			
 		}
-		
-		if(!isDodging() && dodgeDisabled) {
-			if((isDodgingRight() && position.x + width / 2 <= centerX) || 
-					(!isDodgingRight() && position.x + width / 2 >= centerX)) {
-				acceleration.x = 0;
-				velocity.x = 0;
-				position.x = 30;
-				dodgeDisabled = false;
-			} 
-		}
-		
+				
 		velocity.add(acceleration.cpy().scl(delta));
 		
 		position.add(velocity.cpy().scl(delta));
@@ -82,18 +68,12 @@ public class Hero {
 		// Collision
 		if(jumped) {
 			boundingHead.set(position.x + 18, position.y + 12, 5f);
-		} else if(isDodging()){
-			if(isDodgingRight()) {
-				boundingHead.set(position.x + 26, position.y + 12, 5f);
-			} else {
-				boundingHead.set(position.x + 21, position.y + 8, 5f);
-			}
+			boundingBody.set(position.x + 10, position.y + 16, 11f, 10f);
 		} else {
 			boundingHead.set(position.x + 24, position.y + 12, 5f);
+			boundingBody.set(position.x + 10, position.y + 16, 13f, 10f);
 		}
 		
-		
-		boundingBody.set(position.x + 10, position.y + 16, 13f, 10f);
 		
 		boundingFeet.set(position.x + 10, position.y + 26, 10f, 4f);
 	}
@@ -105,7 +85,6 @@ public class Hero {
 		
 		jumped = false;
 		doubleJumped = false;
-		dodgeDisabled = false;
 		
 		alive = true;
 	}
@@ -121,20 +100,6 @@ public class Hero {
 		}
 	}
 	
-	public void onSwipe(boolean right) {
-		if(alive && !jumped && !dodgeDisabled && !isDodging()) {
-			dodgeTime = 0;
-			if(right) {
-				velocity.x = 140;
-				acceleration.x = -460;
-			} else {
-				velocity.x = -140;
-				acceleration.x = 460;
-			}
-			dodgeDisabled = true;
-		}
-	}
-	
 	public void hitEnemy() {
 		if(alive) {
 			velocity.y = -100;
@@ -146,14 +111,6 @@ public class Hero {
 	
 	public void takeElement() {
 		
-	}
-			
-	public boolean isDodging() {
-		return dodgeTime < 0.20f;
-	}
-	
-	public boolean isDodgingRight() {
-		return acceleration.x < 0;
 	}
 	
 	public boolean isJumping() {

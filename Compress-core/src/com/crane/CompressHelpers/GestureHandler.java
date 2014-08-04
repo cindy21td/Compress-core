@@ -39,14 +39,7 @@ public class GestureHandler implements GestureListener {
 	
 	@Override
 	public boolean fling(float velocityX, float velocityY, int button) {
-		
-		if(velocityX < -10) {
-			hero.onSwipe(false);
-		} else if(velocityX > 10){
-			hero.onSwipe(true);
-		}
-		
-		return true;
+		return false;
 	}
 	
 	@Override

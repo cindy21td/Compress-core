@@ -1,20 +1,19 @@
 package com.crane.GameWorld;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.crane.CompressHelpers.AssetLoader;
 import com.crane.GameObjects.Background;
 import com.crane.GameObjects.Element;
 import com.crane.GameObjects.Enemy;
 import com.crane.GameObjects.Hero;
 import com.crane.GameObjects.ScrollHandler;
+import com.crane.GameWorld.GameWorld.RunningState;
 
 public class GameRenderer {
 	
@@ -26,6 +25,8 @@ public class GameRenderer {
 	
 	private int midPointY;
 	private int gameHeight;
+	
+	private RunningState stage;
 	
 	// Game Objects
 	private Hero hero;
@@ -42,7 +43,7 @@ public class GameRenderer {
 	
 	private Animation heroRunAnimation;
 	
-	private TextureRegion heroJump, heroDash;
+	private TextureRegion heroJump;
 	
 	private TextureRegion smoke;
 	
@@ -52,6 +53,8 @@ public class GameRenderer {
 
 	public GameRenderer(GameWorld world, int gameHeight, int midPointY) {
 		myWorld = world;
+		
+		stage = world.getStage();
 		
 		this.midPointY = midPointY;
 		this.gameHeight = gameHeight;
@@ -75,9 +78,9 @@ public class GameRenderer {
 		scroller = myWorld.getScroller();
 		bgFront = scroller.getBgFront();
 		bgBack = scroller.getBgBack();
-		enemyBlob = scroller.getEnemyBlob();
-		enemyBat = scroller.getEnemyBat();
-		enemyGoblin = scroller.getEnemyGoblin();
+		enemyBlob = scroller.getEnemyOne();
+		enemyBat = scroller.getEnemyTwo();
+		enemyGoblin = scroller.getEnemyThree();
 		
 		elementTest = scroller.getElement();
 	}
@@ -91,8 +94,6 @@ public class GameRenderer {
 		
 		heroJump = AssetLoader.heroJump;
 		
-		heroDash = AssetLoader.heroDash;
-		
 		
 		enemyBlobAnimation = AssetLoader.enemyBlobAnimation;
 		enemyBatAnimation = AssetLoader.enemyBatAnimation;
@@ -105,11 +106,15 @@ public class GameRenderer {
 	
 	// runTime is for animation (determining which frame to render);
 	public void render(float runTime) {
+		
+		// Update Stage (NEED FIX)
+		stage = myWorld.getStage();
 
         // Fill the entire screen with black, to prevent potential flickering.
         Gdx.gl.glClearColor(255, 255, 255, 1);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);        
 
+        
         
         /*
         // Begin ShapeRenderer
@@ -152,12 +157,10 @@ public class GameRenderer {
         
         int val = 0;
         if(!hero.isAlive()) {
-        	val = 3;
+        	val = 2;
 		} else if(hero.isJumping()) {
         	val = 1;
-        } else if(hero.isDodging()) {
-        	val = 2;
-        }
+        } 
         
         switch(val) {
         case 0:
@@ -173,20 +176,8 @@ public class GameRenderer {
             		hero.getWidth(), hero.getHeight(), 1, 1, 0);
         	        	
         	break;
-        	
+        	        	
         case 2:
-        	float rotation = 0;
-        	if(!hero.isDodgingRight()) {
-        		rotation = -45;
-        	}
-        	
-        	batcher.draw(heroDash, hero.getX(), hero.getY(), 
-            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
-            		hero.getWidth(), hero.getHeight(), 1, 1, rotation);
-
-        	break;
-        	
-        case 3:
         	batcher.draw(smoke, hero.getX(), hero.getY(), 
             		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
             		hero.getWidth(), hero.getHeight(), 1, 1, 0);
@@ -305,14 +296,30 @@ public class GameRenderer {
         */
         
         
+        
+        // Draw current RunningState
+        switch(stage) {
+        
+        case NORMAL:
+        	AssetLoader.font.draw(batcher, "NORMAL", 100, 5);
+        	break;
+        case RUSH:
+        	AssetLoader.font.draw(batcher, "RUSH", 100, 5);
+        	break;
+        case BOSS:
+        	break;
+        }
+        
+        
         // End SpriteBatch
         batcher.end();
         
-
+        
         /*
         // Draw bounding collision
         shapeRenderer.begin(ShapeType.Filled);
         shapeRenderer.setColor(Color.RED);
+        
         shapeRenderer.circle(hero.getBoundingHead().x, hero.getBoundingHead().y, hero.getBoundingHead().radius);
         shapeRenderer.rect(hero.getBoundingBody().x, hero.getBoundingBody().y, hero.getBoundingBody().getWidth(), hero.getBoundingBody().getHeight());
         
@@ -334,7 +341,12 @@ public class GameRenderer {
 
         
         shapeRenderer.end();
-        */
+		*/
+
+       	}
+	
+	public void setStage(RunningState newStage) {
+		stage = newStage;
 	}
 
 }

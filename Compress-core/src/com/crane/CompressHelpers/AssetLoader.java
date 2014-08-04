@@ -19,8 +19,6 @@ public class AssetLoader {
     
     public static TextureRegion heroJump;
     
-    public static TextureRegion heroDash;
-    
     
     public static TextureRegion enemyBlobOne, enemyBlobTwo, enemyBlobThree;
     public static Animation enemyBlobAnimation;
@@ -104,8 +102,6 @@ public class AssetLoader {
         heroJump = new TextureRegion(hero, 0, 100, 100, 100);
         heroJump.flip(false, true);        
         
-        heroDash = new TextureRegion(hero, 100, 100, 100, 100);
-        heroDash.flip(false, true);
         
         
         enemy = new Texture(Gdx.files.internal("Enemy Sprite ver Two.png"));
