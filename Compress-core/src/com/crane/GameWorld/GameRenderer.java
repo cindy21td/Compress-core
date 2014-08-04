@@ -32,7 +32,7 @@ public class GameRenderer {
 	private Hero hero;
 	private ScrollHandler scroller;
 	private Background bgFront, bgBack;
-	private Enemy enemyBlob, enemyBat, enemyGoblin;
+	private Enemy enemyOne, enemyTwo, enemyThree;
 	private Element elementTest;
 
 	// Game Assets
@@ -45,7 +45,7 @@ public class GameRenderer {
 	
 	private TextureRegion heroJump;
 	
-	private TextureRegion smoke;
+	private TextureRegion scribble;
 	
 	private TextureRegion elementTestBody;
 	
@@ -78,9 +78,9 @@ public class GameRenderer {
 		scroller = myWorld.getScroller();
 		bgFront = scroller.getBgFront();
 		bgBack = scroller.getBgBack();
-		enemyBlob = scroller.getEnemyOne();
-		enemyBat = scroller.getEnemyTwo();
-		enemyGoblin = scroller.getEnemyThree();
+		enemyOne = scroller.getEnemyOne();
+		enemyTwo = scroller.getEnemyTwo();
+		enemyThree = scroller.getEnemyThree();
 		
 		elementTest = scroller.getElement();
 	}
@@ -99,7 +99,7 @@ public class GameRenderer {
 		enemyBatAnimation = AssetLoader.enemyBatAnimation;
 		enemyGoblinAnimation = AssetLoader.enemyGoblinAnimation;
 		
-		smoke = AssetLoader.smoke;
+		scribble = AssetLoader.scribble;
 		
 		elementTestBody = AssetLoader.elementTest;
 	}
@@ -107,8 +107,8 @@ public class GameRenderer {
 	// runTime is for animation (determining which frame to render);
 	public void render(float runTime) {
 		
-		// Update Stage (NEED FIX)
 		stage = myWorld.getStage();
+		
 
         // Fill the entire screen with black, to prevent potential flickering.
         Gdx.gl.glClearColor(255, 255, 255, 1);
@@ -144,98 +144,13 @@ public class GameRenderer {
         
         batcher.enableBlending();
         
-        /*
-        TextureRegion drawHero;
-        if(hero.isAttacking()) {
-        	drawHero = heroBodySwipe;
-        } else {
-        	drawHero = heroBody;
-        }
         
-        batcher.draw(drawHero, hero.getX(), hero.getY(), 15, 23);
-        */
         
-        int val = 0;
-        if(!hero.isAlive()) {
-        	val = 2;
-		} else if(hero.isJumping()) {
-        	val = 1;
-        } 
+        drawHero(runTime);
         
-        switch(val) {
-        case 0:
-        	batcher.draw(heroRunAnimation.getKeyFrame(runTime), hero.getX(), hero.getY(), 
-            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
-            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
-            
-            break;
-            
-        case 1:
-        	batcher.draw(heroJump, hero.getX(), hero.getY(), 
-            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
-            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
-        	        	
-        	break;
-        	        	
-        case 2:
-        	batcher.draw(smoke, hero.getX(), hero.getY(), 
-            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
-            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
-        	
-        	break;
-        }
-        
-        /*if (hero.isAttacking()) {
-            batcher.draw(heroBodySwipe, hero.getX(), hero.getY(), 
-            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
-            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
-        } else {
-            batcher.draw(heroRunAnimation.getKeyFrame(runTime), hero.getX(), hero.getY(), 
-            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
-            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
-            
-            batcher.draw(handAnimation.getKeyFrame(runTime), hero.getX(), hero.getY(), 
-            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
-            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
-        }*/
-        
+        drawEnemy(runTime);   
                 
-        // Draw enemy
-        if(!enemyBlob.isAlive()) {
-        	batcher.draw(smoke, enemyBlob.getX(), enemyBlob.getY(), 
-            		enemyBlob.getWidth() / 2.0f, enemyBlob.getHeight() / 2.0f,
-            		enemyBlob.getWidth(), enemyBlob.getHeight(), 1, 1, 0);
-
-        } else {
-        	batcher.draw(enemyBlobAnimation.getKeyFrame(runTime), enemyBlob.getX(), enemyBlob.getY(), 
-        		enemyBlob.getWidth() / 2.0f, enemyBlob.getHeight() / 2.0f,
-        		enemyBlob.getWidth(), enemyBlob.getHeight(), 1, 1, 0);
-        }
-        
-        if(!enemyBat.isAlive()) {
-        	batcher.draw(smoke, enemyBat.getX(), enemyBat.getY(), 
-            		enemyBat.getWidth() / 2.0f, enemyBat.getHeight() / 2.0f,
-            		enemyBat.getWidth(), enemyBat.getHeight(), 1, 1, 0);
-
-        } else {
-        	batcher.draw(enemyBatAnimation.getKeyFrame(runTime), enemyBat.getX(), enemyBat.getY(), 
-        		enemyBat.getWidth() / 2.0f, enemyBat.getHeight() / 2.0f,
-        		enemyBat.getWidth(), enemyBat.getHeight(), 1, 1, 0);
-        }
-        
-        if(!enemyGoblin.isAlive()) {
-        	batcher.draw(smoke, enemyGoblin.getX(), enemyGoblin.getY(), 
-            		enemyGoblin.getWidth() / 2.0f, enemyGoblin.getHeight() / 2.0f,
-            		enemyGoblin.getWidth(), enemyGoblin.getHeight(), 1, 1, 0);
-
-        } else {
-        	batcher.draw(enemyGoblinAnimation.getKeyFrame(runTime), enemyGoblin.getX(), enemyGoblin.getY(), 
-        		enemyGoblin.getWidth() / 2.0f, enemyGoblin.getHeight() / 2.0f,
-        		enemyGoblin.getWidth(), enemyGoblin.getHeight(), 1, 1, 0);
-        }
-
-
-        /*
+                /*
         // Element
         if(!elementTest.isTaken()) {
         	batcher.draw(elementTestBody, elementTest.getX(), elementTest.getY(), 
@@ -250,52 +165,7 @@ public class GameRenderer {
 		*/
         
         
-        // TEMPORARY CODE! We will fix this section later:
-        
-        if (myWorld.isReady()) {
-        	// Draw text
-            AssetLoader.font.draw(batcher, "Touch me", 100, 75);
-        } else {
-
-        	if (myWorld.isGameOver() || myWorld.isHighScore()) {
-
-                if (myWorld.isGameOver()) {
-                    AssetLoader.font.draw(batcher, "Game Over", 100, 55);
-
-                    AssetLoader.font.draw(batcher, "High Score:", 100, 75);
-
-                    String highScore = AssetLoader.getHighScore() + "";
-
-                    // Draw text
-                    AssetLoader.font.draw(batcher, highScore, 150, 75);
-                } else {
-                    AssetLoader.font.draw(batcher, "High Score!", 100, 55);
-                }
-
-                AssetLoader.font.draw(batcher, "Try again?", 100, 95);
-
-                // Convert integer into String
-                String score = myWorld.getScore() + "";
-
-                // Draw text
-                AssetLoader.font.draw(batcher, score, 100, 115);
-        	}
-        	            
-            // Draw score and distance
-            AssetLoader.font.draw(batcher, "" + myWorld.getScore(), 10, 5);
-            AssetLoader.font.draw(batcher, "" + myWorld.getDistance(), 10, 15);
-
-        }
-
-        
-        
-        /*
-        // Draw score and distance
-        AssetLoader.font.draw(batcher, "" + myWorld.getScore(), 10, 5);
-        AssetLoader.font.draw(batcher, "" + myWorld.getDistance(), 10, 15);
-        */
-        
-        
+        drawScore();
         
         // Draw current RunningState
         switch(stage) {
@@ -347,6 +217,152 @@ public class GameRenderer {
 	
 	public void setStage(RunningState newStage) {
 		stage = newStage;
+	}
+	
+	private void drawHero(float runTime) {
+		
+		// Check case
+		int val = 0;
+        if(!hero.isAlive()) {
+        	val = 2;
+		} else if(hero.isJumping()) {
+        	val = 1;
+        } 
+        
+        switch(val) {
+        case 0:
+        	
+        	// Hero Running (alive)
+        	batcher.draw(heroRunAnimation.getKeyFrame(runTime), hero.getX(), hero.getY(), 
+            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
+            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
+            
+            break;
+            
+        case 1:
+        	
+        	// Hero Jumping (alive)
+        	batcher.draw(heroJump, hero.getX(), hero.getY(), 
+            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
+            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
+        	        	
+        	break;
+        	        	
+        case 2:
+        	
+        	// Hero is dead
+        	batcher.draw(scribble, hero.getX(), hero.getY(), 
+            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
+            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
+        	
+        	break;
+        }
+        
+  	}
+	
+	private void drawEnemy(float runTime) {
+		
+		drawEnemy(runTime, enemyOne, enemyBlobAnimation);
+		drawEnemy(runTime, enemyTwo, enemyBatAnimation);
+		drawEnemy(runTime, enemyThree, enemyGoblinAnimation);
+		
+		/*
+        if(!enemyOne.isAlive()) {
+        	batcher.draw(scribble, enemyOne.getX(), enemyOne.getY(), 
+            		enemyOne.getWidth() / 2.0f, enemyOne.getHeight() / 2.0f,
+            		enemyOne.getWidth(), enemyOne.getHeight(), 1, 1, 0);
+
+        } else {
+        	batcher.draw(enemyBlobAnimation.getKeyFrame(runTime), enemyOne.getX(), enemyOne.getY(), 
+        		enemyOne.getWidth() / 2.0f, enemyOne.getHeight() / 2.0f,
+        		enemyOne.getWidth(), enemyOne.getHeight(), 1, 1, 0);
+        }
+        
+        if(!enemyTwo.isAlive()) {
+        	batcher.draw(scribble, enemyTwo.getX(), enemyTwo.getY(), 
+            		enemyTwo.getWidth() / 2.0f, enemyTwo.getHeight() / 2.0f,
+            		enemyTwo.getWidth(), enemyTwo.getHeight(), 1, 1, 0);
+
+        } else {
+        	batcher.draw(enemyBatAnimation.getKeyFrame(runTime), enemyTwo.getX(), enemyTwo.getY(), 
+        		enemyTwo.getWidth() / 2.0f, enemyTwo.getHeight() / 2.0f,
+        		enemyTwo.getWidth(), enemyTwo.getHeight(), 1, 1, 0);
+        }
+        
+        if(!enemyThree.isAlive()) {
+        	batcher.draw(scribble, enemyThree.getX(), enemyThree.getY(), 
+            		enemyThree.getWidth() / 2.0f, enemyThree.getHeight() / 2.0f,
+            		enemyThree.getWidth(), enemyThree.getHeight(), 1, 1, 0);
+
+        } else {
+        	batcher.draw(enemyGoblinAnimation.getKeyFrame(runTime), enemyThree.getX(), enemyThree.getY(), 
+        		enemyThree.getWidth() / 2.0f, enemyThree.getHeight() / 2.0f,
+        		enemyThree.getWidth(), enemyThree.getHeight(), 1, 1, 0);
+        }
+        */
+
+	}
+	
+	private void drawEnemy(float runTime, Enemy enemy, Animation animation) {
+		if(!enemy.isAlive()) {
+        	batcher.draw(scribble, enemy.getX(), enemy.getY(), 
+            		enemy.getWidth() / 2.0f, enemy.getHeight() / 2.0f,
+            		enemy.getWidth(), enemy.getHeight(), 1, 1, 0);
+
+        } else {
+        	batcher.draw(animation.getKeyFrame(runTime), enemy.getX(), enemy.getY(), 
+        		enemy.getWidth() / 2.0f, enemy.getHeight() / 2.0f,
+        		enemy.getWidth(), enemy.getHeight(), 1, 1, 0);
+        }
+
+	}
+	
+	private void drawScore() {
+		
+		// TEMPORARY CODE! We will fix this section later:
+        
+        if (myWorld.isReady()) {
+        	// Draw text
+            AssetLoader.font.draw(batcher, "Touch me", 100, 75);
+        } else {
+
+        	if (myWorld.isGameOver() || myWorld.isHighScore()) {
+
+                if (myWorld.isGameOver()) {
+                    AssetLoader.font.draw(batcher, "Game Over", 100, 55);
+
+                    AssetLoader.font.draw(batcher, "High Score:", 100, 75);
+
+                    String highScore = AssetLoader.getHighScore() + "";
+
+                    // Draw text
+                    AssetLoader.font.draw(batcher, highScore, 150, 75);
+                } else {
+                    AssetLoader.font.draw(batcher, "High Score!", 100, 55);
+                }
+
+                AssetLoader.font.draw(batcher, "Try again?", 100, 95);
+
+                // Convert integer into String
+                String score = myWorld.getScore() + "";
+
+                // Draw text
+                AssetLoader.font.draw(batcher, score, 100, 115);
+        	}
+        	            
+            // Draw score and distance
+            AssetLoader.font.draw(batcher, "" + myWorld.getScore(), 10, 5);
+            AssetLoader.font.draw(batcher, "" + myWorld.getDistance(), 10, 15);
+
+        }
+
+        
+        
+        /*
+        // Draw score and distance
+        AssetLoader.font.draw(batcher, "" + myWorld.getScore(), 10, 5);
+        AssetLoader.font.draw(batcher, "" + myWorld.getDistance(), 10, 15);
+        */
 	}
 
 }

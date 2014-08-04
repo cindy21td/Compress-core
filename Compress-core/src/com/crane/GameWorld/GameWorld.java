@@ -1,5 +1,6 @@
 package com.crane.GameWorld;
 
+import com.badlogic.gdx.math.MathUtils;
 import com.crane.CompressHelpers.AssetLoader;
 import com.crane.GameObjects.Hero;
 import com.crane.GameObjects.ScrollHandler;
@@ -17,6 +18,8 @@ public class GameWorld {
 	private GameState currentState;
 	private RunningState stage;
 	
+	private int randRushNumber;
+	
 	public enum GameState {
 		READY, RUNNING, GAMEOVER, HIGHSCORE;
 	}
@@ -29,6 +32,9 @@ public class GameWorld {
 	public GameWorld(int midPointY) {
 		currentState = GameState.READY;
 		stage = RunningState.NORMAL;
+		
+		randRushNumber = MathUtils.random(1, 10) * MathUtils.random(1, 10) * MathUtils.random(0, 10);
+		
 		
 		hero = new Hero(30, 97, 32, 32);
 		scroller = new ScrollHandler(this, midPointY);
@@ -63,14 +69,18 @@ public class GameWorld {
             delta = .15f;
         }
 
-        if((rushDistance != 0) && (distance / 8 - rushDistance > 30)) {
+        if((rushDistance != 0) && (distance / 8 - rushDistance > 50)) {
         	stage = RunningState.NORMAL;
         	scroller.changeStage(RunningState.NORMAL);
         	
+    		randRushNumber = MathUtils.random(1, 10) * MathUtils.random(1, 10) * MathUtils.random(0, 10);
+        	
         	rushDistance = 0;
-        } else if((distance / 8 != 0) && (distance / 8 % 50 == 0)) {
+        	
+        } else if((rushDistance == 0) && (distance / 8 != 0) && (distance / 8 % randRushNumber == 0)) {
         	stage = RunningState.RUSH;
         	scroller.changeStage(RunningState.RUSH);
+        	
         	
         	rushDistance = distance / 8;
         }
@@ -144,6 +154,9 @@ public class GameWorld {
         currentState = GameState.READY;
         stage = RunningState.NORMAL;
         scroller.changeStage(RunningState.NORMAL);
+        
+		randRushNumber = MathUtils.random(1, 10) * MathUtils.random(1, 10) * MathUtils.random(0, 10);
+        rushDistance = 0;
         
         score = 0;
         distance = 0;

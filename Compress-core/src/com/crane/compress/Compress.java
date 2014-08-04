@@ -5,7 +5,7 @@ import com.crane.CompressHelpers.AssetLoader;
 import com.crane.Screens.GameScreen;
 
 public class Compress extends Game {
-	
+		
 	@Override
 	public void create() {
 		System.out.println("Compress Game created");

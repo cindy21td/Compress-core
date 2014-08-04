@@ -9,7 +9,8 @@ public class ScrollHandler {
 	
 	private GameWorld gameWorld;
 	
-	private Enemy enemyOne, enemyTwo, enemyThree, enemyFour, enemyFive, enemySix;
+	private Enemy enemyOne, enemyTwo, enemyThree;
+	
 	private Background bgFront, bgBack;
 	
 	private Element elementTest;
@@ -36,14 +37,6 @@ public class ScrollHandler {
 		enemyThree = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 
 				15, 15, SCROLL_SPEED - getEnemyRanVelX(), EnemyType.GOBLIN);
 		
-		
-		enemyFour = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 
-				15, 15, SCROLL_SPEED - getEnemyRanVelX(), EnemyType.BLOB);
-		enemyFive = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 
-				15, 15, SCROLL_SPEED - getEnemyRanVelX(), EnemyType.BAT);
-		enemySix = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 
-				15, 15, SCROLL_SPEED - getEnemyRanVelX(), EnemyType.GOBLIN);
-		
 				
 		bgFront = new Background(0, 0, 204, 126, SCROLL_SPEED);
 		bgBack = new Background(204, 0, 204, 126, SCROLL_SPEED);
@@ -62,6 +55,12 @@ public class ScrollHandler {
         }
 
     	
+    	// Update Enemy
+    	enemyUpdate(delta, enemyOne);
+    	enemyUpdate(delta, enemyTwo);
+    	enemyUpdate(delta, enemyThree);
+    	
+    	/*
         enemyOne.update(delta);
         if (enemyOne.isScrolledLeft()) {
         	
@@ -82,9 +81,9 @@ public class ScrollHandler {
         	enemyThree.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
         	
         }
+        */
         
-        
-        elementTest.update(delta);;
+        elementTest.update(delta);
         if(elementTest.isScrolledLeft()) {
         	elementTest.reset(204);
         }
@@ -107,17 +106,16 @@ public class ScrollHandler {
     	enemyOne.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
     	enemyTwo.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
     	enemyThree.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
-    	
+
     	bgFront.onRestart();
     	bgBack.onRestart();
     }
     
-    public boolean collides(Hero hero) {
+    public boolean collides(Hero hero) {    	
    		return (enemyOne.collides(hero) || enemyTwo.collides(hero) || enemyThree.collides(hero));
 	}
     
-    public boolean enemyIsHit(Hero hero) {
-    	
+    public boolean enemyIsHit(Hero hero) {    	
     	if (enemyOne.isHit(hero) || enemyTwo.isHit(hero) || enemyThree.isHit(hero)) {
     		// Add Score
     		gameWorld.addScore(1);
@@ -148,7 +146,7 @@ public class ScrollHandler {
 			
 			
 		case RUSH:
-			return MathUtils.random(40, 81);
+			return MathUtils.random(50, 71);
 			
 			
 		case BOSS:
@@ -159,6 +157,16 @@ public class ScrollHandler {
 			
 		}
 		
+	}
+	
+	private void enemyUpdate(float delta, Enemy enemy) {
+		enemy.update(delta);
+        if (enemy.isScrolledLeft()) {
+        	
+        	enemy.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
+        	
+        }
+
 	}
 
 	public void changeStage(RunningState newStage) {
@@ -176,7 +184,7 @@ public class ScrollHandler {
     public Enemy getEnemyThree() {
     	return enemyThree;
     }
-    
+       
     public Background getBgFront() {
     	return bgFront;
     }
