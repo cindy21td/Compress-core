@@ -12,7 +12,7 @@ public class Enemy extends Scrollable {
 	private float centerX;
 	private float centerY;
 	
-	private boolean jumped;
+	private boolean eaten;
 	private boolean alive;
 	
 	private Rectangle boundingCollision;
@@ -27,7 +27,7 @@ public class Enemy extends Scrollable {
 		this.centerX = x + width / 2;
 		this.centerY = y + height / 2;
 		
-		jumped = false;
+		eaten = false;
 		alive = true;
 		
 		this.type = type;
@@ -48,6 +48,7 @@ public class Enemy extends Scrollable {
 		position.y = newY;
 		velocity.x = -59 - newVelX;
 		alive = true;
+		eaten = false;
 		super.reset(newX);
 	}
 	
@@ -97,6 +98,14 @@ public class Enemy extends Scrollable {
 	public boolean isAlive() {
 		return alive;
 	}
+	
+	public boolean isEaten() {
+		return eaten;
+	}
+	
+	public void setEaten(boolean check) {
+		eaten = check;
+	}
 
 	public float getCenterX() {
 		return centerX;
@@ -112,14 +121,6 @@ public class Enemy extends Scrollable {
 
 	public void setCenterY(float centerY) {
 		this.centerY = centerY;
-	}
-
-	public boolean isJumped() {
-		return jumped;
-	}
-
-	public void setJumped(boolean jumped) {
-		this.jumped = jumped;
 	}
 	
 	public Rectangle getBoundingCollision() {

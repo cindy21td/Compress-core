@@ -15,7 +15,10 @@ public class ScrollHandler {
 	
 	private Element elementTest;
 	
+	private Boss boss;
+	
 	private RunningState stage;
+	
 	
 	public static final int SCROLL_SPEED = -59;
 	
@@ -38,10 +41,12 @@ public class ScrollHandler {
 				15, 15, SCROLL_SPEED - getEnemyRanVelX(), EnemyType.GOBLIN);
 		
 				
-		bgFront = new Background(0, 0, 204, 126, SCROLL_SPEED);
-		bgBack = new Background(204, 0, 204, 126, SCROLL_SPEED);
+		bgFront = new Background(0, 0, 204, 136, SCROLL_SPEED);
+		bgBack = new Background(204, 0, 204, 136, SCROLL_SPEED);
 		
 		elementTest = new Element(204, 80, 15, 15, SCROLL_SPEED);
+		
+		boss = new Boss(-150, 0, 150, 136, 5);
     }
     
     public void update(float delta) {
@@ -88,6 +93,7 @@ public class ScrollHandler {
         	elementTest.reset(204);
         }
         
+        boss.update(delta);
 
     }
     
@@ -100,6 +106,8 @@ public class ScrollHandler {
     	bgBack.stop();
     	
     	elementTest.stop();
+    	
+    	boss.stop();
     }
     
     public void onRestart() {
@@ -109,6 +117,8 @@ public class ScrollHandler {
 
     	bgFront.onRestart();
     	bgBack.onRestart();
+    	
+    	boss.onRestart();
     }
     
     public boolean collides(Hero hero) {    	
@@ -125,7 +135,11 @@ public class ScrollHandler {
     	
     	return false;
     }
-        
+    
+    public boolean bossIsHit() {
+    	return (boss.collides(enemyOne) || boss.collides(enemyTwo) || boss.collides(enemyThree));
+    }
+    
     public boolean elementIsTaken(Hero hero) {
     	return elementTest.collides(hero);
     }
@@ -172,6 +186,7 @@ public class ScrollHandler {
 	public void changeStage(RunningState newStage) {
 		stage = newStage;
 	}
+	
     
     public Enemy getEnemyOne() {
         return enemyOne;
@@ -195,6 +210,10 @@ public class ScrollHandler {
     
     public Element getElement() {
     	return elementTest;
+    }
+    
+    public Boss getBoss() {
+    	return boss;
     }
 
 

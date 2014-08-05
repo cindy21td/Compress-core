@@ -15,5 +15,25 @@ public class Boss extends Scrollable {
 	public void update(float delta) {
 		super.update(delta);
 	}
+	
+	public void onRestart() {
+		position.x = -150;
+		velocity.x = 5;
+		alive = true;
+	}
+	
+	public boolean collides(Enemy enemy) {
+		if(!enemy.isEaten() && !enemy.isAlive() && enemy.getX() < 0) {
+			position.x -= 5;
+			enemy.setEaten(true);
+			return true;
+		}
+		
+		return false;
+	}
+	
+	public boolean isAlive() {
+		return alive;
+	}
 
 }

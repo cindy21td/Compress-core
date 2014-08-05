@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.crane.CompressHelpers.AssetLoader;
 import com.crane.GameObjects.Background;
+import com.crane.GameObjects.Boss;
 import com.crane.GameObjects.Element;
 import com.crane.GameObjects.Enemy;
 import com.crane.GameObjects.Hero;
@@ -26,7 +27,6 @@ public class GameRenderer {
 	private int midPointY;
 	private int gameHeight;
 	
-	private RunningState stage;
 	
 	// Game Objects
 	private Hero hero;
@@ -34,6 +34,8 @@ public class GameRenderer {
 	private Background bgFront, bgBack;
 	private Enemy enemyOne, enemyTwo, enemyThree;
 	private Element elementTest;
+	
+	private Boss boss;
 
 	// Game Assets
 	private TextureRegion bg;
@@ -49,12 +51,13 @@ public class GameRenderer {
 	
 	private TextureRegion elementTestBody;
 	
+	private TextureRegion bossBody;
+	
 	//private TextureRegion one, two, three;
 
 	public GameRenderer(GameWorld world, int gameHeight, int midPointY) {
 		myWorld = world;
 		
-		stage = world.getStage();
 		
 		this.midPointY = midPointY;
 		this.gameHeight = gameHeight;
@@ -83,6 +86,8 @@ public class GameRenderer {
 		enemyThree = scroller.getEnemyThree();
 		
 		elementTest = scroller.getElement();
+		
+		boss = scroller.getBoss();
 	}
 	
 	public void initAssets() {
@@ -102,12 +107,12 @@ public class GameRenderer {
 		scribble = AssetLoader.scribble;
 		
 		elementTestBody = AssetLoader.elementTest;
+		
+		bossBody = AssetLoader.bossHead;
 	}
 	
 	// runTime is for animation (determining which frame to render);
 	public void render(float runTime) {
-		
-		stage = myWorld.getStage();
 		
 
         // Fill the entire screen with black, to prevent potential flickering.
@@ -165,20 +170,14 @@ public class GameRenderer {
 		*/
         
         
+        // Draw Boss
+        batcher.draw(bossBody, boss.getX(), boss.getY(), 
+        		boss.getWidth() / 2.0f, boss.getHeight() / 2.0f, 
+        		boss.getWidth(), boss.getHeight(), 1, 1, 0);
+        
+        
+        
         drawScore();
-        
-        // Draw current RunningState
-        switch(stage) {
-        
-        case NORMAL:
-        	AssetLoader.font.draw(batcher, "NORMAL", 100, 5);
-        	break;
-        case RUSH:
-        	AssetLoader.font.draw(batcher, "RUSH", 100, 5);
-        	break;
-        case BOSS:
-        	break;
-        }
         
         
         // End SpriteBatch
@@ -213,11 +212,8 @@ public class GameRenderer {
         shapeRenderer.end();
 		*/
 
-       	}
+    }
 	
-	public void setStage(RunningState newStage) {
-		stage = newStage;
-	}
 	
 	private void drawHero(float runTime) {
 		

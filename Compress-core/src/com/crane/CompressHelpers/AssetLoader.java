@@ -10,7 +10,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 public class AssetLoader {
 	
-	public static Texture texture, hero, enemy, element;
+	public static Texture texture, hero, enemy, element, boss;
 	public static TextureRegion bg;
     
 
@@ -32,6 +32,8 @@ public class AssetLoader {
     public static TextureRegion scribble;
     
     public static TextureRegion elementTest;
+    
+    public static TextureRegion bossHead;
     
     
     // Font
@@ -72,6 +74,13 @@ public class AssetLoader {
         
         elementTest = new TextureRegion(element, 0, 0, 100, 100);
         elementTest.flip(false, true);
+        
+        
+        boss = new Texture(Gdx.files.internal("Boss ver One.png"));
+        boss.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
+        
+        bossHead = new TextureRegion(boss, 0, 0, 600, 544);
+        bossHead.flip(false, true);
         
         
         
@@ -121,6 +130,8 @@ public class AssetLoader {
         hero.dispose();
         enemy.dispose();
         element.dispose();
+        
+        boss.dispose();
         
         font.dispose();
         

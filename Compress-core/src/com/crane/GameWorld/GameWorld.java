@@ -30,10 +30,11 @@ public class GameWorld {
 	
 
 	public GameWorld(int midPointY) {
+		
 		currentState = GameState.READY;
 		stage = RunningState.NORMAL;
 		
-		randRushNumber = MathUtils.random(1, 10) * MathUtils.random(1, 10) * MathUtils.random(0, 10);
+		randRushNumber = MathUtils.random(1, 10) * MathUtils.random(1, 10) * MathUtils.random(1, 10);
 		
 		
 		hero = new Hero(30, 97, 32, 32);
@@ -69,11 +70,15 @@ public class GameWorld {
             delta = .15f;
         }
 
+        
+        //if(score % 30 == 0) {
+        //	stage = RunningState.BOSS;
+        //}
         if((rushDistance != 0) && (distance / 8 - rushDistance > 50)) {
         	stage = RunningState.NORMAL;
         	scroller.changeStage(RunningState.NORMAL);
         	
-    		randRushNumber = MathUtils.random(1, 10) * MathUtils.random(1, 10) * MathUtils.random(0, 10);
+    		randRushNumber = MathUtils.random(1, 10) * MathUtils.random(1, 10) * MathUtils.random(1, 10);
         	
         	rushDistance = 0;
         	
@@ -90,6 +95,8 @@ public class GameWorld {
 		
 		// Element
 		// scroller.elementIsTaken(hero);
+		
+		
 		
 		// Collision
 		if (!scroller.enemyIsHit(hero) && scroller.collides(hero)) {
@@ -111,6 +118,11 @@ public class GameWorld {
 
 
 	    }
+		
+		
+		scroller.bossIsHit();
+
+		
 
 		// Distance
 		if(hero.isAlive()) {
@@ -155,7 +167,7 @@ public class GameWorld {
         stage = RunningState.NORMAL;
         scroller.changeStage(RunningState.NORMAL);
         
-		randRushNumber = MathUtils.random(1, 10) * MathUtils.random(1, 10) * MathUtils.random(0, 10);
+		randRushNumber = MathUtils.random(1, 10) * MathUtils.random(1, 10) * MathUtils.random(1, 10);
         rushDistance = 0;
         
         score = 0;
