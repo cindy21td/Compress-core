@@ -2,7 +2,6 @@ package com.crane.GameObjects;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.crane.GameWorld.GameWorld;
-import com.crane.GameWorld.GameWorld.RunningState;
 
 
 public class ScrollHandler {
@@ -17,7 +16,13 @@ public class ScrollHandler {
 	
 	private Boss boss;
 	
-	private RunningState stage;
+	private RunningState state;
+	
+	public enum RunningState {
+		NORMAL, RUSH;
+	}
+	
+	private boolean bossFight;
 	
 	
 	public static final int SCROLL_SPEED = -59;
@@ -30,7 +35,8 @@ public class ScrollHandler {
 	public ScrollHandler(GameWorld world, float yPos) {
 		
 		this.gameWorld = world;
-		this.stage = RunningState.NORMAL;
+		this.state = RunningState.NORMAL;
+		this.bossFight = false;
 		
 		
 		enemyOne = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 
@@ -46,7 +52,7 @@ public class ScrollHandler {
 		
 		elementTest = new Element(204, 80, 15, 15, SCROLL_SPEED);
 		
-		boss = new Boss(-150, 0, 150, 136, 5);
+		boss = new Boss(-150, 0, 150, 136, 15, this);
     }
     
     public void update(float delta) {
@@ -65,35 +71,15 @@ public class ScrollHandler {
     	enemyUpdate(delta, enemyTwo);
     	enemyUpdate(delta, enemyThree);
     	
-    	/*
-        enemyOne.update(delta);
-        if (enemyOne.isScrolledLeft()) {
-        	
-        	enemyOne.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
-        	
-        }
-        
-        enemyTwo.update(delta);
-        if (enemyTwo.isScrolledLeft()) {
-            
-        	enemyTwo.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
-        	
-        }
-        
-        enemyThree.update(delta);
-        if(enemyThree.isScrolledLeft()) {
-        	
-        	enemyThree.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
-        	
-        }
-        */
-        
+    	        
         elementTest.update(delta);
         if(elementTest.isScrolledLeft()) {
         	elementTest.reset(204);
         }
         
-        boss.update(delta);
+        if(bossFight) {
+        	boss.update(delta);
+        }
 
     }
     
@@ -118,6 +104,7 @@ public class ScrollHandler {
     	bgFront.onRestart();
     	bgBack.onRestart();
     	
+    	bossFight = false;
     	boss.onRestart();
     }
     
@@ -149,11 +136,15 @@ public class ScrollHandler {
 	}
 	
 	public float getEnemyRanPosY() {
+		if(bossFight) {
+			return MathUtils.random(80, 112);
+		}
+		
 		return MathUtils.random(50, 112);
 	}
 	
 	public float getEnemyRanVelX() {
-		switch(stage) {
+		switch(state) {
 		
 		case NORMAL:
 			return MathUtils.random(0, 41);
@@ -162,9 +153,6 @@ public class ScrollHandler {
 		case RUSH:
 			return MathUtils.random(50, 71);
 			
-			
-		case BOSS:
-			return MathUtils.random(0, 21);
 			
 		default:
 			return MathUtils.random(0, 41);
@@ -184,7 +172,15 @@ public class ScrollHandler {
 	}
 
 	public void changeStage(RunningState newStage) {
-		stage = newStage;
+		state = newStage;
+	}
+	
+	public void setBossAlive(boolean check) {
+		boss.setAlive(check);
+	}
+	
+	public boolean bossWins() {
+		return boss.wins();
 	}
 	
     
@@ -216,5 +212,15 @@ public class ScrollHandler {
     	return boss;
     }
 
+    public boolean getBossFight() {
+    	return bossFight;
+    }
+    
+    public void toogleBossFight(boolean check) {
+    	if(check) {
+    		boss.onRestart();
+    	}
+    	bossFight = check;
+    }
 
 }

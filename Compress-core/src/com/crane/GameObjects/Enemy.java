@@ -54,7 +54,7 @@ public class Enemy extends Scrollable {
 	
 		
 	public boolean collides(Hero hero) {
-        if (position.x < hero.getX() + hero.getWidth()) {
+        if (alive && position.x < hero.getX() + hero.getWidth()) {
             return (Intersector.overlaps(hero.getBoundingHead(), boundingCollision)
                     || Intersector.overlaps(hero.getBoundingBody(), boundingCollision));
         }

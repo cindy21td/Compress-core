@@ -33,7 +33,7 @@ public class AssetLoader {
     
     public static TextureRegion elementTest;
     
-    public static TextureRegion bossHead;
+    public static TextureRegion bossHead, bossChomp;
     
     
     // Font
@@ -76,10 +76,13 @@ public class AssetLoader {
         elementTest.flip(false, true);
         
         
-        boss = new Texture(Gdx.files.internal("Boss ver One.png"));
+        boss = new Texture(Gdx.files.internal("Boss Sprite ver One.png"));
         boss.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
         
-        bossHead = new TextureRegion(boss, 0, 0, 600, 544);
+        bossChomp = new TextureRegion(boss, 0, 0, 300, 272);
+        bossChomp.flip(false, true);
+        
+        bossHead = new TextureRegion(boss, 0, 272, 300, 272);
         bossHead.flip(false, true);
         
         

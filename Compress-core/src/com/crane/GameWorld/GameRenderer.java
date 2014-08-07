@@ -1,12 +1,14 @@
 package com.crane.GameWorld;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.crane.CompressHelpers.AssetLoader;
 import com.crane.GameObjects.Background;
 import com.crane.GameObjects.Boss;
@@ -14,7 +16,6 @@ import com.crane.GameObjects.Element;
 import com.crane.GameObjects.Enemy;
 import com.crane.GameObjects.Hero;
 import com.crane.GameObjects.ScrollHandler;
-import com.crane.GameWorld.GameWorld.RunningState;
 
 public class GameRenderer {
 	
@@ -51,7 +52,7 @@ public class GameRenderer {
 	
 	private TextureRegion elementTestBody;
 	
-	private TextureRegion bossBody;
+	private TextureRegion bossBody, bossChomp;
 	
 	//private TextureRegion one, two, three;
 
@@ -88,6 +89,7 @@ public class GameRenderer {
 		elementTest = scroller.getElement();
 		
 		boss = scroller.getBoss();
+		
 	}
 	
 	public void initAssets() {
@@ -109,6 +111,7 @@ public class GameRenderer {
 		elementTestBody = AssetLoader.elementTest;
 		
 		bossBody = AssetLoader.bossHead;
+		bossChomp = AssetLoader.bossChomp;
 	}
 	
 	// runTime is for animation (determining which frame to render);
@@ -171,9 +174,16 @@ public class GameRenderer {
         
         
         // Draw Boss
-        batcher.draw(bossBody, boss.getX(), boss.getY(), 
+        if(boss.hasWon()) {
+        	batcher.draw(bossChomp, boss.getX(), boss.getY(), 
+            		boss.getWidth() / 2.0f, boss.getHeight() / 2.0f, 
+            		boss.getWidth(), boss.getHeight(), 1, 1, 0);
+
+        } else {
+        	batcher.draw(bossBody, boss.getX(), boss.getY(), 
         		boss.getWidth() / 2.0f, boss.getHeight() / 2.0f, 
         		boss.getWidth(), boss.getHeight(), 1, 1, 0);
+        }
         
         
         
@@ -184,7 +194,7 @@ public class GameRenderer {
         batcher.end();
         
         
-        /*
+        
         // Draw bounding collision
         shapeRenderer.begin(ShapeType.Filled);
         shapeRenderer.setColor(Color.RED);
@@ -197,20 +207,20 @@ public class GameRenderer {
         	shapeRenderer.rect(hero.getBoundingFeet().x, hero.getBoundingFeet().y, hero.getBoundingFeet().getWidth(), hero.getBoundingFeet().getHeight());
         }
         
-        shapeRenderer.rect(enemyBlob.getBoundingCollision().x, enemyBlob.getBoundingCollision().y, 
-        		enemyBlob.getBoundingCollision().getWidth(), enemyBlob.getBoundingCollision().getHeight());
+        shapeRenderer.rect(enemyOne.getBoundingCollision().x, enemyOne.getBoundingCollision().y, 
+        		enemyOne.getBoundingCollision().getWidth(), enemyOne.getBoundingCollision().getHeight());
         
-        shapeRenderer.rect(enemyBat.getBoundingCollision().x, enemyBat.getBoundingCollision().y, 
-        		enemyBat.getBoundingCollision().getWidth(), enemyBat.getBoundingCollision().getHeight());
+        shapeRenderer.rect(enemyTwo.getBoundingCollision().x, enemyTwo.getBoundingCollision().y, 
+        		enemyTwo.getBoundingCollision().getWidth(), enemyTwo.getBoundingCollision().getHeight());
 
-        shapeRenderer.rect(enemyGoblin.getBoundingCollision().x, enemyGoblin.getBoundingCollision().y, 
-        		enemyGoblin.getBoundingCollision().getWidth(), enemyGoblin.getBoundingCollision().getHeight());
+        shapeRenderer.rect(enemyThree.getBoundingCollision().x, enemyThree.getBoundingCollision().y, 
+        		enemyThree.getBoundingCollision().getWidth(), enemyThree.getBoundingCollision().getHeight());
         
         shapeRenderer.circle(elementTest.getBoundingCollision().x, elementTest.getBoundingCollision().y, elementTest.getBoundingCollision().radius);
 
         
         shapeRenderer.end();
-		*/
+		
 
     }
 	

@@ -4,6 +4,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.crane.CompressHelpers.AssetLoader;
 import com.crane.GameObjects.Hero;
 import com.crane.GameObjects.ScrollHandler;
+import com.crane.GameObjects.ScrollHandler.RunningState;
 
 public class GameWorld {
 	
@@ -16,7 +17,8 @@ public class GameWorld {
 	private int rushDistance = 0;
 	
 	private GameState currentState;
-	private RunningState stage;
+	
+	private final static int RUSH_DURATION = 60;
 	
 	private int randRushNumber;
 	
@@ -24,26 +26,15 @@ public class GameWorld {
 		READY, RUNNING, GAMEOVER, HIGHSCORE;
 	}
 	
-	public enum RunningState {
-		NORMAL, RUSH, BOSS;
-	}
 	
-
 	public GameWorld(int midPointY) {
-		
 		currentState = GameState.READY;
-		stage = RunningState.NORMAL;
-		
 		randRushNumber = MathUtils.random(1, 10) * MathUtils.random(1, 10) * MathUtils.random(1, 10);
-		
-		
 		hero = new Hero(30, 97, 32, 32);
 		scroller = new ScrollHandler(this, midPointY);
-		
 	}
 	
 	public void update(float delta) {
-		
 		switch(currentState) {
 		case READY:
 			updateReady(delta);
@@ -71,35 +62,27 @@ public class GameWorld {
         }
 
         
-        //if(score % 30 == 0) {
-        //	stage = RunningState.BOSS;
-        //}
-        if((rushDistance != 0) && (distance / 8 - rushDistance > 50)) {
-        	stage = RunningState.NORMAL;
+        if(!scroller.getBossFight() && (score > 0) && (score % 5 == 0)) {
+        	scroller.setBossAlive(true);
+        	scroller.toogleBossFight(true);
+        }
+        
+        if((rushDistance != 0) && (distance / 8 - rushDistance > RUSH_DURATION)) {
         	scroller.changeStage(RunningState.NORMAL);
-        	
     		randRushNumber = MathUtils.random(1, 10) * MathUtils.random(1, 10) * MathUtils.random(1, 10);
-        	
         	rushDistance = 0;
         	
         } else if((rushDistance == 0) && (distance / 8 != 0) && (distance / 8 % randRushNumber == 0)) {
-        	stage = RunningState.RUSH;
         	scroller.changeStage(RunningState.RUSH);
-        	
-        	
         	rushDistance = distance / 8;
         }
         		
         hero.update(delta);
 		scroller.update(delta);
 		
-		// Element
-		// scroller.elementIsTaken(hero);
-		
-		
 		
 		// Collision
-		if (!scroller.enemyIsHit(hero) && scroller.collides(hero)) {
+		if ((!scroller.enemyIsHit(hero) && scroller.collides(hero)) || scroller.bossWins() ) {
 	        // Clean up on game over
 	        scroller.stop();
 	        hero.isDead(true);
@@ -121,7 +104,7 @@ public class GameWorld {
 		
 		
 		scroller.bossIsHit();
-
+		
 		
 
 		// Distance
@@ -136,7 +119,6 @@ public class GameWorld {
 	public void addScore(int increment) {
 		score += increment;
 	}
-	
 	
 	public int getScore() {
 		return score;
@@ -164,7 +146,7 @@ public class GameWorld {
 
     public void restart() {
         currentState = GameState.READY;
-        stage = RunningState.NORMAL;
+
         scroller.changeStage(RunningState.NORMAL);
         
 		randRushNumber = MathUtils.random(1, 10) * MathUtils.random(1, 10) * MathUtils.random(1, 10);
@@ -188,9 +170,4 @@ public class GameWorld {
         return currentState == GameState.HIGHSCORE;
     }
     
-    public RunningState getStage() {
-    	return stage;
-    }
-
-
 }
