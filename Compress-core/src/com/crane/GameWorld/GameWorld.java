@@ -11,27 +11,28 @@ public class GameWorld {
 	private Hero hero;
 	private ScrollHandler scroller;
 	
+	private int midPointY;
+	
 	private int score = 0;
 	private int distance = 0;
 	
 	private int rushDistance = 0;
-	
-	private GameState currentState;
-	
 	private final static int RUSH_DURATION = 60;
-	
 	private int randRushNumber;
 	
+	private GameState currentState;
+		
 	public enum GameState {
 		READY, RUNNING, GAMEOVER, HIGHSCORE;
 	}
 	
-	
 	public GameWorld(int midPointY) {
 		currentState = GameState.READY;
 		randRushNumber = MathUtils.random(1, 10) * MathUtils.random(1, 10) * MathUtils.random(1, 10);
-		hero = new Hero(30, 97, 32, 32);
+		hero = new Hero(30, 104, 25, 25);
 		scroller = new ScrollHandler(this, midPointY);
+		
+		this.midPointY = midPointY;
 	}
 	
 	public void update(float delta) {
@@ -61,28 +62,14 @@ public class GameWorld {
             delta = .15f;
         }
 
+        checkState();
         
-        if(!scroller.getBossFight() && (score > 0) && (score % 5 == 0)) {
-        	scroller.setBossAlive(true);
-        	scroller.toogleBossFight(true);
-        }
-        
-        if((rushDistance != 0) && (distance / 8 - rushDistance > RUSH_DURATION)) {
-        	scroller.changeStage(RunningState.NORMAL);
-    		randRushNumber = MathUtils.random(1, 10) * MathUtils.random(1, 10) * MathUtils.random(1, 10);
-        	rushDistance = 0;
-        	
-        } else if((rushDistance == 0) && (distance / 8 != 0) && (distance / 8 % randRushNumber == 0)) {
-        	scroller.changeStage(RunningState.RUSH);
-        	rushDistance = distance / 8;
-        }
-        		
         hero.update(delta);
 		scroller.update(delta);
 		
 		
 		// Collision
-		if ((!scroller.enemyIsHit(hero) && scroller.collides(hero)) || scroller.bossWins() ) {
+		if (scroller.collides(hero) || scroller.bossWins() ) {
 	        // Clean up on game over
 	        scroller.stop();
 	        hero.isDead(true);
@@ -98,15 +85,9 @@ public class GameWorld {
                 AssetLoader.setLongestDistance(distance / 8);
                 currentState = GameState.HIGHSCORE;
             }
-
-
+	        
 	    }
 		
-		
-		scroller.bossIsHit();
-		
-		
-
 		// Distance
 		if(hero.isAlive()) {
 			distance++;
@@ -146,7 +127,6 @@ public class GameWorld {
 
     public void restart() {
         currentState = GameState.READY;
-
         scroller.changeStage(RunningState.NORMAL);
         
 		randRushNumber = MathUtils.random(1, 10) * MathUtils.random(1, 10) * MathUtils.random(1, 10);
@@ -154,6 +134,7 @@ public class GameWorld {
         
         score = 0;
         distance = 0;
+        
         hero.onRestart();
         scroller.onRestart();
     }
@@ -169,5 +150,29 @@ public class GameWorld {
     public boolean isHighScore() {
         return currentState == GameState.HIGHSCORE;
     }
+    
+    private void checkState() {
+    	// Boss
+    	if(!scroller.getBossFight() && (score > 0) && (score % 5 == 0)) {
+        	scroller.setBossAlive(true);
+        	scroller.toogleBossFight(true);
+        }
+        
+    	// Normal and Rush
+        if((rushDistance != 0) && (distance / 8 - rushDistance > RUSH_DURATION)) {
+        	scroller.changeStage(RunningState.NORMAL);
+    		randRushNumber = MathUtils.random(1, 10) * MathUtils.random(1, 10) * MathUtils.random(1, 10);
+        	rushDistance = 0;
+        	
+        } else if((rushDistance == 0) && (distance / 8 != 0) && (distance / 8 % randRushNumber == 0)) {
+        	scroller.changeStage(RunningState.RUSH);
+        	rushDistance = distance / 8;
+        }
+        		
+    }
+
+	public int getMidPointY() {
+		return midPointY;
+	}
     
 }

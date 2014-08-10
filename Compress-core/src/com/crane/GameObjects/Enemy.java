@@ -1,5 +1,6 @@
 package com.crane.GameObjects;
 
+import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
@@ -15,7 +16,8 @@ public class Enemy extends Scrollable {
 	private boolean eaten;
 	private boolean alive;
 	
-	private Rectangle boundingCollision;
+	private Rectangle boundingCollisionRect;
+	private Circle boundingCollisionCirc;
 	
 	private EnemyType type;
 	
@@ -32,7 +34,8 @@ public class Enemy extends Scrollable {
 		
 		this.type = type;
 		
-		boundingCollision = new Rectangle();
+		boundingCollisionRect = new Rectangle();
+		boundingCollisionCirc = new Circle();
 		
 	}
 	
@@ -55,15 +58,16 @@ public class Enemy extends Scrollable {
 		
 	public boolean collides(Hero hero) {
         if (alive && position.x < hero.getX() + hero.getWidth()) {
-            return (Intersector.overlaps(hero.getBoundingHead(), boundingCollision)
-                    || Intersector.overlaps(hero.getBoundingBody(), boundingCollision));
+            return (Intersector.overlaps(hero.getBoundingBody(), boundingCollisionRect) 
+            		|| Intersector.overlaps(hero.getBoundingBody(), boundingCollisionCirc));
         }
         return false;
     }
 	
 	public boolean isHit(Hero hero) {
 		if(hero.isJumping() && hero.isAlive() && alive && (position.x < hero.getX() + hero.getWidth())) {
-			if(Intersector.overlaps(hero.getBoundingFeet(), boundingCollision)) {
+			if(Intersector.overlaps(hero.getBoundingFeet(), boundingCollisionRect )
+					|| Intersector.overlaps(boundingCollisionCirc, hero.getBoundingFeet())) {
 				alive = false;
 				hero.hitEnemy();
 				return true;
@@ -76,19 +80,19 @@ public class Enemy extends Scrollable {
 	public void setBoundingCollision() {
 		switch(type) {
 		
-		case BLOB:
+		case WHISP:
 			
-			boundingCollision.set(position.x + 1, position.y + 5, 13f, 10f);
+			boundingCollisionCirc.set(position.x + 10, position.y + 10.5f, 7.5f);
 			break;
 			
 		case BAT:
 			
-			boundingCollision.set(position.x + 2, position.y + 3, 11f, 9.5f);
+			boundingCollisionRect.set(position.x + 2, position.y + 3, 11f, 9.5f);
 			break;
 			
 		case GOBLIN:
 			
-			boundingCollision.set(position.x + 2, position.y + 3, 10f, 11f);
+			boundingCollisionRect.set(position.x + 2, position.y + 3, 10f, 11f);
 			break;
 		
 		}
@@ -123,8 +127,12 @@ public class Enemy extends Scrollable {
 		this.centerY = centerY;
 	}
 	
-	public Rectangle getBoundingCollision() {
-		return boundingCollision;
+	public Rectangle getBoundingCollisionRect() {
+		return boundingCollisionRect;
+	}
+	
+	public Circle getBoundingCollisionCircle() {
+		return boundingCollisionCirc;
 	}
 	
 }

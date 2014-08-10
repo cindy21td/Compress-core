@@ -12,23 +12,20 @@ public class ScrollHandler {
 	
 	private Background bgFront, bgBack;
 	
-	private Element elementTest;
-	
 	private Boss boss;
+	private boolean bossFight;
+
 	
 	private RunningState state;
 	
 	public enum RunningState {
 		NORMAL, RUSH;
-	}
-	
-	private boolean bossFight;
-	
+	}	
 	
 	public static final int SCROLL_SPEED = -59;
 	
 	public enum EnemyType {
-		BLOB, BAT, GOBLIN;
+		WHISP, BAT, GOBLIN;
 	}
 
 	
@@ -38,9 +35,8 @@ public class ScrollHandler {
 		this.state = RunningState.NORMAL;
 		this.bossFight = false;
 		
-		
 		enemyOne = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 
-				15, 15, SCROLL_SPEED - getEnemyRanVelX(), EnemyType.BLOB);
+				20, 20, SCROLL_SPEED - getEnemyRanVelX(), EnemyType.WHISP);
 		enemyTwo = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 
 				15, 15, SCROLL_SPEED - getEnemyRanVelX(), EnemyType.BAT);
 		enemyThree = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 
@@ -50,9 +46,7 @@ public class ScrollHandler {
 		bgFront = new Background(0, 0, 204, 136, SCROLL_SPEED);
 		bgBack = new Background(204, 0, 204, 136, SCROLL_SPEED);
 		
-		elementTest = new Element(204, 80, 15, 15, SCROLL_SPEED);
-		
-		boss = new Boss(-150, 0, 150, 136, 15, this);
+		boss = new Boss(-150, 0, 150, 136, 13, this);
     }
     
     public void update(float delta) {
@@ -65,17 +59,11 @@ public class ScrollHandler {
         	bgBack.reset(bgFront.getTailX());
         }
 
-    	
     	// Update Enemy
     	enemyUpdate(delta, enemyOne);
     	enemyUpdate(delta, enemyTwo);
     	enemyUpdate(delta, enemyThree);
     	
-    	        
-        elementTest.update(delta);
-        if(elementTest.isScrolledLeft()) {
-        	elementTest.reset(204);
-        }
         
         if(bossFight) {
         	boss.update(delta);
@@ -90,8 +78,6 @@ public class ScrollHandler {
     	
     	bgFront.stop();
     	bgBack.stop();
-    	
-    	elementTest.stop();
     	
     	boss.stop();
     }
@@ -108,27 +94,25 @@ public class ScrollHandler {
     	boss.onRestart();
     }
     
-    public boolean collides(Hero hero) {    	
+    public boolean collides(Hero hero) {
+    	if(enemyIsHit(hero)) {
+    		gameWorld.addScore(1);
+    	}
+    	
+    	if(bossFight && bossIsHit()) {
+    		gameWorld.addScore(2);
+    	}
+    	
+    	
    		return (enemyOne.collides(hero) || enemyTwo.collides(hero) || enemyThree.collides(hero));
 	}
     
     public boolean enemyIsHit(Hero hero) {    	
-    	if (enemyOne.isHit(hero) || enemyTwo.isHit(hero) || enemyThree.isHit(hero)) {
-    		// Add Score
-    		gameWorld.addScore(1);
-    		
-    		return true;
-    	}
-    	
-    	return false;
+    	return (enemyOne.isHit(hero) || enemyTwo.isHit(hero) || enemyThree.isHit(hero));
     }
     
     public boolean bossIsHit() {
     	return (boss.collides(enemyOne) || boss.collides(enemyTwo) || boss.collides(enemyThree));
-    }
-    
-    public boolean elementIsTaken(Hero hero) {
-    	return elementTest.collides(hero);
     }
     
     public float getEnemyRanPosX() {
@@ -202,10 +186,6 @@ public class ScrollHandler {
     
     public Background getBgBack() {
     	return bgBack;
-    }
-    
-    public Element getElement() {
-    	return elementTest;
     }
     
     public Boss getBoss() {

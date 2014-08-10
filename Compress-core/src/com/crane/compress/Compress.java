@@ -11,6 +11,7 @@ public class Compress extends Game {
 		System.out.println("Compress Game created");
 		AssetLoader.load();
 		setScreen(new GameScreen());
+		//setScreen(new SplashScreen(this));
 	}
 	
 	@Override

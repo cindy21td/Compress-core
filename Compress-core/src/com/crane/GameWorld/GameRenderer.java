@@ -12,7 +12,6 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.crane.CompressHelpers.AssetLoader;
 import com.crane.GameObjects.Background;
 import com.crane.GameObjects.Boss;
-import com.crane.GameObjects.Element;
 import com.crane.GameObjects.Enemy;
 import com.crane.GameObjects.Hero;
 import com.crane.GameObjects.ScrollHandler;
@@ -34,31 +33,24 @@ public class GameRenderer {
 	private ScrollHandler scroller;
 	private Background bgFront, bgBack;
 	private Enemy enemyOne, enemyTwo, enemyThree;
-	private Element elementTest;
-	
 	private Boss boss;
 
 	// Game Assets
 	private TextureRegion bg;
 	private TextureRegion bgFrontBody, bgBackBody;
 	
-	private Animation enemyBlobAnimation, enemyBatAnimation, enemyGoblinAnimation;
+	private Animation enemyWhispAnimation, enemyBatAnimation, enemyGoblinAnimation;
 	
-	private Animation heroRunAnimation;
-	
-	private TextureRegion heroJump;
+	private Animation heroRunAnimation, heroStillAnimation;
+	private TextureRegion heroJump, heroFall;
 	
 	private TextureRegion scribble;
 	
-	private TextureRegion elementTestBody;
-	
 	private TextureRegion bossBody, bossChomp;
 	
-	//private TextureRegion one, two, three;
 
 	public GameRenderer(GameWorld world, int gameHeight, int midPointY) {
 		myWorld = world;
-		
 		
 		this.midPointY = midPointY;
 		this.gameHeight = gameHeight;
@@ -85,9 +77,6 @@ public class GameRenderer {
 		enemyOne = scroller.getEnemyOne();
 		enemyTwo = scroller.getEnemyTwo();
 		enemyThree = scroller.getEnemyThree();
-		
-		elementTest = scroller.getElement();
-		
 		boss = scroller.getBoss();
 		
 	}
@@ -98,20 +87,19 @@ public class GameRenderer {
 		bgBackBody = bg;
 		
 		heroRunAnimation = AssetLoader.heroRunAnimation;
-		
+		heroStillAnimation = AssetLoader.heroStillAnimation;
 		heroJump = AssetLoader.heroJump;
+		heroFall = AssetLoader.heroFall;
 		
-		
-		enemyBlobAnimation = AssetLoader.enemyBlobAnimation;
+		enemyWhispAnimation = AssetLoader.enemyWhispAnimation;
 		enemyBatAnimation = AssetLoader.enemyBatAnimation;
 		enemyGoblinAnimation = AssetLoader.enemyGoblinAnimation;
 		
 		scribble = AssetLoader.scribble;
 		
-		elementTestBody = AssetLoader.elementTest;
-		
 		bossBody = AssetLoader.bossHead;
 		bossChomp = AssetLoader.bossChomp;
+		
 	}
 	
 	// runTime is for animation (determining which frame to render);
@@ -122,8 +110,6 @@ public class GameRenderer {
         Gdx.gl.glClearColor(255, 255, 255, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);        
 
-        
-        
         /*
         // Begin ShapeRenderer
         shapeRenderer.begin(ShapeType.Filled);
@@ -132,9 +118,6 @@ public class GameRenderer {
         // Draw Ground
         shapeRenderer.setColor(0, 0, 0, 1);
         shapeRenderer.rect(0, 120, 204, 16);
-        
-        
-        
         
         // End ShapeRenderer
         shapeRenderer.end();
@@ -153,25 +136,9 @@ public class GameRenderer {
         batcher.enableBlending();
         
         
-        
         drawHero(runTime);
         
-        drawEnemy(runTime);   
-                
-                /*
-        // Element
-        if(!elementTest.isTaken()) {
-        	batcher.draw(elementTestBody, elementTest.getX(), elementTest.getY(), 
-        		elementTest.getWidth() / 2.0f, elementTest.getHeight() / 2.0f,
-        		elementTest.getWidth(), elementTest.getHeight(), 1, 1, 0);
-        } else {
-        	batcher.draw(smoke, elementTest.getX(), elementTest.getY(), 
-            		elementTest.getWidth() / 2.0f, elementTest.getHeight() / 2.0f,
-            		elementTest.getWidth(), elementTest.getHeight(), 1, 1, 0);
-
-        }
-		*/
-        
+        drawEnemy(runTime);           
         
         // Draw Boss
         if(boss.hasWon()) {
@@ -185,43 +152,17 @@ public class GameRenderer {
         		boss.getWidth(), boss.getHeight(), 1, 1, 0);
         }
         
-        
-        
         drawScore();
         
+
         
         // End SpriteBatch
         batcher.end();
         
         
+        // Check Collision
+        //drawCollisionCheck();
         
-        // Draw bounding collision
-        shapeRenderer.begin(ShapeType.Filled);
-        shapeRenderer.setColor(Color.RED);
-        
-        shapeRenderer.circle(hero.getBoundingHead().x, hero.getBoundingHead().y, hero.getBoundingHead().radius);
-        shapeRenderer.rect(hero.getBoundingBody().x, hero.getBoundingBody().y, hero.getBoundingBody().getWidth(), hero.getBoundingBody().getHeight());
-        
-        if(hero.isJumping()) {
-        	shapeRenderer.setColor(Color.BLUE);
-        	shapeRenderer.rect(hero.getBoundingFeet().x, hero.getBoundingFeet().y, hero.getBoundingFeet().getWidth(), hero.getBoundingFeet().getHeight());
-        }
-        
-        shapeRenderer.rect(enemyOne.getBoundingCollision().x, enemyOne.getBoundingCollision().y, 
-        		enemyOne.getBoundingCollision().getWidth(), enemyOne.getBoundingCollision().getHeight());
-        
-        shapeRenderer.rect(enemyTwo.getBoundingCollision().x, enemyTwo.getBoundingCollision().y, 
-        		enemyTwo.getBoundingCollision().getWidth(), enemyTwo.getBoundingCollision().getHeight());
-
-        shapeRenderer.rect(enemyThree.getBoundingCollision().x, enemyThree.getBoundingCollision().y, 
-        		enemyThree.getBoundingCollision().getWidth(), enemyThree.getBoundingCollision().getHeight());
-        
-        shapeRenderer.circle(elementTest.getBoundingCollision().x, elementTest.getBoundingCollision().y, elementTest.getBoundingCollision().radius);
-
-        
-        shapeRenderer.end();
-		
-
     }
 	
 	
@@ -231,6 +172,10 @@ public class GameRenderer {
 		int val = 0;
         if(!hero.isAlive()) {
         	val = 2;
+		} else if(hero.actionIsDisabled()) {
+			val = 4;
+		} else if(hero.isFalling()) {
+			val = 3;
 		} else if(hero.isJumping()) {
         	val = 1;
         } 
@@ -262,13 +207,31 @@ public class GameRenderer {
             		hero.getWidth(), hero.getHeight(), 1, 1, 0);
         	
         	break;
+        	
+        case 3:
+        	
+        	// Hero Falling (alive)
+        	batcher.draw(heroFall, hero.getX(), hero.getY(), 
+            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
+            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
+        	        	
+        	break;
+        	
+        case 4:
+        	
+        	batcher.draw(heroStillAnimation.getKeyFrame(runTime), hero.getX(), hero.getY(), 
+            		hero.getWidth() / 2.0f, hero.getHeight() / 2.0f, 
+            		hero.getWidth(), hero.getHeight(), 1, 1, 0);
+        	        	
+        	break;
+
         }
         
   	}
 	
 	private void drawEnemy(float runTime) {
 		
-		drawEnemy(runTime, enemyOne, enemyBlobAnimation);
+		drawEnemy(runTime, enemyOne, enemyWhispAnimation);
 		drawEnemy(runTime, enemyTwo, enemyBatAnimation);
 		drawEnemy(runTime, enemyThree, enemyGoblinAnimation);
 		
@@ -369,6 +332,34 @@ public class GameRenderer {
         AssetLoader.font.draw(batcher, "" + myWorld.getScore(), 10, 5);
         AssetLoader.font.draw(batcher, "" + myWorld.getDistance(), 10, 15);
         */
+	}
+	
+	
+	private void drawCollisionCheck() {
+		// Draw bounding collision
+        shapeRenderer.begin(ShapeType.Filled);
+        shapeRenderer.setColor(Color.RED);
+        
+        shapeRenderer.circle(hero.getBoundingBody().x, hero.getBoundingBody().y, hero.getBoundingBody().radius);
+        
+        if(hero.isJumping()) {
+        	shapeRenderer.setColor(Color.BLUE);
+        	shapeRenderer.rect(hero.getBoundingFeet().x, hero.getBoundingFeet().y, hero.getBoundingFeet().getWidth(), hero.getBoundingFeet().getHeight());
+        }
+        
+        shapeRenderer.circle(enemyOne.getBoundingCollisionCircle().x, enemyOne.getBoundingCollisionCircle().y, 
+        		enemyOne.getBoundingCollisionCircle().radius);
+        
+        shapeRenderer.rect(enemyTwo.getBoundingCollisionRect().x, enemyTwo.getBoundingCollisionRect().y, 
+        		enemyTwo.getBoundingCollisionRect().getWidth(), enemyTwo.getBoundingCollisionRect().getHeight());
+
+        shapeRenderer.rect(enemyThree.getBoundingCollisionRect().x, enemyThree.getBoundingCollisionRect().y, 
+        		enemyThree.getBoundingCollisionRect().getWidth(), enemyThree.getBoundingCollisionRect().getHeight());
+
+        
+        shapeRenderer.end();
+		
+
 	}
 
 }

@@ -25,7 +25,7 @@ public class Boss extends Scrollable {
 	
 	public void onRestart() {
 		position.x = -150;
-		velocity.x = 15;
+		velocity.x = 13;
 		health = 10;
 		alive = true;
 		win = false;

@@ -10,18 +10,22 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 public class AssetLoader {
 	
-	public static Texture texture, hero, enemy, element, boss;
+	public static Texture texture, hero, enemy, boss;
+	
+	public static Texture enemyT;
+	
+	
 	public static TextureRegion bg;
     
-
-    public static Animation heroRunAnimation;
+    public static Animation heroRunAnimation, heroStillAnimation;
     public static TextureRegion heroRunOne, heroRunTwo, heroRunThree, heroRunFour;
-    
-    public static TextureRegion heroJump;
-    
-    
-    public static TextureRegion enemyBlobOne, enemyBlobTwo, enemyBlobThree;
-    public static Animation enemyBlobAnimation;
+    public static TextureRegion heroRunInOne, heroRunInTwo, heroRunInThree, heroRunInFour;
+    public static TextureRegion heroJump, heroFall;
+    public static TextureRegion heroStillOne, heroStillTwo;
+
+     
+    public static TextureRegion enemyWhispOne, enemyWhispTwo, enemyWhispThree, enemyWhispFour;
+    public static Animation enemyWhispAnimation;
     
     public static TextureRegion enemyBatOne, enemyBatTwo, enemyBatThree;
     public static Animation enemyBatAnimation;
@@ -31,9 +35,18 @@ public class AssetLoader {
     
     public static TextureRegion scribble;
     
-    public static TextureRegion elementTest;
-    
     public static TextureRegion bossHead, bossChomp;
+    
+    
+    public static Texture logoTexture;
+    public static TextureRegion logo;
+    
+    public static Texture buttonTexture;
+    public static TextureRegion buttonUp, buttonDown;
+    
+    public static Texture pig;
+    public static TextureRegion pigOne, pigTwo;
+    public static Animation pigAni;
     
     
     // Font
@@ -52,9 +65,8 @@ public class AssetLoader {
   
     public static void load() {
     	
-    	
     	// Background Sprite
-        texture = new Texture(Gdx.files.internal("Background Sprite ver three.png"));
+        texture = new Texture(Gdx.files.internal("Background.png"));
         texture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
         
         bg = new TextureRegion(texture, 0, 0, 816, 544);
@@ -63,38 +75,41 @@ public class AssetLoader {
         
         loadHero();
         
-        loadEnemy();     
+        loadEnemy();
+        
+        loadBoss();
                
         // Effect
-        scribble = new TextureRegion(enemy, 300, 0, 100, 100);
+        scribble = new TextureRegion(enemyT, 300, 0, 100, 100);
         scribble.flip(false, true);
         
-        element = new Texture(Gdx.files.internal("Element Sprite.png"));
-        element.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
-        
-        elementTest = new TextureRegion(element, 0, 0, 100, 100);
-        elementTest.flip(false, true);
-        
-        
-        boss = new Texture(Gdx.files.internal("Boss Sprite ver One.png"));
-        boss.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
-        
-        bossChomp = new TextureRegion(boss, 0, 0, 300, 272);
-        bossChomp.flip(false, true);
-        
-        bossHead = new TextureRegion(boss, 0, 272, 300, 272);
-        bossHead.flip(false, true);
-        
-        
-        
+                
         // Font
         font = new BitmapFont(Gdx.files.internal("text.fnt"));
         font.setScale(.1f, -.1f);
         
         
+        logoTexture = new Texture(Gdx.files.internal("Logo ver One.png"));
+        logoTexture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
+        
+        logo = new TextureRegion(logoTexture, 0, 0, 204, 136);
+        logo.flip(false, true);
+        
+        
+        buttonTexture = new Texture(Gdx.files.internal("Button Sprite ver One.png"));
+        buttonTexture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
+        
+        buttonUp = new TextureRegion(logoTexture, 0, 0, 100, 50);
+        buttonUp.flip(false, true);
+        
+        buttonDown = new TextureRegion(logoTexture, 0, 50, 100, 50);
+        buttonDown.flip(false, true);
+
+
+        
         //example = Gdx.audio.newSound(Gdx.files.internal("path/to/sound/file");
         
-
+        
         
         // Create (or retrieve existing) preferences file
         prefs = Gdx.app.getPreferences("Compress");
@@ -132,11 +147,13 @@ public class AssetLoader {
         texture.dispose();
         hero.dispose();
         enemy.dispose();
-        element.dispose();
         
         boss.dispose();
         
         font.dispose();
+        
+        
+        enemyT.dispose();
         
     }
     
@@ -144,7 +161,7 @@ public class AssetLoader {
     private static void loadHero() {
     	
     	// Sprite File
-    	hero = new Texture(Gdx.files.internal("Hero Sprite ver Three.png"));
+    	hero = new Texture(Gdx.files.internal("Hero Texture.png"));
         hero.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
         
         // Each Frame for running animation
@@ -160,48 +177,86 @@ public class AssetLoader {
         heroRunFour = new TextureRegion(hero, 300, 0, 100, 100);
         heroRunFour.flip(false, true);
         
+        
+        heroRunInOne = new TextureRegion(hero, 0, 200, 100, 100);
+        heroRunInOne.flip(false, true);
+        
+        heroRunInTwo = new TextureRegion(hero, 100, 200, 100, 100);
+        heroRunInTwo.flip(false, true);
+        
+        heroRunInThree = new TextureRegion(hero, 200, 200, 100, 100);
+        heroRunInThree.flip(false, true);
+        
+        heroRunInFour = new TextureRegion(hero, 300, 200, 100, 100);
+        heroRunInFour.flip(false, true);
+
+        
+        
         // Hero's running animation
-        TextureRegion[] runningHero = {heroRunOne, heroRunTwo, heroRunThree, heroRunFour};
+        TextureRegion[] runningHero = {heroRunOne, heroRunTwo,  
+        		heroRunThree,  heroRunFour};
+        
+        // Before : 0.1f
         heroRunAnimation = new Animation(0.1f, runningHero);
         heroRunAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
 
         // Hero's jump Sprite
         heroJump = new TextureRegion(hero, 0, 100, 100, 100);
-        heroJump.flip(false, true);        
+        heroJump.flip(false, true);   
         
-
+        heroFall = new TextureRegion(hero, 100, 100, 100, 100);
+        heroFall.flip(false, true);
+        
+        
+        heroStillOne = new TextureRegion(hero, 200, 100, 100, 100);
+        heroStillOne.flip(false, true);   
+        
+        heroStillTwo = new TextureRegion(hero, 300, 100, 100, 100);
+        heroStillTwo.flip(false, true); 
+        
+        TextureRegion[] stillHero = {heroStillOne, heroStillTwo};
+        
+        heroStillAnimation = new Animation(0.3f, stillHero);
+        heroStillAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
     }
     
     private static void loadEnemy() {
     	
     	// Sprite File
-    	enemy = new Texture(Gdx.files.internal("Enemy Sprite ver Two.png"));
+    	enemyT = new Texture(Gdx.files.internal("Enemy Sprite ver Two.png"));
+        enemyT.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
+        
+        
+        enemy = new Texture(Gdx.files.internal("Enemy Texture.png"));
         enemy.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
         
-        // Enemy Blob
-        enemyBlobOne = new TextureRegion(enemy, 0, 0, 100, 100);
-        enemyBlobOne.flip(false, true);
+        // Enemy Whisp
+        enemyWhispOne = new TextureRegion(enemy, 0, 0, 100, 100);
+        enemyWhispOne.flip(false, true);
         
-        enemyBlobTwo = new TextureRegion(enemy, 100, 0, 100, 100);
-        enemyBlobTwo.flip(false, true);
+        enemyWhispTwo = new TextureRegion(enemy, 100, 0, 100, 100);
+        enemyWhispTwo.flip(false, true);
         
-        enemyBlobThree = new TextureRegion(enemy, 200, 0, 100, 100);
-        enemyBlobThree.flip(false, true);
+        enemyWhispThree = new TextureRegion(enemy, 200, 0, 100, 100);
+        enemyWhispThree.flip(false, true);
         
-        // Enemy Blob Animation
-        TextureRegion[] blob = {enemyBlobOne, enemyBlobTwo, enemyBlobThree};
-        enemyBlobAnimation = new Animation(0.2f, blob);
-        enemyBlobAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
+        enemyWhispFour = new TextureRegion(enemy, 300, 0, 100, 100);
+        enemyWhispFour.flip(false, true);
+        
+        // Enemy Whisp Animation
+        TextureRegion[] whisp = {enemyWhispOne, enemyWhispTwo, enemyWhispThree, enemyWhispFour};
+        enemyWhispAnimation = new Animation(0.2f, whisp);
+        enemyWhispAnimation.setPlayMode(Animation.PlayMode.LOOP);
 
         
         // Enemy Bat
-        enemyBatOne = new TextureRegion(enemy, 0, 100, 100, 100);
+        enemyBatOne = new TextureRegion(enemyT, 0, 100, 100, 100);
         enemyBatOne.flip(false, true);
         
-        enemyBatTwo = new TextureRegion(enemy, 100, 100, 100, 100);
+        enemyBatTwo = new TextureRegion(enemyT, 100, 100, 100, 100);
         enemyBatTwo.flip(false, true);
         
-        enemyBatThree = new TextureRegion(enemy, 200, 100, 100, 100);
+        enemyBatThree = new TextureRegion(enemyT, 200, 100, 100, 100);
         enemyBatThree.flip(false, true);
         
         // Enemy Bat Animation
@@ -211,13 +266,13 @@ public class AssetLoader {
         
         
         // Enemy Goblin
-        enemyGoblinOne = new TextureRegion(enemy, 0, 200, 100, 100);
+        enemyGoblinOne = new TextureRegion(enemyT, 0, 200, 100, 100);
         enemyGoblinOne.flip(false, true);
         
-        enemyGoblinTwo = new TextureRegion(enemy, 100, 200, 100, 100);
+        enemyGoblinTwo = new TextureRegion(enemyT, 100, 200, 100, 100);
         enemyGoblinTwo.flip(false, true);
         
-        enemyGoblinThree = new TextureRegion(enemy, 200, 200, 100, 100);
+        enemyGoblinThree = new TextureRegion(enemyT, 200, 200, 100, 100);
         enemyGoblinThree.flip(false, true);
         
         // Enemy Goblin Animation
@@ -226,6 +281,19 @@ public class AssetLoader {
         enemyGoblinAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
 
 
+    }
+    
+    public static void loadBoss() {
+
+        boss = new Texture(Gdx.files.internal("Boss Sprite ver One.png"));
+        boss.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
+        
+        bossChomp = new TextureRegion(boss, 0, 0, 300, 272);
+        bossChomp.flip(false, true);
+        
+        bossHead = new TextureRegion(boss, 0, 272, 300, 272);
+        bossHead.flip(false, true);
+        
     }
 	
 }

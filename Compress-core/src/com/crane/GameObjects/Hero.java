@@ -18,12 +18,13 @@ public class Hero {
 	
 	private boolean jumped;
 	private boolean doubleJumped;
+	private boolean falling;
+	private boolean actionDisabled;
 	
 	private boolean alive;
 	
 	// Collision object
-	private Circle boundingHead;
-	private Rectangle boundingBody;
+	private Circle boundingBody;
 	private Rectangle boundingFeet;
 	
 	public Hero(float x, float y, int width, int height) {
@@ -39,16 +40,23 @@ public class Hero {
 		
 		jumped = false;
 		doubleJumped = false;
+		actionDisabled = true;
+		falling = false;
 		
 		alive = true;
 		
 		// Collision object
-		boundingHead = new Circle();
-		boundingBody = new Rectangle();
+		boundingBody = new Circle();
 		boundingFeet = new Rectangle();
 	}
 	
 	public void update(float delta) {
+		if(velocity.y > 0) {
+			falling = true;
+		} else {
+			falling = false;
+		}
+		
 		if(jumped && position.y + height / 2 > centerY) {
 			jumped = false;
 			doubleJumped = false;
@@ -56,7 +64,7 @@ public class Hero {
 			acceleration.x = 0;
 			velocity.y = 0;
 			velocity.x = 0;
-			position.y = 97;
+			position.y = 104;
 			
 		}
 				
@@ -66,22 +74,29 @@ public class Hero {
 		
 		
 		// Collision
-		if(jumped) {
-			boundingHead.set(position.x + 18, position.y + 12, 5f);
-			boundingBody.set(position.x + 10, position.y + 16, 11f, 10f);
+		if(falling) {
+			boundingBody.set(position.x + 16, position.y + 11, 7f);
+			boundingFeet.set(position.x + 12, position.y + 19, 9f, 2f);
+
+		} else if(jumped) {
+			boundingBody.set(position.x + 15, position.y + 10, 7f);
+			boundingFeet.set(position.x + 13, position.y + 19, 6f, 2f);
+
 		} else {
-			boundingHead.set(position.x + 24, position.y + 12, 5f);
-			boundingBody.set(position.x + 10, position.y + 16, 13f, 10f);
+			boundingBody.set(position.x + 15, position.y + 13, 7f);
 		}
 		
 		
-		boundingFeet.set(position.x + 10, position.y + 26, 10f, 4f);
 	}
 	
 	public void onRestart() {
 		position.x = 30;
-		position.y = 97;
+		position.y = 104;
+		velocity.y = 0;
+		acceleration.y = 0;
 		
+		actionDisabled = true;
+		falling = false;
 		
 		jumped = false;
 		doubleJumped = false;
@@ -90,10 +105,12 @@ public class Hero {
 	}
 	
 	public void onClick() {
-		if(alive && jumped && !doubleJumped) {
+		if(actionDisabled) {
+			actionDisabled = false;
+		} else if(alive && !actionDisabled && jumped && !doubleJumped) {
 			doubleJumped = true;
 			velocity.y = -200;
-		} else if(alive && !jumped) {
+		} else if(alive && !actionDisabled && !jumped) {
 			jumped = true;
 			velocity.y = -200;
 			acceleration.y = 460;
@@ -117,9 +134,18 @@ public class Hero {
 		return jumped;
 	}
 	
+	public boolean isFalling() {
+		return falling;
+	}
+	
 	public boolean isAlive() {
 		return alive;
 	}
+	
+	public boolean actionIsDisabled() {
+		return actionDisabled;
+	}
+	
 	
 	public void isDead(boolean isDead) {
 		alive = !isDead;
@@ -165,11 +191,7 @@ public class Hero {
 		this.centerY = centerY;
 	}
 	
-	public Circle getBoundingHead() {
-		return boundingHead;
-	}
-	
-	public Rectangle getBoundingBody() {
+	public Circle getBoundingBody() {
 		return boundingBody;
 	}
 	
