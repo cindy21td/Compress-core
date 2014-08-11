@@ -24,11 +24,11 @@ public class AssetLoader {
     public static TextureRegion heroStillOne, heroStillTwo;
 
      
-    public static TextureRegion enemyWhispOne, enemyWhispTwo, enemyWhispThree, enemyWhispFour;
-    public static Animation enemyWhispAnimation;
+    public static TextureRegion enemyWizardOne, enemyWizardTwo, enemyWizardThree;
+    public static Animation enemyWizardAnimation;
     
-    public static TextureRegion enemyBatOne, enemyBatTwo, enemyBatThree;
-    public static Animation enemyBatAnimation;
+    public static TextureRegion enemyKnightOne, enemyKnightTwo, enemyKnightThree;
+    public static Animation enemyKnightAnimation;
     
     public static TextureRegion enemyGoblinOne, enemyGoblinTwo, enemyGoblinThree;
     public static Animation enemyGoblinAnimation;
@@ -231,38 +231,35 @@ public class AssetLoader {
         enemy.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
         
         // Enemy Whisp
-        enemyWhispOne = new TextureRegion(enemy, 0, 0, 100, 100);
-        enemyWhispOne.flip(false, true);
+        enemyWizardOne = new TextureRegion(enemy, 0, 0, 100, 100);
+        enemyWizardOne.flip(false, true);
         
-        enemyWhispTwo = new TextureRegion(enemy, 100, 0, 100, 100);
-        enemyWhispTwo.flip(false, true);
+        enemyWizardTwo = new TextureRegion(enemy, 100, 0, 100, 100);
+        enemyWizardTwo.flip(false, true);
         
-        enemyWhispThree = new TextureRegion(enemy, 200, 0, 100, 100);
-        enemyWhispThree.flip(false, true);
-        
-        enemyWhispFour = new TextureRegion(enemy, 300, 0, 100, 100);
-        enemyWhispFour.flip(false, true);
+        enemyWizardThree = new TextureRegion(enemy, 200, 0, 100, 100);
+        enemyWizardThree.flip(false, true);
         
         // Enemy Whisp Animation
-        TextureRegion[] whisp = {enemyWhispOne, enemyWhispTwo, enemyWhispThree, enemyWhispFour};
-        enemyWhispAnimation = new Animation(0.2f, whisp);
-        enemyWhispAnimation.setPlayMode(Animation.PlayMode.LOOP);
+        TextureRegion[] wizard = {enemyWizardOne, enemyWizardTwo, enemyWizardThree};
+        enemyWizardAnimation = new Animation(0.2f, wizard);
+        enemyWizardAnimation.setPlayMode(Animation.PlayMode.LOOP);
 
         
-        // Enemy Bat
-        enemyBatOne = new TextureRegion(enemyT, 0, 100, 100, 100);
-        enemyBatOne.flip(false, true);
+        // Enemy Knight
+        enemyKnightOne = new TextureRegion(enemy, 0, 100, 100, 100);
+        enemyKnightOne.flip(false, true);
         
-        enemyBatTwo = new TextureRegion(enemyT, 100, 100, 100, 100);
-        enemyBatTwo.flip(false, true);
+        enemyKnightTwo = new TextureRegion(enemy, 100, 100, 100, 100);
+        enemyKnightTwo.flip(false, true);
         
-        enemyBatThree = new TextureRegion(enemyT, 200, 100, 100, 100);
-        enemyBatThree.flip(false, true);
+        enemyKnightThree = new TextureRegion(enemy, 200, 100, 100, 100);
+        enemyKnightThree.flip(false, true);
         
         // Enemy Bat Animation
-        TextureRegion[] bat = {enemyBatOne, enemyBatTwo, enemyBatThree};
-        enemyBatAnimation = new Animation(0.2f, bat);
-        enemyBatAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
+        TextureRegion[] knight = {enemyKnightOne, enemyKnightTwo, enemyKnightThree};
+        enemyKnightAnimation = new Animation(0.2f, knight);
+        enemyKnightAnimation.setPlayMode(Animation.PlayMode.LOOP);
         
         
         // Enemy Goblin

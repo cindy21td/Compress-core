@@ -25,7 +25,7 @@ public class ScrollHandler {
 	public static final int SCROLL_SPEED = -59;
 	
 	public enum EnemyType {
-		WHISP, BAT, GOBLIN;
+		WIZARD, KNIGHT, GOBLIN;
 	}
 
 	
@@ -36,9 +36,9 @@ public class ScrollHandler {
 		this.bossFight = false;
 		
 		enemyOne = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 
-				20, 20, SCROLL_SPEED - getEnemyRanVelX(), EnemyType.WHISP);
+				20, 20, SCROLL_SPEED - getEnemyRanVelX(), EnemyType.WIZARD);
 		enemyTwo = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 
-				15, 15, SCROLL_SPEED - getEnemyRanVelX(), EnemyType.BAT);
+				22, 22, SCROLL_SPEED - getEnemyRanVelX(), EnemyType.KNIGHT);
 		enemyThree = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 
 				15, 15, SCROLL_SPEED - getEnemyRanVelX(), EnemyType.GOBLIN);
 		

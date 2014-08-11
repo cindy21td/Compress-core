@@ -39,7 +39,7 @@ public class GameRenderer {
 	private TextureRegion bg;
 	private TextureRegion bgFrontBody, bgBackBody;
 	
-	private Animation enemyWhispAnimation, enemyBatAnimation, enemyGoblinAnimation;
+	private Animation enemyWizardAnimation, enemyKnightAnimation, enemyGoblinAnimation;
 	
 	private Animation heroRunAnimation, heroStillAnimation;
 	private TextureRegion heroJump, heroFall;
@@ -91,8 +91,8 @@ public class GameRenderer {
 		heroJump = AssetLoader.heroJump;
 		heroFall = AssetLoader.heroFall;
 		
-		enemyWhispAnimation = AssetLoader.enemyWhispAnimation;
-		enemyBatAnimation = AssetLoader.enemyBatAnimation;
+		enemyWizardAnimation = AssetLoader.enemyWizardAnimation;
+		enemyKnightAnimation = AssetLoader.enemyKnightAnimation;
 		enemyGoblinAnimation = AssetLoader.enemyGoblinAnimation;
 		
 		scribble = AssetLoader.scribble;
@@ -231,8 +231,8 @@ public class GameRenderer {
 	
 	private void drawEnemy(float runTime) {
 		
-		drawEnemy(runTime, enemyOne, enemyWhispAnimation);
-		drawEnemy(runTime, enemyTwo, enemyBatAnimation);
+		drawEnemy(runTime, enemyOne, enemyWizardAnimation);
+		drawEnemy(runTime, enemyTwo, enemyKnightAnimation);
 		drawEnemy(runTime, enemyThree, enemyGoblinAnimation);
 		
 		/*
@@ -350,6 +350,8 @@ public class GameRenderer {
         shapeRenderer.circle(enemyOne.getBoundingCollisionCircle().x, enemyOne.getBoundingCollisionCircle().y, 
         		enemyOne.getBoundingCollisionCircle().radius);
         
+        shapeRenderer.circle(enemyTwo.getBoundingCollisionCircle().x, enemyTwo.getBoundingCollisionCircle().y, 
+        		enemyTwo.getBoundingCollisionCircle().radius);
         shapeRenderer.rect(enemyTwo.getBoundingCollisionRect().x, enemyTwo.getBoundingCollisionRect().y, 
         		enemyTwo.getBoundingCollisionRect().getWidth(), enemyTwo.getBoundingCollisionRect().getHeight());
 

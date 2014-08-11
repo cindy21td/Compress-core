@@ -80,14 +80,14 @@ public class Enemy extends Scrollable {
 	public void setBoundingCollision() {
 		switch(type) {
 		
-		case WHISP:
+		case WIZARD:
 			
-			boundingCollisionCirc.set(position.x + 10, position.y + 10.5f, 7.5f);
+			boundingCollisionCirc.set(position.x + 10, position.y + 11f, 6f);
 			break;
 			
-		case BAT:
+		case KNIGHT:
 			
-			boundingCollisionRect.set(position.x + 2, position.y + 3, 11f, 9.5f);
+			boundingCollisionCirc.set(position.x + 10, position.y + 12f, 7f);
 			break;
 			
 		case GOBLIN:
