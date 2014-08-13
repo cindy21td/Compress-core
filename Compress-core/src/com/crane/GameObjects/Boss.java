@@ -25,14 +25,14 @@ public class Boss extends Scrollable {
 	
 	public void onRestart() {
 		position.x = -150;
-		velocity.x = 13;
+		velocity.x = 10;
 		health = 10;
 		alive = true;
 		win = false;
 	}
 	
 	public boolean collides(Enemy enemy) {
-		if(alive && !enemy.isEaten() && !enemy.isAlive() && enemy.getX() < 0) {
+		if(alive && !enemy.isEaten() && !enemy.isAlive() && enemy.isVisible() && enemy.getX() < 0) {
 			position.x -= 10;
 			enemy.setEaten(true);
 			health--;

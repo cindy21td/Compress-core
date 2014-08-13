@@ -15,6 +15,8 @@ public class Enemy extends Scrollable {
 	
 	private boolean eaten;
 	private boolean alive;
+	private boolean attacking;
+	private boolean isVisible;
 	
 	private Rectangle boundingCollisionRect;
 	private Circle boundingCollisionCirc;
@@ -31,6 +33,8 @@ public class Enemy extends Scrollable {
 		
 		eaten = false;
 		alive = true;
+		attacking = false;
+		isVisible = false;
 		
 		this.type = type;
 		
@@ -52,12 +56,18 @@ public class Enemy extends Scrollable {
 		velocity.x = -59 - newVelX;
 		alive = true;
 		eaten = false;
+		attacking = false;
+		isVisible = false;
 		super.reset(newX);
+	}
+	
+	public void startAttacking() {
+		attacking = true;
 	}
 	
 		
 	public boolean collides(Hero hero) {
-        if (alive && position.x < hero.getX() + hero.getWidth()) {
+        if (alive && isVisible && position.x < hero.getX() + hero.getWidth()) {
             return (Intersector.overlaps(hero.getBoundingBody(), boundingCollisionRect) 
             		|| Intersector.overlaps(hero.getBoundingBody(), boundingCollisionCirc));
         }
@@ -65,7 +75,7 @@ public class Enemy extends Scrollable {
     }
 	
 	public boolean isHit(Hero hero) {
-		if(hero.isJumping() && hero.isAlive() && alive && (position.x < hero.getX() + hero.getWidth())) {
+		if(hero.isJumping() && hero.isAlive() && alive && isVisible && (position.x < hero.getX() + hero.getWidth())) {
 			if(Intersector.overlaps(hero.getBoundingFeet(), boundingCollisionRect )
 					|| Intersector.overlaps(boundingCollisionCirc, hero.getBoundingFeet())) {
 				alive = false;
@@ -87,14 +97,10 @@ public class Enemy extends Scrollable {
 			
 		case KNIGHT:
 			
-			boundingCollisionCirc.set(position.x + 10, position.y + 12f, 7f);
+			boundingCollisionCirc.set(position.x + 12, position.y + 15, 7f);
 			break;
 			
-		case GOBLIN:
-			
-			boundingCollisionRect.set(position.x + 2, position.y + 3, 10f, 11f);
-			break;
-		
+				
 		}
 			
 	}
@@ -109,6 +115,10 @@ public class Enemy extends Scrollable {
 	
 	public void setEaten(boolean check) {
 		eaten = check;
+	}
+	
+	public boolean isAttacking() {
+		return attacking;
 	}
 
 	public float getCenterX() {
@@ -127,6 +137,10 @@ public class Enemy extends Scrollable {
 		this.centerY = centerY;
 	}
 	
+	public float getVelX() {
+		return velocity.x;
+	}
+	
 	public Rectangle getBoundingCollisionRect() {
 		return boundingCollisionRect;
 	}
@@ -135,4 +149,11 @@ public class Enemy extends Scrollable {
 		return boundingCollisionCirc;
 	}
 	
+	public boolean isVisible() {
+		return isVisible;
+	}
+	
+	public void setIsVisible(boolean check) {
+		isVisible = check;
+	}
 }

@@ -25,10 +25,14 @@ public class AssetLoader {
 
      
     public static TextureRegion enemyWizardOne, enemyWizardTwo, enemyWizardThree;
+    public static TextureRegion flameOne, flameTwo, flameThree;
     public static Animation enemyWizardAnimation;
+    public static Animation flameAnimation;
     
     public static TextureRegion enemyKnightOne, enemyKnightTwo, enemyKnightThree;
+    public static TextureRegion enemyKnightSwingOne, enemyKnightSwingTwo;
     public static Animation enemyKnightAnimation;
+    public static Animation enemyKnightAttackAnimation;
     
     public static TextureRegion enemyGoblinOne, enemyGoblinTwo, enemyGoblinThree;
     public static Animation enemyGoblinAnimation;
@@ -230,7 +234,7 @@ public class AssetLoader {
         enemy = new Texture(Gdx.files.internal("Enemy Texture.png"));
         enemy.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
         
-        // Enemy Whisp
+        // Enemy Wizard
         enemyWizardOne = new TextureRegion(enemy, 0, 0, 100, 100);
         enemyWizardOne.flip(false, true);
         
@@ -240,10 +244,24 @@ public class AssetLoader {
         enemyWizardThree = new TextureRegion(enemy, 200, 0, 100, 100);
         enemyWizardThree.flip(false, true);
         
-        // Enemy Whisp Animation
+        // Enemy Wizard Animation
         TextureRegion[] wizard = {enemyWizardOne, enemyWizardTwo, enemyWizardThree};
         enemyWizardAnimation = new Animation(0.2f, wizard);
         enemyWizardAnimation.setPlayMode(Animation.PlayMode.LOOP);
+        
+        
+        flameOne = new TextureRegion(enemy, 300, 0, 50, 50);
+        flameOne.flip(false, true);
+        
+        flameTwo = new TextureRegion(enemy, 350, 0, 50, 50);
+        flameTwo.flip(false, true);
+        
+        flameThree = new TextureRegion(enemy, 300, 50, 50, 50);
+        flameThree.flip(false, true);
+        
+        TextureRegion[] flame = {flameOne, flameTwo, flameThree};
+        flameAnimation = new Animation(0.2f, flame);
+        flameAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
 
         
         // Enemy Knight
@@ -260,6 +278,18 @@ public class AssetLoader {
         TextureRegion[] knight = {enemyKnightOne, enemyKnightTwo, enemyKnightThree};
         enemyKnightAnimation = new Animation(0.2f, knight);
         enemyKnightAnimation.setPlayMode(Animation.PlayMode.LOOP);
+        
+        
+        enemyKnightSwingOne = new TextureRegion(enemy, 300, 100, 100, 100);
+        enemyKnightSwingOne.flip(false, true);
+        
+        enemyKnightSwingTwo = new TextureRegion(enemy, 400, 100, 100, 100);
+        enemyKnightSwingTwo.flip(false, true);
+        
+        TextureRegion[] knightAttack = {enemyKnightSwingOne, enemyKnightSwingOne, enemyKnightSwingOne, enemyKnightSwingTwo};
+        enemyKnightAttackAnimation = new Animation(0.2f, knightAttack);
+        enemyKnightAttackAnimation.setPlayMode(Animation.PlayMode.LOOP);
+
         
         
         // Enemy Goblin

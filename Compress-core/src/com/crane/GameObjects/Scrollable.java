@@ -10,6 +10,7 @@ public class Scrollable {
     protected int width;
     protected int height;
     protected boolean isScrolledLeft;
+    protected boolean isVisible;
 
 
 	public Scrollable(float x, float y, int width, int height, float scrollSpeed) {
@@ -26,12 +27,17 @@ public class Scrollable {
         if (position.x + width < 0) {
             isScrolledLeft = true;
         }
+        
+        if(position.x <= 204) {
+        	isVisible = true;
+        }
     }
 
     // Reset: Should Override in subclass for more specific behavior.
     public void reset(float newX) {
         position.x = newX;
         isScrolledLeft = false;
+        isVisible = false;
     }
     
     public void stop() {
@@ -41,6 +47,10 @@ public class Scrollable {
     // Getters for instance variables
     public boolean isScrolledLeft() {
         return isScrolledLeft;
+    }
+    
+    public boolean isVisible() {
+    	return isVisible;
     }
 
     public float getTailX() {
