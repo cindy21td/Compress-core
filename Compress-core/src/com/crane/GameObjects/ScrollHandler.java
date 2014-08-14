@@ -17,8 +17,6 @@ public class ScrollHandler {
 
 	private Background bgFront, bgBack;
 
-	private Projectile flame;
-
 	private Boss boss;
 	private boolean bossFight;
 
@@ -42,9 +40,6 @@ public class ScrollHandler {
 
 		initializeEnemy();
 
-		flame = new Projectile(enemyOne.getX() - 10, enemyOne.getY(), 10, 10,
-				SCROLL_SPEED - enemyOne.getVelX());
-
 		bgFront = new Background(0, 0, 204, 136, SCROLL_SPEED);
 		bgBack = new Background(204, 0, 204, 136, SCROLL_SPEED);
 
@@ -56,11 +51,11 @@ public class ScrollHandler {
 		enemyCollOriginal = new ArrayList<Enemy>();
 
 		enemyOne = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 20, 20,
-				SCROLL_SPEED - getEnemyRanVelX(), EnemyType.WIZARD);
+				SCROLL_SPEED, EnemyType.WIZARD);
 		enemyTwo = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 20, 20,
-				SCROLL_SPEED - getEnemyRanVelX(), EnemyType.WIZARD);
+				SCROLL_SPEED, EnemyType.WIZARD);
 		enemyThree = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 20, 20,
-				SCROLL_SPEED - getEnemyRanVelX(), EnemyType.WIZARD);
+				SCROLL_SPEED, EnemyType.WIZARD);
 
 		enemyFour = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 22, 22,
 				SCROLL_SPEED - getEnemyRanVelX(), EnemyType.KNIGHT);
@@ -75,7 +70,7 @@ public class ScrollHandler {
 		enemyColl.add(enemyFour);
 		enemyColl.add(enemyFive);
 		enemyColl.add(enemySix);
-		
+
 		enemyCollOriginal.add(enemyOne);
 		enemyCollOriginal.add(enemyTwo);
 		enemyCollOriginal.add(enemyThree);
@@ -92,7 +87,7 @@ public class ScrollHandler {
 		int ranIndex = MathUtils.random(0, enemyColl.size() - 1);
 		Enemy e = enemyColl.get(ranIndex);
 		enemyColl.remove(e);
-			e.setIsVisible(true);
+		e.setIsVisible(true);
 	}
 
 	public void update(float delta) {
@@ -131,18 +126,18 @@ public class ScrollHandler {
 	}
 
 	public void onRestart() {
-		enemyOne.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
-		enemyTwo.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
-		enemyThree.reset(getEnemyRanPosX(), getEnemyRanPosY(),
-				getEnemyRanVelX());
-		
-		enemyFour.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
-		enemyFive.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
-		enemySix.reset(getEnemyRanPosX(), getEnemyRanPosY(),
-				getEnemyRanVelX());
+		enemyOne.reset(getEnemyRanPosX(), getEnemyRanPosY(), 0);
+		enemyTwo.reset(getEnemyRanPosX(), getEnemyRanPosY(), 0);
+		enemyThree.reset(getEnemyRanPosX(), getEnemyRanPosY(), 0);
+
+		enemyFour
+				.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
+		enemyFive
+				.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
+		enemySix.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
 
 		enemyColl = new ArrayList<Enemy>(enemyCollOriginal);
-		
+
 		setRandomVisibility();
 		setRandomVisibility();
 		setRandomVisibility();
@@ -196,13 +191,13 @@ public class ScrollHandler {
 		switch (state) {
 
 		case NORMAL:
-			return MathUtils.random(0, 41);
+			return MathUtils.random(10, 41);
 
 		case RUSH:
 			return MathUtils.random(50, 71);
 
 		default:
-			return MathUtils.random(0, 41);
+			return MathUtils.random(10, 41);
 
 		}
 
@@ -212,9 +207,13 @@ public class ScrollHandler {
 		if (enemy.isVisible()) {
 			enemy.update(delta);
 			if (enemy.isScrolledLeft()) {
-
+				if(enemy.equals(enemyOne) || enemy.equals(enemyTwo) || enemy.equals(enemyThree)) {
+					enemy.reset(getEnemyRanPosX(), getEnemyRanPosY(),
+							0);
+				} else {
 				enemy.reset(getEnemyRanPosX(), getEnemyRanPosY(),
 						getEnemyRanVelX());
+				}
 				enemyColl.add(enemy);
 				setRandomVisibility();
 			}
@@ -271,10 +270,6 @@ public class ScrollHandler {
 
 	public boolean getBossFight() {
 		return bossFight;
-	}
-
-	public Projectile getProjectile() {
-		return flame;
 	}
 
 	public void toogleBossFight(boolean check) {

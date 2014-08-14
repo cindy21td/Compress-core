@@ -26,8 +26,10 @@ public class AssetLoader {
      
     public static TextureRegion enemyWizardOne, enemyWizardTwo, enemyWizardThree;
     public static TextureRegion flameOne, flameTwo, flameThree;
+    public static TextureRegion lightOne, lightTwo, lightThree;
     public static Animation enemyWizardAnimation;
     public static Animation flameAnimation;
+    public static Animation lightAnimation;
     
     public static TextureRegion enemyKnightOne, enemyKnightTwo, enemyKnightThree;
     public static TextureRegion enemyKnightSwingOne, enemyKnightSwingTwo;
@@ -262,6 +264,20 @@ public class AssetLoader {
         TextureRegion[] flame = {flameOne, flameTwo, flameThree};
         flameAnimation = new Animation(0.2f, flame);
         flameAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
+        
+        
+        lightOne = new TextureRegion(enemy, 400, 0, 50, 50);
+        lightOne.flip(false, true);
+        
+        lightTwo = new TextureRegion(enemy, 450, 0, 50, 50);
+        lightTwo.flip(false, true);
+        
+        lightThree = new TextureRegion(enemy, 400, 50, 50, 50);
+        lightThree.flip(false, true);
+        
+        TextureRegion[] light = {lightOne, lightTwo, lightThree};
+        lightAnimation = new Animation(0.2f, light);
+        lightAnimation.setPlayMode(Animation.PlayMode.NORMAL);
 
         
         // Enemy Knight

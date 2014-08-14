@@ -1,5 +1,7 @@
 package com.crane.GameWorld;
 
+import java.util.ArrayList;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -35,14 +37,15 @@ public class GameRenderer {
 	private Enemy enemyOne, enemyTwo, enemyThree, enemyFour, enemyFive,
 			enemySix;
 	private Boss boss;
-	private Projectile flame;
 
 	// Game Assets
 	private TextureRegion bg;
 	private TextureRegion bgFrontBody, bgBackBody;
 
 	private Animation enemyWizardAnimation, enemyKnightAnimation;
-	private Animation flameAnimation, enemyKnightAttackAnimation;
+	private Animation flameAnimation;
+	private Animation lightAnimation;
+	private Animation enemyKnightAttackAnimation;
 
 	private Animation heroRunAnimation, heroStillAnimation;
 	private TextureRegion heroJump, heroFall;
@@ -84,7 +87,6 @@ public class GameRenderer {
 		enemySix = scroller.getEnemySix();
 
 		boss = scroller.getBoss();
-		flame = scroller.getProjectile();
 
 	}
 
@@ -101,13 +103,15 @@ public class GameRenderer {
 		enemyWizardAnimation = AssetLoader.enemyWizardAnimation;
 		enemyKnightAnimation = AssetLoader.enemyKnightAnimation;
 
-		flameAnimation = AssetLoader.flameAnimation;
-		enemyKnightAttackAnimation = AssetLoader.enemyKnightAttackAnimation;
-
 		scribble = AssetLoader.scribble;
 
 		bossBody = AssetLoader.bossHead;
 		bossChomp = AssetLoader.bossChomp;
+
+		flameAnimation = AssetLoader.flameAnimation;
+		lightAnimation = AssetLoader.lightAnimation;
+
+		enemyKnightAttackAnimation = AssetLoader.enemyKnightAttackAnimation;
 
 	}
 
@@ -161,7 +165,7 @@ public class GameRenderer {
 		batcher.end();
 
 		// Check Collision
-		// drawCollisionCheck();
+		//drawCollisionCheck();
 
 	}
 
@@ -232,12 +236,12 @@ public class GameRenderer {
 
 	private void drawEnemy(float runTime) {
 
-		drawEnemy(runTime, enemyOne, enemyWizardAnimation);
-		drawEnemy(runTime, enemyTwo, enemyWizardAnimation);
-		drawEnemy(runTime, enemyThree, enemyWizardAnimation);
-		drawEnemy(runTime, enemyFour, enemyKnightAnimation);
-		drawEnemy(runTime, enemyFive, enemyKnightAnimation);
-		drawEnemy(runTime, enemySix, enemyKnightAnimation);
+		drawEnemyWizard(runTime, enemyOne, enemyWizardAnimation);
+		drawEnemyWizard(runTime, enemyTwo, enemyWizardAnimation);
+		drawEnemyWizard(runTime, enemyThree, enemyWizardAnimation);
+		drawEnemyKnight(runTime, enemyFour, enemyKnightAnimation);
+		drawEnemyKnight(runTime, enemyFive, enemyKnightAnimation);
+		drawEnemyKnight(runTime, enemySix, enemyKnightAnimation);
 
 	}
 
@@ -247,11 +251,89 @@ public class GameRenderer {
 					enemy.getWidth() / 2.0f, enemy.getHeight() / 2.0f,
 					enemy.getWidth(), enemy.getHeight(), 1, 1, 0);
 
-		} else if(enemy.isVisible()){
+		} else if (enemy.isVisible()) {
 			batcher.draw(animation.getKeyFrame(runTime), enemy.getX(),
 					enemy.getY(), enemy.getWidth() / 2.0f,
 					enemy.getHeight() / 2.0f, enemy.getWidth(),
 					enemy.getHeight(), 1, 1, 0);
+		}
+
+		if (enemy.equals(enemyOne) || enemy.equals(enemyTwo)
+				|| enemy.equals(enemyThree)) {
+			ArrayList<Projectile> projectiles = enemy.getProjectiles();
+			for (int i = 0; i < projectiles.size(); i++) {
+				Projectile p = (Projectile) projectiles.get(i);
+				if (p.isVisible()) {
+					if (p.isMoving()) {
+						batcher.draw(flameAnimation.getKeyFrame(runTime),
+								p.getX(), p.getY(), p.getWidth() / 2.0f,
+								p.getHeight() / 2.0f, p.getWidth(),
+								p.getHeight(), 1, 1, 0);
+					} else {
+						batcher.draw(lightAnimation.getKeyFrame(runTime),
+								p.getX() + 1, p.getY() + 4,
+								(p.getWidth() - 5) / 2.0f,
+								(p.getHeight() - 5) / 2.0f, p.getWidth() - 5,
+								p.getHeight() - 5, 1, 1, 0);
+					}
+				}
+			}
+		}
+	}
+
+	private void drawEnemyKnight(float runTime, Enemy enemy, Animation animation) {
+		if (!enemy.isAlive()) {
+			batcher.draw(scribble, enemy.getX(), enemy.getY(),
+					enemy.getWidth() / 2.0f, enemy.getHeight() / 2.0f,
+					enemy.getWidth(), enemy.getHeight(), 1, 1, 0);
+
+		} else if (enemy.isVisible()) {
+			if(enemy.isAttacking()) {
+				batcher.draw(enemyKnightAttackAnimation.getKeyFrame(runTime), enemy.getX(),
+						enemy.getY(), enemy.getWidth() / 2.0f,
+						enemy.getHeight() / 2.0f, enemy.getWidth(),
+						enemy.getHeight(), 1, 1, 0);
+
+			} else {
+			batcher.draw(animation.getKeyFrame(runTime), enemy.getX(),
+					enemy.getY(), enemy.getWidth() / 2.0f,
+					enemy.getHeight() / 2.0f, enemy.getWidth(),
+					enemy.getHeight(), 1, 1, 0);
+			}
+		}
+
+	}
+
+	private void drawEnemyWizard(float runTime, Enemy enemy, Animation animation) {
+		if (!enemy.isAlive()) {
+			batcher.draw(scribble, enemy.getX(), enemy.getY(),
+					enemy.getWidth() / 2.0f, enemy.getHeight() / 2.0f,
+					enemy.getWidth(), enemy.getHeight(), 1, 1, 0);
+
+		} else if (enemy.isVisible()) {
+			batcher.draw(animation.getKeyFrame(runTime), enemy.getX(),
+					enemy.getY(), enemy.getWidth() / 2.0f,
+					enemy.getHeight() / 2.0f, enemy.getWidth(),
+					enemy.getHeight(), 1, 1, 0);
+		}
+
+		ArrayList<Projectile> projectiles = enemy.getProjectiles();
+		for (int i = 0; i < projectiles.size(); i++) {
+			Projectile p = (Projectile) projectiles.get(i);
+			if (p.isVisible()) {
+				if (p.isMoving()) {
+					batcher.draw(flameAnimation.getKeyFrame(runTime), p.getX(),
+							p.getY(), p.getWidth() / 2.0f,
+							p.getHeight() / 2.0f, p.getWidth(), p.getHeight(),
+							1, 1, 0);
+				} else {
+					batcher.draw(lightAnimation.getKeyFrame(runTime),
+							p.getX() + 1, p.getY() + 4,
+							(p.getWidth() - 5) / 2.0f,
+							(p.getHeight() - 5) / 2.0f, p.getWidth() - 5,
+							p.getHeight() - 5, 1, 1, 0);
+				}
+			}
 		}
 
 	}
@@ -322,18 +404,24 @@ public class GameRenderer {
 				enemyOne.getBoundingCollisionCircle().y,
 				enemyOne.getBoundingCollisionCircle().radius);
 
-		shapeRenderer.circle(enemyTwo.getBoundingCollisionCircle().x,
-				enemyTwo.getBoundingCollisionCircle().y,
-				enemyTwo.getBoundingCollisionCircle().radius);
-		shapeRenderer.rect(enemyTwo.getBoundingCollisionRect().x, enemyTwo
-				.getBoundingCollisionRect().y, enemyTwo
-				.getBoundingCollisionRect().getWidth(), enemyTwo
+		shapeRenderer.circle(enemyFive.getBoundingCollisionCircle().x,
+				enemyFive.getBoundingCollisionCircle().y,
+				enemyFive.getBoundingCollisionCircle().radius);
+		shapeRenderer.rect(enemyFour.getBoundingCollisionRect().x, enemyFour
+				.getBoundingCollisionRect().y, enemyFour
+				.getBoundingCollisionRect().getWidth(), enemyFour
 				.getBoundingCollisionRect().getHeight());
 
-		shapeRenderer.rect(enemyThree.getBoundingCollisionRect().x, enemyThree
-				.getBoundingCollisionRect().y, enemyThree
-				.getBoundingCollisionRect().getWidth(), enemyThree
-				.getBoundingCollisionRect().getHeight());
+
+		ArrayList<Projectile> projectiles = enemyOne.getProjectiles();
+		for (int i = 0; i < projectiles.size(); i++) {
+			Projectile p = (Projectile) projectiles.get(i);
+			if (p.isVisible()) {
+				shapeRenderer.circle(p.getBoundingCollision().x,
+						p.getBoundingCollision().y,
+						p.getBoundingCollision().radius);
+			}
+		}
 
 		shapeRenderer.end();
 

@@ -26,11 +26,9 @@ public class Scrollable {
         // If the Scrollable object is no longer visible:
         if (position.x + width < 0) {
             isScrolledLeft = true;
+            isVisible = false;
         }
         
-        if(position.x <= 204) {
-        	isVisible = true;
-        }
     }
 
     // Reset: Should Override in subclass for more specific behavior.
