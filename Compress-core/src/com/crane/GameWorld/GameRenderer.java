@@ -88,7 +88,7 @@ public class GameRenderer {
 		enemyFour = scroller.getEnemyFour();
 		enemyFive = scroller.getEnemyFive();
 		enemySix = scroller.getEnemySix();
-		
+
 		enemySeven = scroller.getEnemySeven();
 
 		boss = scroller.getBoss();
@@ -250,7 +250,7 @@ public class GameRenderer {
 		drawEnemyKnight(runTime, enemyFour, enemyKnightAnimation);
 		drawEnemyKnight(runTime, enemyFive, enemyKnightAnimation);
 		drawEnemyKnight(runTime, enemySix, enemyKnightAnimation);
-		
+
 		drawEnemySummoner(runTime, enemySeven, enemySummonerAnimation);
 
 	}
@@ -336,28 +336,31 @@ public class GameRenderer {
 					enemy.getHeight(), 1, 1, 0);
 		}
 
-		ArrayList<Projectile> projectiles = enemy.getProjectiles();
-		for (int i = 0; i < projectiles.size(); i++) {
-			Projectile p = (Projectile) projectiles.get(i);
-			if (p.isVisible()) {
-				if (p.isMoving()) {
-					batcher.draw(flameAnimation.getKeyFrame(runTime), p.getX(),
-							p.getY(), p.getWidth() / 2.0f,
-							p.getHeight() / 2.0f, p.getWidth(), p.getHeight(),
-							1, 1, 0);
-				} else {
-					batcher.draw(lightAnimation.getKeyFrame(runTime),
-							p.getX() + 1, p.getY() + 4,
-							(p.getWidth() - 5) / 2.0f,
-							(p.getHeight() - 5) / 2.0f, p.getWidth() - 5,
-							p.getHeight() - 5, 1, 1, 0);
+		if (enemy.isAlive() && enemy.isVisible()) {
+			ArrayList<Projectile> projectiles = enemy.getProjectiles();
+			for (int i = 0; i < projectiles.size(); i++) {
+				Projectile p = (Projectile) projectiles.get(i);
+				if (p.isVisible()) {
+					if (p.isMoving()) {
+						batcher.draw(flameAnimation.getKeyFrame(runTime),
+								p.getX(), p.getY(), p.getWidth() / 2.0f,
+								p.getHeight() / 2.0f, p.getWidth(),
+								p.getHeight(), 1, 1, 0);
+					} else {
+						batcher.draw(lightAnimation.getKeyFrame(runTime),
+								p.getX() + 1, p.getY() + 4,
+								(p.getWidth() - 5) / 2.0f,
+								(p.getHeight() - 5) / 2.0f, p.getWidth() - 5,
+								p.getHeight() - 5, 1, 1, 0);
+					}
 				}
 			}
 		}
 
 	}
-	
-	private void drawEnemySummoner(float runTime, Enemy enemy, Animation animation) {
+
+	private void drawEnemySummoner(float runTime, Enemy enemy,
+			Animation animation) {
 		if (!enemy.isAlive()) {
 			batcher.draw(soulAnimation.getKeyFrame(runTime), enemy.getX(),
 					enemy.getY(), enemy.getWidth() / 2.0f,

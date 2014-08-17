@@ -50,22 +50,22 @@ public class ScrollHandler {
 		enemyColl = new ArrayList<Enemy>();
 		enemyCollOriginal = new ArrayList<Enemy>();
 
-		enemyOne = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 20, 20,
-				SCROLL_SPEED, EnemyType.WIZARD);
-		enemyTwo = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 20, 20,
-				SCROLL_SPEED, EnemyType.WIZARD);
-		enemyThree = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 20, 20,
-				SCROLL_SPEED, EnemyType.WIZARD);
+		enemyOne = new Wizard(getEnemyRanPosX(), getEnemyRanPosY(), 20, 20,
+				SCROLL_SPEED);
+		enemyTwo = new Wizard(getEnemyRanPosX(), getEnemyRanPosY(), 20, 20,
+				SCROLL_SPEED);
+		enemyThree = new Wizard(getEnemyRanPosX(), getEnemyRanPosY(), 20, 20,
+				SCROLL_SPEED);
 
-		enemyFour = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 22, 22,
-				SCROLL_SPEED - getEnemyRanVelX(), EnemyType.KNIGHT);
-		enemyFive = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 22, 22,
-				SCROLL_SPEED - getEnemyRanVelX(), EnemyType.KNIGHT);
-		enemySix = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 22, 22,
-				SCROLL_SPEED - getEnemyRanVelX(), EnemyType.KNIGHT);
+		enemyFour = new Knight(getEnemyRanPosX(), getEnemyRanPosY(), 22, 22,
+				SCROLL_SPEED - getEnemyRanVelX());
+		enemyFive = new Knight(getEnemyRanPosX(), getEnemyRanPosY(), 22, 22,
+				SCROLL_SPEED - getEnemyRanVelX());
+		enemySix = new Knight(getEnemyRanPosX(), getEnemyRanPosY(), 22, 22,
+				SCROLL_SPEED - getEnemyRanVelX());
 
-		enemySeven = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 22, 22,
-				SCROLL_SPEED + 10, EnemyType.SUMMONER);
+		enemySeven = new Summoner(getEnemyRanPosX(), getEnemyRanPosY(), 15, 15,
+				SCROLL_SPEED + 10);
 
 		enemyColl.add(enemyOne);
 		enemyColl.add(enemyTwo);
@@ -144,10 +144,8 @@ public class ScrollHandler {
 		enemyTwo.reset(getEnemyRanPosX(), getEnemyRanPosY(), 0);
 		enemyThree.reset(getEnemyRanPosX(), getEnemyRanPosY(), 0);
 
-		enemyFour
-				.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
-		enemyFive
-				.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
+		enemyFour.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
+		enemyFive.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
 		enemySix.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
 
 		enemySeven.reset(getEnemyRanPosX(), getEnemyRanPosY(), -10);
