@@ -12,9 +12,6 @@ public class AssetLoader {
 	
 	public static Texture texture, hero, enemy, boss;
 	
-	public static Texture enemyT;
-	
-	
 	public static TextureRegion bg;
     
     public static Animation heroRunAnimation, heroStillAnimation;
@@ -36,10 +33,13 @@ public class AssetLoader {
     public static Animation enemyKnightAnimation;
     public static Animation enemyKnightAttackAnimation;
     
-    public static TextureRegion enemyGoblinOne, enemyGoblinTwo, enemyGoblinThree;
-    public static Animation enemyGoblinAnimation;
+    public static TextureRegion enemySummonerOne, enemySummonerTwo, enemySummonerThree;
+    public static Animation enemySummonerAnimation;
     
-    public static TextureRegion scribble;
+    
+    public static TextureRegion soulOne, soulTwo, soulThree;
+    public static Animation soulAnimation;
+    
     
     public static TextureRegion bossHead, bossChomp;
     
@@ -86,9 +86,20 @@ public class AssetLoader {
         loadBoss();
                
         // Effect
-        scribble = new TextureRegion(enemyT, 300, 0, 100, 100);
-        scribble.flip(false, true);
+        soulOne = new TextureRegion(enemy, 0, 300, 100, 100);
+        soulOne.flip(false, true);
         
+        soulTwo = new TextureRegion(enemy, 100, 300, 100, 100);
+        soulTwo.flip(false, true);
+        
+        soulThree = new TextureRegion(enemy, 200, 300, 100, 100);
+        soulThree.flip(false, true);
+        
+        // Enemy Wizard Animation
+        TextureRegion[] soul = {soulOne, soulTwo, soulThree};
+        soulAnimation = new Animation(0.2f, soul);
+        soulAnimation.setPlayMode(Animation.PlayMode.LOOP);
+
                 
         // Font
         font = new BitmapFont(Gdx.files.internal("text.fnt"));
@@ -159,7 +170,6 @@ public class AssetLoader {
         font.dispose();
         
         
-        enemyT.dispose();
         
     }
     
@@ -229,10 +239,6 @@ public class AssetLoader {
     private static void loadEnemy() {
     	
     	// Sprite File
-    	enemyT = new Texture(Gdx.files.internal("Enemy Sprite ver Two.png"));
-        enemyT.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
-        
-        
         enemy = new Texture(Gdx.files.internal("Enemy Texture.png"));
         enemy.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
         
@@ -308,20 +314,20 @@ public class AssetLoader {
 
         
         
-        // Enemy Goblin
-        enemyGoblinOne = new TextureRegion(enemyT, 0, 200, 100, 100);
-        enemyGoblinOne.flip(false, true);
+        // Enemy Summoner
+        enemySummonerOne = new TextureRegion(enemy, 0, 200, 100, 100);
+        enemySummonerOne.flip(false, true);
         
-        enemyGoblinTwo = new TextureRegion(enemyT, 100, 200, 100, 100);
-        enemyGoblinTwo.flip(false, true);
+        enemySummonerTwo = new TextureRegion(enemy, 100, 200, 100, 100);
+        enemySummonerTwo.flip(false, true);
         
-        enemyGoblinThree = new TextureRegion(enemyT, 200, 200, 100, 100);
-        enemyGoblinThree.flip(false, true);
+        enemySummonerThree = new TextureRegion(enemy, 200, 200, 100, 100);
+        enemySummonerThree.flip(false, true);
         
-        // Enemy Goblin Animation
-        TextureRegion[] goblin = {enemyGoblinOne, enemyGoblinTwo, enemyGoblinThree};
-        enemyGoblinAnimation = new Animation(0.2f, goblin);
-        enemyGoblinAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
+        // Enemy Summoner Animation
+        TextureRegion[] summoner = {enemySummonerOne, enemySummonerTwo, enemySummonerThree};
+        enemySummonerAnimation = new Animation(0.2f, summoner);
+        enemySummonerAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
 
 
     }

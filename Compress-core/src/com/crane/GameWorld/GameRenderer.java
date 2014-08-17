@@ -35,22 +35,25 @@ public class GameRenderer {
 	private ScrollHandler scroller;
 	private Background bgFront, bgBack;
 	private Enemy enemyOne, enemyTwo, enemyThree, enemyFour, enemyFive,
-			enemySix;
+			enemySix, enemySeven;
 	private Boss boss;
 
 	// Game Assets
 	private TextureRegion bg;
 	private TextureRegion bgFrontBody, bgBackBody;
 
-	private Animation enemyWizardAnimation, enemyKnightAnimation;
+	private Animation enemyWizardAnimation, enemyKnightAnimation,
+			enemySummonerAnimation;
 	private Animation flameAnimation;
 	private Animation lightAnimation;
+
+	private TextureRegion enemyKnightSwingTwo;
 	private Animation enemyKnightAttackAnimation;
+
+	private Animation soulAnimation;
 
 	private Animation heroRunAnimation, heroStillAnimation;
 	private TextureRegion heroJump, heroFall;
-
-	private TextureRegion scribble;
 
 	private TextureRegion bossBody, bossChomp;
 
@@ -85,6 +88,8 @@ public class GameRenderer {
 		enemyFour = scroller.getEnemyFour();
 		enemyFive = scroller.getEnemyFive();
 		enemySix = scroller.getEnemySix();
+		
+		enemySeven = scroller.getEnemySeven();
 
 		boss = scroller.getBoss();
 
@@ -102,8 +107,7 @@ public class GameRenderer {
 
 		enemyWizardAnimation = AssetLoader.enemyWizardAnimation;
 		enemyKnightAnimation = AssetLoader.enemyKnightAnimation;
-
-		scribble = AssetLoader.scribble;
+		enemySummonerAnimation = AssetLoader.enemySummonerAnimation;
 
 		bossBody = AssetLoader.bossHead;
 		bossChomp = AssetLoader.bossChomp;
@@ -111,7 +115,10 @@ public class GameRenderer {
 		flameAnimation = AssetLoader.flameAnimation;
 		lightAnimation = AssetLoader.lightAnimation;
 
+		enemyKnightSwingTwo = AssetLoader.enemyKnightSwingTwo;
 		enemyKnightAttackAnimation = AssetLoader.enemyKnightAttackAnimation;
+
+		soulAnimation = AssetLoader.soulAnimation;
 
 	}
 
@@ -165,7 +172,7 @@ public class GameRenderer {
 		batcher.end();
 
 		// Check Collision
-		//drawCollisionCheck();
+		// drawCollisionCheck();
 
 	}
 
@@ -206,9 +213,10 @@ public class GameRenderer {
 		case 2:
 
 			// Hero is dead
-			batcher.draw(scribble, hero.getX(), hero.getY(),
-					hero.getWidth() / 2.0f, hero.getHeight() / 2.0f,
-					hero.getWidth(), hero.getHeight(), 1, 1, 0);
+			batcher.draw(soulAnimation.getKeyFrame(runTime), hero.getX(),
+					hero.getY(), hero.getWidth() / 2.0f,
+					hero.getHeight() / 2.0f, hero.getWidth(), hero.getHeight(),
+					1, 1, 0);
 
 			break;
 
@@ -242,14 +250,17 @@ public class GameRenderer {
 		drawEnemyKnight(runTime, enemyFour, enemyKnightAnimation);
 		drawEnemyKnight(runTime, enemyFive, enemyKnightAnimation);
 		drawEnemyKnight(runTime, enemySix, enemyKnightAnimation);
+		
+		drawEnemySummoner(runTime, enemySeven, enemySummonerAnimation);
 
 	}
 
 	private void drawEnemy(float runTime, Enemy enemy, Animation animation) {
 		if (!enemy.isAlive()) {
-			batcher.draw(scribble, enemy.getX(), enemy.getY(),
-					enemy.getWidth() / 2.0f, enemy.getHeight() / 2.0f,
-					enemy.getWidth(), enemy.getHeight(), 1, 1, 0);
+			batcher.draw(soulAnimation.getKeyFrame(runTime), enemy.getX(),
+					enemy.getY(), enemy.getWidth() / 2.0f,
+					enemy.getHeight() / 2.0f, enemy.getWidth(),
+					enemy.getHeight(), 1, 1, 0);
 
 		} else if (enemy.isVisible()) {
 			batcher.draw(animation.getKeyFrame(runTime), enemy.getX(),
@@ -283,22 +294,29 @@ public class GameRenderer {
 
 	private void drawEnemyKnight(float runTime, Enemy enemy, Animation animation) {
 		if (!enemy.isAlive()) {
-			batcher.draw(scribble, enemy.getX(), enemy.getY(),
-					enemy.getWidth() / 2.0f, enemy.getHeight() / 2.0f,
-					enemy.getWidth(), enemy.getHeight(), 1, 1, 0);
-
-		} else if (enemy.isVisible()) {
-			if(enemy.isAttacking()) {
-				batcher.draw(enemyKnightAttackAnimation.getKeyFrame(runTime), enemy.getX(),
-						enemy.getY(), enemy.getWidth() / 2.0f,
-						enemy.getHeight() / 2.0f, enemy.getWidth(),
-						enemy.getHeight(), 1, 1, 0);
-
-			} else {
-			batcher.draw(animation.getKeyFrame(runTime), enemy.getX(),
+			batcher.draw(soulAnimation.getKeyFrame(runTime), enemy.getX(),
 					enemy.getY(), enemy.getWidth() / 2.0f,
 					enemy.getHeight() / 2.0f, enemy.getWidth(),
 					enemy.getHeight(), 1, 1, 0);
+
+		} else if (enemy.isVisible()) {
+			if (enemy.isAttacking()) {
+				TextureRegion frame = enemyKnightAttackAnimation
+						.getKeyFrame(runTime);
+				if (frame.equals(enemyKnightSwingTwo)) {
+					enemy.swordThrust(true);
+				} else {
+					enemy.swordThrust(false);
+				}
+				batcher.draw(frame, enemy.getX(), enemy.getY(),
+						enemy.getWidth() / 2.0f, enemy.getHeight() / 2.0f,
+						enemy.getWidth(), enemy.getHeight(), 1, 1, 0);
+
+			} else {
+				batcher.draw(animation.getKeyFrame(runTime), enemy.getX(),
+						enemy.getY(), enemy.getWidth() / 2.0f,
+						enemy.getHeight() / 2.0f, enemy.getWidth(),
+						enemy.getHeight(), 1, 1, 0);
 			}
 		}
 
@@ -306,9 +324,10 @@ public class GameRenderer {
 
 	private void drawEnemyWizard(float runTime, Enemy enemy, Animation animation) {
 		if (!enemy.isAlive()) {
-			batcher.draw(scribble, enemy.getX(), enemy.getY(),
-					enemy.getWidth() / 2.0f, enemy.getHeight() / 2.0f,
-					enemy.getWidth(), enemy.getHeight(), 1, 1, 0);
+			batcher.draw(soulAnimation.getKeyFrame(runTime), enemy.getX(),
+					enemy.getY(), enemy.getWidth() / 2.0f,
+					enemy.getHeight() / 2.0f, enemy.getWidth(),
+					enemy.getHeight(), 1, 1, 0);
 
 		} else if (enemy.isVisible()) {
 			batcher.draw(animation.getKeyFrame(runTime), enemy.getX(),
@@ -334,6 +353,22 @@ public class GameRenderer {
 							p.getHeight() - 5, 1, 1, 0);
 				}
 			}
+		}
+
+	}
+	
+	private void drawEnemySummoner(float runTime, Enemy enemy, Animation animation) {
+		if (!enemy.isAlive()) {
+			batcher.draw(soulAnimation.getKeyFrame(runTime), enemy.getX(),
+					enemy.getY(), enemy.getWidth() / 2.0f,
+					enemy.getHeight() / 2.0f, enemy.getWidth(),
+					enemy.getHeight(), 1, 1, 0);
+
+		} else if (enemy.isVisible()) {
+			batcher.draw(animation.getKeyFrame(runTime), enemy.getX(),
+					enemy.getY(), enemy.getWidth() / 2.0f,
+					enemy.getHeight() / 2.0f, enemy.getWidth(),
+					enemy.getHeight(), 1, 1, 0);
 		}
 
 	}
@@ -400,20 +435,35 @@ public class GameRenderer {
 							.getHeight());
 		}
 
-		shapeRenderer.circle(enemyOne.getBoundingCollisionCircle().x,
-				enemyOne.getBoundingCollisionCircle().y,
-				enemyOne.getBoundingCollisionCircle().radius);
+		drawWizardCollision(enemyOne);
+		drawWizardCollision(enemyTwo);
+		drawWizardCollision(enemyThree);
 
-		shapeRenderer.circle(enemyFive.getBoundingCollisionCircle().x,
-				enemyFive.getBoundingCollisionCircle().y,
-				enemyFive.getBoundingCollisionCircle().radius);
-		shapeRenderer.rect(enemyFour.getBoundingCollisionRect().x, enemyFour
-				.getBoundingCollisionRect().y, enemyFour
-				.getBoundingCollisionRect().getWidth(), enemyFour
-				.getBoundingCollisionRect().getHeight());
+		drawKnightCollision(enemyFour);
+		drawKnightCollision(enemyFive);
+		drawKnightCollision(enemySix);
 
+		shapeRenderer.end();
 
-		ArrayList<Projectile> projectiles = enemyOne.getProjectiles();
+	}
+
+	private void drawKnightCollision(Enemy enemy) {
+		shapeRenderer.circle(enemy.getBoundingCollisionCircle().x,
+				enemy.getBoundingCollisionCircle().y,
+				enemy.getBoundingCollisionCircle().radius);
+
+		shapeRenderer.rect(enemy.getBoundingCollisionRect().x, enemy
+				.getBoundingCollisionRect().y, enemy.getBoundingCollisionRect()
+				.getWidth(), enemy.getBoundingCollisionRect().getHeight());
+
+	}
+
+	private void drawWizardCollision(Enemy enemy) {
+		shapeRenderer.circle(enemy.getBoundingCollisionCircle().x,
+				enemy.getBoundingCollisionCircle().y,
+				enemy.getBoundingCollisionCircle().radius);
+
+		ArrayList<Projectile> projectiles = enemy.getProjectiles();
 		for (int i = 0; i < projectiles.size(); i++) {
 			Projectile p = (Projectile) projectiles.get(i);
 			if (p.isVisible()) {
@@ -422,8 +472,6 @@ public class GameRenderer {
 						p.getBoundingCollision().radius);
 			}
 		}
-
-		shapeRenderer.end();
 
 	}
 

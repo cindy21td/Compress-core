@@ -11,7 +11,7 @@ public class ScrollHandler {
 	private GameWorld gameWorld;
 
 	private Enemy enemyOne, enemyTwo, enemyThree, enemyFour, enemyFive,
-			enemySix;
+			enemySix, enemySeven;
 	private List<Enemy> enemyCollOriginal;
 	private List<Enemy> enemyColl;
 
@@ -29,7 +29,7 @@ public class ScrollHandler {
 	public static final int SCROLL_SPEED = -59;
 
 	public enum EnemyType {
-		WIZARD, KNIGHT;
+		WIZARD, KNIGHT, SUMMONER;
 	}
 
 	public ScrollHandler(GameWorld world, float yPos) {
@@ -64,6 +64,9 @@ public class ScrollHandler {
 		enemySix = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 22, 22,
 				SCROLL_SPEED - getEnemyRanVelX(), EnemyType.KNIGHT);
 
+		enemySeven = new Enemy(getEnemyRanPosX(), getEnemyRanPosY(), 22, 22,
+				SCROLL_SPEED + 10, EnemyType.SUMMONER);
+
 		enemyColl.add(enemyOne);
 		enemyColl.add(enemyTwo);
 		enemyColl.add(enemyThree);
@@ -71,12 +74,16 @@ public class ScrollHandler {
 		enemyColl.add(enemyFive);
 		enemyColl.add(enemySix);
 
+		enemyColl.add(enemySeven);
+
 		enemyCollOriginal.add(enemyOne);
 		enemyCollOriginal.add(enemyTwo);
 		enemyCollOriginal.add(enemyThree);
 		enemyCollOriginal.add(enemyFour);
 		enemyCollOriginal.add(enemyFive);
 		enemyCollOriginal.add(enemySix);
+
+		enemyCollOriginal.add(enemySeven);
 
 		setRandomVisibility();
 		setRandomVisibility();
@@ -108,6 +115,8 @@ public class ScrollHandler {
 		enemyUpdate(delta, enemyFive);
 		enemyUpdate(delta, enemySix);
 
+		enemyUpdate(delta, enemySeven);
+
 		if (bossFight) {
 			boss.update(delta);
 		}
@@ -118,6 +127,11 @@ public class ScrollHandler {
 		enemyOne.stop();
 		enemyTwo.stop();
 		enemyThree.stop();
+		enemyFour.stop();
+		enemyFive.stop();
+		enemySix.stop();
+
+		enemySeven.stop();
 
 		bgFront.stop();
 		bgBack.stop();
@@ -135,6 +149,8 @@ public class ScrollHandler {
 		enemyFive
 				.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
 		enemySix.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
+
+		enemySeven.reset(getEnemyRanPosX(), getEnemyRanPosY(), -10);
 
 		enemyColl = new ArrayList<Enemy>(enemyCollOriginal);
 
@@ -160,13 +176,15 @@ public class ScrollHandler {
 
 		return (enemyOne.collides(hero) || enemyTwo.collides(hero)
 				|| enemyThree.collides(hero) || enemyFour.collides(hero)
-				|| enemyFive.collides(hero) || enemySix.collides(hero));
+				|| enemyFive.collides(hero) || enemySix.collides(hero) || enemySeven
+					.collides(hero));
 	}
 
 	public boolean enemyIsHit(Hero hero) {
 		return (enemyOne.isHit(hero) || enemyTwo.isHit(hero)
 				|| enemyThree.isHit(hero) || enemyFour.isHit(hero)
-				|| enemyFive.isHit(hero) || enemySix.isHit(hero));
+				|| enemyFive.isHit(hero) || enemySix.isHit(hero) || enemySeven
+					.isHit(hero));
 	}
 
 	public boolean bossIsHit() {
@@ -207,12 +225,16 @@ public class ScrollHandler {
 		if (enemy.isVisible()) {
 			enemy.update(delta);
 			if (enemy.isScrolledLeft()) {
-				if(enemy.equals(enemyOne) || enemy.equals(enemyTwo) || enemy.equals(enemyThree)) {
-					enemy.reset(getEnemyRanPosX(), getEnemyRanPosY(),
-							0);
+				if (enemy.equals(enemyOne) || enemy.equals(enemyTwo)
+						|| enemy.equals(enemyThree)) {
+					enemy.reset(getEnemyRanPosX(), getEnemyRanPosY(), 0);
+				} else if (enemy.equals(enemySeven)) {
+					enemy.reset(getEnemyRanPosX(), getEnemyRanPosY(), -10);
+
 				} else {
-				enemy.reset(getEnemyRanPosX(), getEnemyRanPosY(),
-						getEnemyRanVelX());
+					enemy.reset(getEnemyRanPosX(), getEnemyRanPosY(),
+							getEnemyRanVelX());
+
 				}
 				enemyColl.add(enemy);
 				setRandomVisibility();
@@ -254,6 +276,10 @@ public class ScrollHandler {
 
 	public Enemy getEnemySix() {
 		return enemySix;
+	}
+
+	public Enemy getEnemySeven() {
+		return enemySeven;
 	}
 
 	public Background getBgFront() {

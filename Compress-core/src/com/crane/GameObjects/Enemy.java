@@ -19,6 +19,7 @@ public class Enemy extends Scrollable {
 	private boolean alive;
 	private boolean attacking;
 	private boolean projectileIsEnabled;
+	private boolean swordThrust;
 
 	private float deltaTimeStart;
 	private float deltaTimeDuration;
@@ -42,6 +43,7 @@ public class Enemy extends Scrollable {
 		eaten = false;
 		alive = true;
 		attacking = false;
+		swordThrust = false;
 
 		attackDuration = 0.8f;
 
@@ -102,8 +104,11 @@ public class Enemy extends Scrollable {
 		alive = true;
 		eaten = false;
 		attacking = false;
+		swordThrust = false;
 		deltaTimeStart = 1.5f;
 		projectiles.clear();
+		boundingCollisionCirc.set(0,0,0);
+		boundingCollisionRect.set(0,0,0,0);
 		super.reset(newX);
 	}
 
@@ -123,14 +128,18 @@ public class Enemy extends Scrollable {
 				}
 
 			}
+			boolean hitBySword = false;
+			if(attacking) {
+				hitBySword = Intersector.overlaps(hero.getBoundingBody(),
+						boundingCollisionRect);
+			}
+
 			boolean isHit = false;
 			if (position.x < hero.getX() + hero.getWidth()) {
-				isHit = (Intersector.overlaps(hero.getBoundingBody(),
-						boundingCollisionRect) || Intersector.overlaps(
-						hero.getBoundingBody(), boundingCollisionCirc));
-
+				isHit = Intersector.overlaps(
+						hero.getBoundingBody(), boundingCollisionCirc);
 			}
-			return (hitByProjectile || isHit);
+			return (hitByProjectile || hitBySword || isHit);
 
 		}
 		return false;
@@ -159,18 +168,19 @@ public class Enemy extends Scrollable {
 			break;
 
 		case KNIGHT:
-			if (attacking) {
-				if (deltaTimeStart - deltaTimeDuration > attackDuration - 0.4f) {
-					boundingCollisionRect.set(position.x + 2, position.y + 17,
+			if (swordThrust) {
+					boundingCollisionRect.set(position.x + 1, position.y + 17,
 							7, 2);
-				} else {
-					boundingCollisionRect.set(position.x + 3, position.y + 17,
+			} else {
+				boundingCollisionRect.set(position.x + 3, position.y + 17,
 							7, 2);
-				}
 			}
 			boundingCollisionCirc.set(position.x + 13, position.y + 15, 7f);
 			break;
 
+		case SUMMONER:
+			boundingCollisionCirc.set(position.x + 10, position.y + 12f, 6f);
+			break;
 		}
 
 	}
@@ -233,5 +243,10 @@ public class Enemy extends Scrollable {
 	public ArrayList getProjectiles() {
 		return projectiles;
 	}
+	
+	public void swordThrust(boolean check) {
+		swordThrust = check;
+	}
+	
 
 }
