@@ -152,12 +152,7 @@ public class GameWorld {
     }
     
     private void checkState() {
-    	// Boss
-    	if(!scroller.getBossFight() && (score > 0) && (score % 5 == 0)) {
-        	scroller.setBossAlive(true);
-        	scroller.toogleBossFight(true);
-        }
-        
+    	
     	// Normal and Rush
         if((rushDistance != 0) && (distance / 8 - rushDistance > RUSH_DURATION)) {
         	scroller.changeStage(RunningState.NORMAL);

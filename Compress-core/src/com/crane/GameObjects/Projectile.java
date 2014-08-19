@@ -37,6 +37,7 @@ public class Projectile extends Scrollable {
 		position.y = newY;
 		velocity.x = newVelX;
 		isMoving = false;
+		isVisible = false;
 		delayTime = 0;
 
 		super.reset(newX);

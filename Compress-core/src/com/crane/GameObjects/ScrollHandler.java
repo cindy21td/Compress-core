@@ -43,29 +43,22 @@ public class ScrollHandler {
 		bgFront = new Background(0, 0, 204, 136, SCROLL_SPEED);
 		bgBack = new Background(204, 0, 204, 136, SCROLL_SPEED);
 
-		boss = new Boss(-150, 0, 150, 136, 10, this);
+		boss = new Boss(-157, -80, 157, 120, 10, this);
 	}
 
 	public void initializeEnemy() {
 		enemyColl = new ArrayList<Enemy>();
 		enemyCollOriginal = new ArrayList<Enemy>();
 
-		enemyOne = new Wizard(getEnemyRanPosX(), getEnemyRanPosY(), 20, 20,
-				SCROLL_SPEED);
-		enemyTwo = new Wizard(getEnemyRanPosX(), getEnemyRanPosY(), 20, 20,
-				SCROLL_SPEED);
-		enemyThree = new Wizard(getEnemyRanPosX(), getEnemyRanPosY(), 20, 20,
-				SCROLL_SPEED);
+		enemyOne = new Wizard(20, 20, SCROLL_SPEED);
+		enemyTwo = new Wizard(20, 20, SCROLL_SPEED);
+		enemyThree = new Wizard(20, 20, SCROLL_SPEED);
 
-		enemyFour = new Knight(getEnemyRanPosX(), getEnemyRanPosY(), 22, 22,
-				SCROLL_SPEED - getEnemyRanVelX());
-		enemyFive = new Knight(getEnemyRanPosX(), getEnemyRanPosY(), 22, 22,
-				SCROLL_SPEED - getEnemyRanVelX());
-		enemySix = new Knight(getEnemyRanPosX(), getEnemyRanPosY(), 22, 22,
-				SCROLL_SPEED - getEnemyRanVelX());
+		enemyFour = new Knight(22, 22, SCROLL_SPEED - getEnemyRanVelX());
+		enemyFive = new Knight(22, 22, SCROLL_SPEED - getEnemyRanVelX());
+		enemySix = new Knight(22, 22, SCROLL_SPEED - getEnemyRanVelX());
 
-		enemySeven = new Summoner(getEnemyRanPosX(), getEnemyRanPosY(), 15, 15,
-				SCROLL_SPEED + 10);
+		enemySeven = new Summoner(18, 18, SCROLL_SPEED + 10);
 
 		enemyColl.add(enemyOne);
 		enemyColl.add(enemyTwo);
@@ -93,6 +86,10 @@ public class ScrollHandler {
 	public void setRandomVisibility() {
 		int ranIndex = MathUtils.random(0, enemyColl.size() - 1);
 		Enemy e = enemyColl.get(ranIndex);
+		// if (e.getType() == EnemyType.SUMMONER) {
+		// ranIndex = MathUtils.random(0, enemyColl.size() - 1);
+		// e = enemyColl.get(ranIndex);
+		// }
 		enemyColl.remove(e);
 		e.setIsVisible(true);
 	}
@@ -140,15 +137,15 @@ public class ScrollHandler {
 	}
 
 	public void onRestart() {
-		enemyOne.reset(getEnemyRanPosX(), getEnemyRanPosY(), 0);
-		enemyTwo.reset(getEnemyRanPosX(), getEnemyRanPosY(), 0);
-		enemyThree.reset(getEnemyRanPosX(), getEnemyRanPosY(), 0);
+		enemyOne.reset(0);
+		enemyTwo.reset(0);
+		enemyThree.reset(0);
 
-		enemyFour.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
-		enemyFive.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
-		enemySix.reset(getEnemyRanPosX(), getEnemyRanPosY(), getEnemyRanVelX());
+		enemyFour.reset(getEnemyRanVelX());
+		enemyFive.reset(getEnemyRanVelX());
+		enemySix.reset(getEnemyRanVelX());
 
-		enemySeven.reset(getEnemyRanPosX(), getEnemyRanPosY(), -10);
+		enemySeven.reset(-10);
 
 		enemyColl = new ArrayList<Enemy>(enemyCollOriginal);
 
@@ -164,18 +161,22 @@ public class ScrollHandler {
 	}
 
 	public boolean collides(Hero hero) {
-		if (enemyIsHit(hero)) {
-			gameWorld.addScore(1);
-		}
+		if (boss.hasWon()) {
+			return false;
+		} else {
+			if (enemyIsHit(hero)) {
+				gameWorld.addScore(1);
+			}
 
-		if (bossFight && bossIsHit()) {
-			gameWorld.addScore(2);
-		}
+			if (bossFight && bossIsHit()) {
+				gameWorld.addScore(2);
+			}
 
-		return (enemyOne.collides(hero) || enemyTwo.collides(hero)
-				|| enemyThree.collides(hero) || enemyFour.collides(hero)
-				|| enemyFive.collides(hero) || enemySix.collides(hero) || enemySeven
-					.collides(hero));
+			return (enemyOne.collides(hero) || enemyTwo.collides(hero)
+					|| enemyThree.collides(hero) || enemyFour.collides(hero)
+					|| enemyFive.collides(hero) || enemySix.collides(hero) || enemySeven
+						.collides(hero));
+		}
 	}
 
 	public boolean enemyIsHit(Hero hero) {
@@ -189,18 +190,6 @@ public class ScrollHandler {
 		return (boss.collides(enemyOne) || boss.collides(enemyTwo)
 				|| boss.collides(enemyThree) || boss.collides(enemyFour)
 				|| boss.collides(enemyFive) || boss.collides(enemySix));
-	}
-
-	public float getEnemyRanPosX() {
-		return MathUtils.random(204, 235);
-	}
-
-	public float getEnemyRanPosY() {
-		if (bossFight) {
-			return MathUtils.random(80, 107);
-		}
-
-		return MathUtils.random(50, 112);
 	}
 
 	public float getEnemyRanVelX() {
@@ -225,16 +214,22 @@ public class ScrollHandler {
 			if (enemy.isScrolledLeft()) {
 				if (enemy.equals(enemyOne) || enemy.equals(enemyTwo)
 						|| enemy.equals(enemyThree)) {
-					enemy.reset(getEnemyRanPosX(), getEnemyRanPosY(), 0);
-				} else if (enemy.equals(enemySeven)) {
-					enemy.reset(getEnemyRanPosX(), getEnemyRanPosY(), -10);
+					enemy.reset(0);
+					enemyColl.add(enemy);
 
+				} else if (enemy.equals(enemySeven)) {
+					if (enemy.isAlive()) {
+						setBossAlive(true);
+						toogleBossFight(true);
+					} else {
+						enemyColl.add(enemy);
+					}
+					enemy.reset(-10);
 				} else {
-					enemy.reset(getEnemyRanPosX(), getEnemyRanPosY(),
-							getEnemyRanVelX());
+					enemy.reset(getEnemyRanVelX());
+					enemyColl.add(enemy);
 
 				}
-				enemyColl.add(enemy);
 				setRandomVisibility();
 			}
 		}
@@ -249,7 +244,7 @@ public class ScrollHandler {
 	}
 
 	public boolean bossWins() {
-		return boss.wins();
+		return boss.dropped();
 	}
 
 	public Enemy getEnemyOne() {
@@ -299,6 +294,8 @@ public class ScrollHandler {
 	public void toogleBossFight(boolean check) {
 		if (check) {
 			boss.onRestart();
+		} else {
+			enemyColl.add(enemySeven);
 		}
 		bossFight = check;
 	}

@@ -41,7 +41,8 @@ public class AssetLoader {
     public static Animation soulAnimation;
     
     
-    public static TextureRegion bossHead, bossChomp;
+    public static TextureRegion bossOne, bossTwo, bossThree;
+    public static Animation bossAnimation;
     
     
     public static Texture logoTexture;
@@ -334,15 +335,21 @@ public class AssetLoader {
     
     public static void loadBoss() {
 
-        boss = new Texture(Gdx.files.internal("Boss Sprite ver One.png"));
+        boss = new Texture(Gdx.files.internal("Boss Texture.png"));
         boss.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
         
-        bossChomp = new TextureRegion(boss, 0, 0, 300, 272);
-        bossChomp.flip(false, true);
+        bossOne = new TextureRegion(boss, 0, 0, 314, 240);
+        bossOne.flip(false, true);
         
-        bossHead = new TextureRegion(boss, 0, 272, 300, 272);
-        bossHead.flip(false, true);
+        bossTwo = new TextureRegion(boss, 314, 0, 314, 240);
+        bossTwo.flip(false, true);
         
+        bossThree = new TextureRegion(boss, 0, 240, 314, 240);
+        bossThree.flip(false, true);
+
+        TextureRegion[] bossColl = {bossOne, bossTwo, bossThree};
+        bossAnimation = new Animation(0.2f, bossColl);
+        bossAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
     }
 	
 }
