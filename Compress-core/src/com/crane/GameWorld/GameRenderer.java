@@ -53,7 +53,7 @@ public class GameRenderer {
 	private Animation soulAnimation;
 
 	private Animation heroRunAnimation, heroStillAnimation;
-	private TextureRegion heroJump, heroFall;
+	private TextureRegion heroJump, heroFall, heroDash;
 
 	private TextureRegion bossOne;
 	private Animation bossAnimation;
@@ -105,6 +105,7 @@ public class GameRenderer {
 		heroStillAnimation = AssetLoader.heroStillAnimation;
 		heroJump = AssetLoader.heroJump;
 		heroFall = AssetLoader.heroFall;
+		heroDash = AssetLoader.heroDash;
 
 		enemyWizardAnimation = AssetLoader.enemyWizardAnimation;
 		enemyKnightAnimation = AssetLoader.enemyKnightAnimation;
@@ -130,16 +131,6 @@ public class GameRenderer {
 		Gdx.gl.glClearColor(255, 255, 255, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-		/*
-		 * // Begin ShapeRenderer shapeRenderer.begin(ShapeType.Filled);
-		 * 
-		 * 
-		 * // Draw Ground shapeRenderer.setColor(0, 0, 0, 1);
-		 * shapeRenderer.rect(0, 120, 204, 16);
-		 * 
-		 * // End ShapeRenderer shapeRenderer.end();
-		 */
-
 		// Begin SpriteBatch
 		batcher.begin();
 		// Disable transparency
@@ -162,9 +153,10 @@ public class GameRenderer {
 					boss.getWidth(), boss.getHeight(), 1, 1, 0);
 
 		} else {
-			batcher.draw(bossAnimation.getKeyFrame(runTime), boss.getX(), boss.getY(),
-					boss.getWidth() / 2.0f, boss.getHeight() / 2.0f,
-					boss.getWidth(), boss.getHeight(), 1, 1, 0);
+			batcher.draw(bossAnimation.getKeyFrame(runTime), boss.getX(),
+					boss.getY(), boss.getWidth() / 2.0f,
+					boss.getHeight() / 2.0f, boss.getWidth(), boss.getHeight(),
+					1, 1, 0);
 		}
 
 		drawScore();
@@ -172,8 +164,21 @@ public class GameRenderer {
 		// End SpriteBatch
 		batcher.end();
 
+		// Draw DashGauge (NEED FIX)
+		int barHeight = hero.getDashGauge() * 10;
+
+		shapeRenderer.begin(ShapeType.Filled);
+		shapeRenderer.setColor(Color.RED);
+		shapeRenderer.rect(195, 10 + 50 - barHeight, 5, barHeight);
+		shapeRenderer.end();
+
+		shapeRenderer.begin(ShapeType.Line);
+		shapeRenderer.setColor(Color.BLACK);
+		shapeRenderer.rect(195, 10, 5, 50);
+		shapeRenderer.end();
+
 		// Check Collision
-		//drawCollisionCheck();
+		 drawCollisionCheck();
 
 	}
 
@@ -189,6 +194,8 @@ public class GameRenderer {
 			val = 3;
 		} else if (hero.isJumping()) {
 			val = 1;
+		} else if (hero.isDashing()) {
+			val = 5;
 		}
 
 		switch (val) {
@@ -239,6 +246,14 @@ public class GameRenderer {
 
 			break;
 
+		case 5:
+
+			batcher.draw(heroDash, hero.getX(), hero.getY(),
+					hero.getWidth() / 2.0f, hero.getHeight() / 2.0f,
+					hero.getWidth(), hero.getHeight(), 1, 1, 0);
+
+			break;
+
 		}
 
 	}
@@ -258,10 +273,8 @@ public class GameRenderer {
 
 	private void drawEnemyKnight(float runTime, Enemy enemy, Animation animation) {
 		if (!enemy.isAlive()) {
-			batcher.draw(soulAnimation.getKeyFrame(runTime), enemy.getX(),
-					enemy.getY(), enemy.getWidth() / 2.0f,
-					enemy.getHeight() / 2.0f, enemy.getWidth(),
-					enemy.getHeight(), 1, 1, 0);
+			batcher.draw(soulAnimation.getKeyFrame(runTime), enemy.getSoul().getX(),
+					enemy.getSoul().getY(), 15 / 2.0f, 15 / 2.0f, 15, 15, 1, 1, 0);
 
 		} else if (enemy.isVisible()) {
 			if (enemy.isAttacking()) {
@@ -288,11 +301,8 @@ public class GameRenderer {
 
 	private void drawEnemyWizard(float runTime, Enemy enemy, Animation animation) {
 		if (!enemy.isAlive()) {
-			batcher.draw(soulAnimation.getKeyFrame(runTime), enemy.getX(),
-					enemy.getY(), enemy.getWidth() / 2.0f,
-					enemy.getHeight() / 2.0f, enemy.getWidth(),
-					enemy.getHeight(), 1, 1, 0);
-
+			batcher.draw(soulAnimation.getKeyFrame(runTime), enemy.getSoul().getX(),
+					enemy.getSoul().getY(), 15 / 2.0f, 15 / 2.0f, 15, 15, 1, 1, 0);
 		} else if (enemy.isVisible()) {
 			batcher.draw(animation.getKeyFrame(runTime), enemy.getX(),
 					enemy.getY(), enemy.getWidth() / 2.0f,
@@ -325,10 +335,8 @@ public class GameRenderer {
 	private void drawEnemySummoner(float runTime, Enemy enemy,
 			Animation animation) {
 		if (!enemy.isAlive()) {
-			batcher.draw(soulAnimation.getKeyFrame(runTime), enemy.getX(),
-					enemy.getY(), enemy.getWidth() / 2.0f,
-					enemy.getHeight() / 2.0f, enemy.getWidth(),
-					enemy.getHeight(), 1, 1, 0);
+			batcher.draw(soulAnimation.getKeyFrame(runTime), enemy.getSoul().getX(),
+					enemy.getSoul().getY(), 15 / 2.0f, 15 / 2.0f, 15, 15, 1, 1, 0);
 
 		} else if (enemy.isVisible()) {
 			batcher.draw(animation.getKeyFrame(runTime), enemy.getX(),
@@ -390,6 +398,7 @@ public class GameRenderer {
 		shapeRenderer.begin(ShapeType.Filled);
 		shapeRenderer.setColor(Color.RED);
 
+		/*
 		shapeRenderer.circle(hero.getBoundingBody().x,
 				hero.getBoundingBody().y, hero.getBoundingBody().radius);
 
@@ -409,15 +418,34 @@ public class GameRenderer {
 		drawKnightCollision(enemyFive);
 		drawKnightCollision(enemySix);
 
+		// Summoner
 		shapeRenderer.circle(enemySeven.getBoundingCollisionCircle().x,
 				enemySeven.getBoundingCollisionCircle().y,
 				enemySeven.getBoundingCollisionCircle().radius);
+		
+		shapeRenderer.circle(enemySeven.getSoul().getBoundingCollision().x,
+				enemySeven.getSoul().getBoundingCollision().y,
+				enemySeven.getSoul().getBoundingCollision().radius);
+
+		
+		// Boss
+		shapeRenderer.rect(boss.getBoundingCollision().x, boss
+				.getBoundingCollision().y, boss.getBoundingCollision()
+				.getWidth(), boss.getBoundingCollision().getHeight());
+		*/
+		// Bar
+		shapeRenderer.rect(0, 88, 204, 2);
 
 		shapeRenderer.end();
 
 	}
 
 	private void drawKnightCollision(Enemy enemy) {
+		shapeRenderer.circle(enemy.getSoul().getBoundingCollision().x,
+				enemy.getSoul().getBoundingCollision().y,
+				enemy.getSoul().getBoundingCollision().radius);
+
+		
 		shapeRenderer.circle(enemy.getBoundingCollisionCircle().x,
 				enemy.getBoundingCollisionCircle().y,
 				enemy.getBoundingCollisionCircle().radius);
@@ -429,6 +457,10 @@ public class GameRenderer {
 	}
 
 	private void drawWizardCollision(Enemy enemy) {
+		shapeRenderer.circle(enemy.getSoul().getBoundingCollision().x,
+				enemy.getSoul().getBoundingCollision().y,
+				enemy.getSoul().getBoundingCollision().radius);
+		
 		shapeRenderer.circle(enemy.getBoundingCollisionCircle().x,
 				enemy.getBoundingCollisionCircle().y,
 				enemy.getBoundingCollisionCircle().radius);

@@ -16,6 +16,10 @@ public class Summoner extends Enemy {
 
 	@Override
 	public void update(float delta) {
+		if(soul.isVisible) {
+			soul.update(delta);		
+		}
+
 		position.add(velocity.cpy().scl(delta));
 		// If the Scrollable object is no longer visible:
 		if (position.x + width < 0) {
@@ -27,11 +31,18 @@ public class Summoner extends Enemy {
 	}
 
 	@Override
-	public void reset(float newVelX) {
+	public void reset(float newVelX, boolean startOver) {
 		position.y = getRanPosY();
 		velocity.x = -59 - newVelX;
 		alive = true;
 		eaten = false;
+		
+		if(startOver) {
+			soul.setIsVisible(false);
+		}
+
+			
+		bossFight = false;
 
 		position.x = getRanPosX();
 		isScrolledLeft = false;
@@ -40,7 +51,7 @@ public class Summoner extends Enemy {
 
 	@Override
 	public boolean collides(Hero hero) {
-		if (alive && isVisible && position.x < hero.getX() + hero.getWidth()) {
+		if (alive && isVisible && position.x < hero.getX() + hero.getWidth() && !hero.isDashing()) {
 			return Intersector.overlaps(hero.getBoundingBody(),
 					boundingCollisionCirc);
 

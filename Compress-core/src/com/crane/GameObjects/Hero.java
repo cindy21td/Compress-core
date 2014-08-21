@@ -20,8 +20,11 @@ public class Hero {
 	private boolean doubleJumped;
 	private boolean falling;
 	private boolean actionDisabled;
+	private boolean dashed;
 	
 	private boolean alive;
+	
+	private int dashGauge;
 	
 	// Collision object
 	private Circle boundingBody;
@@ -42,8 +45,11 @@ public class Hero {
 		doubleJumped = false;
 		actionDisabled = true;
 		falling = false;
+		dashed = false;
 		
 		alive = true;
+		
+		dashGauge = 0;
 		
 		// Collision object
 		boundingBody = new Circle();
@@ -67,7 +73,21 @@ public class Hero {
 			position.y = 104;
 			
 		}
-				
+		
+		//if(dashed && velocity.x > 0 && position.x >= 50) {
+		//	velocity.x = -180;
+		//	dashed = false;
+		//} else if(!dashed && velocity.x < 0 && position.x <= 30) {
+		//	position.x = 30;
+		//	velocity.x = 0;
+		//}
+		
+		if(dashed && position.x < 30) {
+			acceleration.x = 0;
+			velocity.x = 0;
+			position.x = 30;
+			dashed = false;
+		}
 		velocity.add(acceleration.cpy().scl(delta));
 		
 		position.add(velocity.cpy().scl(delta));
@@ -82,6 +102,8 @@ public class Hero {
 			boundingBody.set(position.x + 15, position.y + 10, 7f);
 			boundingFeet.set(position.x + 13, position.y + 19, 6f, 2f);
 
+		} else if(dashed){
+			boundingBody.set(position.x + 17, position.y + 14, 7f);
 		} else {
 			boundingBody.set(position.x + 15, position.y + 13, 7f);
 		}
@@ -90,13 +112,18 @@ public class Hero {
 	}
 	
 	public void onRestart() {
+		velocity.y = 0;
+		velocity.x = 0;
+		acceleration.y = 0;
+		acceleration.x = 0;
 		position.x = 30;
 		position.y = 104;
-		velocity.y = 0;
-		acceleration.y = 0;
+
+		dashGauge = 0;
 		
 		actionDisabled = true;
 		falling = false;
+		dashed = false;
 		
 		jumped = false;
 		doubleJumped = false;
@@ -117,17 +144,29 @@ public class Hero {
 		}
 	}
 	
+	public void onSwipe() {
+		if(alive && !actionDisabled && !dashed && !jumped && dashGauge == 5) {
+			dashed = true;
+			velocity.x = 140;
+			acceleration.x = -500;
+			dashGauge = 0;
+		}
+	}
+	
 	public void hitEnemy() {
-		if(alive) {
+		if(alive && !dashed) {
 			velocity.y = -100;
 			if(doubleJumped) {
 				doubleJumped = false;
 			}
+			if(dashGauge < 5) {
+				dashGauge++;
+			}
 		}
 	}
 	
-	public void takeElement() {
-		
+	public int getDashGauge() {
+		return dashGauge;
 	}
 	
 	public boolean isJumping() {
@@ -140,6 +179,10 @@ public class Hero {
 	
 	public boolean isAlive() {
 		return alive;
+	}
+	
+	public boolean isDashing() {
+		return dashed;
 	}
 	
 	public boolean actionIsDisabled() {

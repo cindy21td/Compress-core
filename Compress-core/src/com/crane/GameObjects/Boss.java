@@ -1,5 +1,7 @@
 package com.crane.GameObjects;
 
+import com.badlogic.gdx.math.Intersector;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 
 public class Boss extends Scrollable {
@@ -11,8 +13,10 @@ public class Boss extends Scrollable {
 	private boolean alive;
 	private boolean win;
 	private boolean dropped;
-	
+
 	private int health = 10;
+
+	private Rectangle boundingCollision;
 
 	public Boss(float x, float y, int width, int height, float scrollSpeed,
 			ScrollHandler scroller) {
@@ -25,24 +29,34 @@ public class Boss extends Scrollable {
 		alive = false;
 		win = false;
 		dropped = false;
+
+		boundingCollision = new Rectangle(0, 0, 0, 0);
 	}
 
 	public void update(float delta) {
-		if(win) {
-			if(position.y + height >= 135) {
+		if (win) {
+			if (position.y + height >= 135) {
 				acceleration.y = 0;
 				velocity.y = 0;
 				position.y = 15;
 				dropped = true;
 			}
-	        velocity.add(acceleration.cpy().scl(delta));
+			velocity.add(acceleration.cpy().scl(delta));
 		} else if (position.x + width >= 102) {
 			win = true;
 			acceleration.y = 480;
 		}
 
-		
+		if (health <= 0) {
+			scroller.setBossAlive(false);
+			scroller.toogleBossFight(false);
+
+			onRestart();
+		}
+
 		super.update(delta);
+
+		setBoundingCollision();
 	}
 
 	public void onRestart() {
@@ -53,28 +67,29 @@ public class Boss extends Scrollable {
 		alive = true;
 		win = false;
 		dropped = false;
+		setBoundingCollision();
 	}
 
-	public boolean collides(Enemy enemy) {
-		if (alive && !enemy.isEaten() && !enemy.isAlive() && enemy.isVisible()
-				&& enemy.getX() < 0) {
-			position.x -= 10;
-			enemy.setEaten(true);
-			health--;
-			if (health <= 0) {
-				alive = false;
-				win = false;
-				dropped = false;
-				scroller.setBossAlive(false);
-				scroller.toogleBossFight(false);
-
-				// NEED FIX
-				position.x = -157;
-				velocity.x = 0;
+	public boolean isHit(Enemy enemy) {
+		if (alive && enemy.soulVisible()
+				&& enemy.getSoul().getX() < position.x + width) {
+			if (Intersector.overlaps(enemy.getSoul().getBoundingCollision(),
+					boundingCollision)) {
+				position.x -= 10;
+				enemy.setEaten(true);
+				health--;
+				return true;
 			}
-			return true;
 		}
 
+		return false;
+	}
+
+	public boolean collides(Hero hero) {
+		if (alive && hero.isAlive()) {
+			return Intersector.overlaps(hero.getBoundingBody(),
+					boundingCollision);
+		}
 		return false;
 	}
 
@@ -92,5 +107,14 @@ public class Boss extends Scrollable {
 
 	public boolean dropped() {
 		return dropped;
+	}
+
+	public void setBoundingCollision() {
+		boundingCollision.set(position.x, position.y + height - 12, width - 10,
+				4);
+	}
+
+	public Rectangle getBoundingCollision() {
+		return boundingCollision;
 	}
 }

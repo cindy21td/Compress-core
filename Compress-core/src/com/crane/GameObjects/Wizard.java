@@ -1,6 +1,7 @@
 package com.crane.GameObjects;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.MathUtils;
@@ -10,12 +11,20 @@ public class Wizard extends Enemy {
 
 	private float attackTimeStart;
 	private float actionDuration;
+	
+	private List<Integer> posX;
+	private int currPos;
+
 
 	private ArrayList<Projectile> projectiles = new ArrayList<Projectile>();
 
-	public Wizard(int width, int height, float scrollSpeed) {
+	public Wizard(int width, int height, float scrollSpeed, List<Integer> posX) {
 		super(width, height, scrollSpeed, EnemyType.WIZARD);
 
+		currPos = -1;
+		this.posX = posX;
+
+		
 		position.x = getRanPosX();
 		position.y = getRanPosY();
 
@@ -25,6 +34,10 @@ public class Wizard extends Enemy {
 
 	@Override
 	public void update(float delta) {
+		if(soul.isVisible) {
+			soul.update(delta);		
+		}
+
 		position.add(velocity.cpy().scl(delta));
         // If the Scrollable object is no longer visible:
         if (position.x + width < 0) {
@@ -49,7 +62,7 @@ public class Wizard extends Enemy {
 	}
 
 	@Override
-	public void reset(float newVelX) {
+	public void reset(float newVelX, boolean startOver) {
 		attackTimeStart = 1.5f;
 		projectiles.clear();
 
@@ -57,10 +70,18 @@ public class Wizard extends Enemy {
 		velocity.x = -59 - newVelX;
 		alive = true;
 		eaten = false;
+		//soulVisible = false;
 		
+		bossFight = false;
+
 		position.x = getRanPosX();
 		isScrolledLeft = false;
 		isVisible = false;
+		
+		if(startOver) {
+			soul.setIsVisible(false);
+		}
+
 	}
 
 	@Override
@@ -75,7 +96,7 @@ public class Wizard extends Enemy {
 			}
 
 			boolean isHit = false;
-			if (position.x < hero.getX() + hero.getWidth()) {
+			if (!hero.isDashing() && position.x < hero.getX() + hero.getWidth()) {
 				isHit = Intersector.overlaps(hero.getBoundingBody(),
 						boundingCollisionCirc);
 			}
@@ -104,16 +125,29 @@ public class Wizard extends Enemy {
 	public void setIsVisible(boolean check) {
 		attackTimeStart = 1;
 		isVisible = check;
+		if(bossFight && check) {
+			position.y = getRanPosY();
+		}
 	}
 	
 	@Override
 	public float getRanPosX() {
+		int ranIndex = MathUtils.random(0, posX.size() - 1);
+		int pos = posX.get(ranIndex);
+		posX.remove(ranIndex);
+		if(currPos != -1) {
+			posX.add(currPos);
+		}
+		currPos = pos;
+		return 204 + currPos * 5;
 		//return MathUtils.random(204, 235);
-		return 204 + (MathUtils.random(0, 2) * 20f);
 	}
 
 	@Override
 	public float getRanPosY() {
+		if(bossFight) {
+			return MathUtils.random(90, 96);
+		}
 		return MathUtils.random(50, 81);
 	}
 

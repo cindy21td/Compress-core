@@ -16,9 +16,9 @@ public class AssetLoader {
     
     public static Animation heroRunAnimation, heroStillAnimation;
     public static TextureRegion heroRunOne, heroRunTwo, heroRunThree, heroRunFour;
-    public static TextureRegion heroRunInOne, heroRunInTwo, heroRunInThree, heroRunInFour;
     public static TextureRegion heroJump, heroFall;
     public static TextureRegion heroStillOne, heroStillTwo;
+    public static TextureRegion heroDash;
 
      
     public static TextureRegion enemyWizardOne, enemyWizardTwo, enemyWizardThree;
@@ -195,18 +195,9 @@ public class AssetLoader {
         heroRunFour.flip(false, true);
         
         
-        heroRunInOne = new TextureRegion(hero, 0, 200, 100, 100);
-        heroRunInOne.flip(false, true);
+        heroDash = new TextureRegion(hero, 0, 200, 100, 100);
+        heroDash.flip(false, true);
         
-        heroRunInTwo = new TextureRegion(hero, 100, 200, 100, 100);
-        heroRunInTwo.flip(false, true);
-        
-        heroRunInThree = new TextureRegion(hero, 200, 200, 100, 100);
-        heroRunInThree.flip(false, true);
-        
-        heroRunInFour = new TextureRegion(hero, 300, 200, 100, 100);
-        heroRunInFour.flip(false, true);
-
         
         
         // Hero's running animation

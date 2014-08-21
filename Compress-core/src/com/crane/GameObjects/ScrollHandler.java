@@ -14,6 +14,9 @@ public class ScrollHandler {
 			enemySix, enemySeven;
 	private List<Enemy> enemyCollOriginal;
 	private List<Enemy> enemyColl;
+	
+	private List<Integer> posXKnight;
+	private List<Integer> posXWizard;
 
 	private Background bgFront, bgBack;
 
@@ -38,25 +41,42 @@ public class ScrollHandler {
 		this.state = RunningState.NORMAL;
 		this.bossFight = false;
 
+		initializePosX();
+
 		initializeEnemy();
+		
 
 		bgFront = new Background(0, 0, 204, 136, SCROLL_SPEED);
 		bgBack = new Background(204, 0, 204, 136, SCROLL_SPEED);
 
 		boss = new Boss(-157, -80, 157, 120, 10, this);
 	}
+	
+	public void initializePosX() {
+		posXWizard = new ArrayList<Integer>();
+		posXWizard.add(0);
+		posXWizard.add(1);
+		posXWizard.add(2);
+		posXWizard.add(3);
+		posXWizard.add(4);
+		posXWizard.add(5);
+		posXWizard.add(6);
+
+		
+		posXKnight = new ArrayList<Integer>(posXWizard);
+	}
 
 	public void initializeEnemy() {
 		enemyColl = new ArrayList<Enemy>();
 		enemyCollOriginal = new ArrayList<Enemy>();
 
-		enemyOne = new Wizard(20, 20, SCROLL_SPEED);
-		enemyTwo = new Wizard(20, 20, SCROLL_SPEED);
-		enemyThree = new Wizard(20, 20, SCROLL_SPEED);
+		enemyOne = new Wizard(20, 20, SCROLL_SPEED, posXWizard);
+		enemyTwo = new Wizard(20, 20, SCROLL_SPEED, posXWizard);
+		enemyThree = new Wizard(20, 20, SCROLL_SPEED, posXWizard);
 
-		enemyFour = new Knight(22, 22, SCROLL_SPEED - getEnemyRanVelX());
-		enemyFive = new Knight(22, 22, SCROLL_SPEED - getEnemyRanVelX());
-		enemySix = new Knight(22, 22, SCROLL_SPEED - getEnemyRanVelX());
+		enemyFour = new Knight(22, 22, SCROLL_SPEED - getEnemyRanVelX(), posXKnight);
+		enemyFive = new Knight(22, 22, SCROLL_SPEED - getEnemyRanVelX(), posXKnight);
+		enemySix = new Knight(22, 22, SCROLL_SPEED - getEnemyRanVelX(), posXKnight);
 
 		enemySeven = new Summoner(18, 18, SCROLL_SPEED + 10);
 
@@ -137,15 +157,15 @@ public class ScrollHandler {
 	}
 
 	public void onRestart() {
-		enemyOne.reset(0);
-		enemyTwo.reset(0);
-		enemyThree.reset(0);
+		enemyOne.reset(0, true);
+		enemyTwo.reset(0, true);
+		enemyThree.reset(0, true);
 
-		enemyFour.reset(getEnemyRanVelX());
-		enemyFive.reset(getEnemyRanVelX());
-		enemySix.reset(getEnemyRanVelX());
+		enemyFour.reset(getEnemyRanVelX(), true);
+		enemyFive.reset(getEnemyRanVelX(), true);
+		enemySix.reset(getEnemyRanVelX(), true);
 
-		enemySeven.reset(-10);
+		enemySeven.reset(-10, true);
 
 		enemyColl = new ArrayList<Enemy>(enemyCollOriginal);
 
@@ -175,7 +195,7 @@ public class ScrollHandler {
 			return (enemyOne.collides(hero) || enemyTwo.collides(hero)
 					|| enemyThree.collides(hero) || enemyFour.collides(hero)
 					|| enemyFive.collides(hero) || enemySix.collides(hero) || enemySeven
-						.collides(hero));
+						.collides(hero) || boss.collides(hero));
 		}
 	}
 
@@ -187,9 +207,9 @@ public class ScrollHandler {
 	}
 
 	public boolean bossIsHit() {
-		return (boss.collides(enemyOne) || boss.collides(enemyTwo)
-				|| boss.collides(enemyThree) || boss.collides(enemyFour)
-				|| boss.collides(enemyFive) || boss.collides(enemySix));
+		return (boss.isHit(enemyOne) || boss.isHit(enemyTwo)
+				|| boss.isHit(enemyThree) || boss.isHit(enemyFour)
+				|| boss.isHit(enemyFive) || boss.isHit(enemySix));
 	}
 
 	public float getEnemyRanVelX() {
@@ -214,7 +234,7 @@ public class ScrollHandler {
 			if (enemy.isScrolledLeft()) {
 				if (enemy.equals(enemyOne) || enemy.equals(enemyTwo)
 						|| enemy.equals(enemyThree)) {
-					enemy.reset(0);
+					enemy.reset(0, false);
 					enemyColl.add(enemy);
 
 				} else if (enemy.equals(enemySeven)) {
@@ -224,9 +244,9 @@ public class ScrollHandler {
 					} else {
 						enemyColl.add(enemy);
 					}
-					enemy.reset(-10);
+					enemy.reset(-10, false);
 				} else {
-					enemy.reset(getEnemyRanVelX());
+					enemy.reset(getEnemyRanVelX(), false);
 					enemyColl.add(enemy);
 
 				}
@@ -292,10 +312,14 @@ public class ScrollHandler {
 	}
 
 	public void toogleBossFight(boolean check) {
+		for(Enemy e : enemyColl) {
+			e.setBossFight(check);
+		}
 		if (check) {
 			boss.onRestart();
 		} else {
 			enemyColl.add(enemySeven);
+			gameWorld.addScore(10);
 		}
 		bossFight = check;
 	}
