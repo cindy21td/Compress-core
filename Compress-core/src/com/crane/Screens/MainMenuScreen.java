@@ -2,19 +2,20 @@ package com.crane.Screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.input.GestureDetector;
-import com.crane.CompressHelpers.GestureHandler;
+import com.crane.CompressHelpers.InputHandler;
 import com.crane.GameWorld.GameRenderer;
 import com.crane.GameWorld.GameWorld;
+import com.crane.compress.Compress;
 
-public class GameScreen implements Screen {
-	
+public class MainMenuScreen implements Screen {
+
 	private GameWorld world;
 	private GameRenderer renderer;
 	
-	private float runTime = 0;
+	private Compress game;
 
-	public GameScreen(GameWorld world) {
+	public MainMenuScreen(Compress game) {
+		this.game = game;
 		
 		float screenWidth = Gdx.graphics.getWidth();
 		float screenHeight = Gdx.graphics.getHeight();
@@ -23,43 +24,45 @@ public class GameScreen implements Screen {
 		
 		int midPointY = (int) (gameHeight / 2);
 		
-		this.world = world;				// Initializes GameWorld
+		world = new GameWorld(midPointY);				// Initializes GameWorld
 		renderer = new GameRenderer(world, (int) gameHeight, midPointY);			// Initializes GameRenderer
 		
-		GestureDetector gestureDetect = new GestureDetector(new GestureHandler(world, gameWidth, gameHeight));
-		Gdx.input.setInputProcessor(gestureDetect);
+        Gdx.input.setInputProcessor(new InputHandler(game, world, screenWidth / gameWidth, screenHeight / gameHeight));
 	}
 
 	@Override
 	public void render(float delta) {
-		runTime += delta;
-		world.update(delta);					// GameWorld updates
-		renderer.render(delta, runTime);						// GameRenderer renders
+		renderer.renderMenu(delta, (InputHandler) Gdx.input.getInputProcessor());
 	}
 
 	@Override
 	public void resize(int width, int height) {
-		System.out.println("GameScreen - resizing");
+		// TODO Auto-generated method stub
+		
 	}
 
 	@Override
 	public void show() {
-		System.out.println("GameScreen - show called");
+		// TODO Auto-generated method stub
+		
 	}
 
 	@Override
 	public void hide() {
-		System.out.println("GameScreen - hide called");
+		// TODO Auto-generated method stub
+		
 	}
 
 	@Override
 	public void pause() {
-		System.out.println("GameScreen - pause called");
+		// TODO Auto-generated method stub
+		
 	}
 
 	@Override
 	public void resume() {
-		System.out.println("GameScreen - resume called");
+		// TODO Auto-generated method stub
+		
 	}
 
 	@Override

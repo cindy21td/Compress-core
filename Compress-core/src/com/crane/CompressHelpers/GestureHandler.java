@@ -45,15 +45,10 @@ public class GestureHandler implements GestureListener {
         screenY = scaleY(screenY);
         System.out.println(screenX + " " + screenY);
         
-        //// Input Handler use touch up. Need Fix
-        //if (myWorld.isMenu()) {
-        //    playButton.isTouchDown(screenX, screenY);
-        //} else if (myWorld.isReady()) {
-        //    myWorld.start();
-       // }
-		
+        System.out.println("tapped");		
 		
 		if(myWorld.isReady()) {
+			
 			
 			myWorld.start();
 			

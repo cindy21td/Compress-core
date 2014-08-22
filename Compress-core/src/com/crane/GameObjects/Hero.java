@@ -111,6 +111,10 @@ public class Hero {
 		
 	}
 	
+	public void updateReady(float runTime) {
+        //position.y = 2 * (float) Math.sin(7 * runTime) + originalY;
+    }
+	
 	public void onRestart() {
 		velocity.y = 0;
 		velocity.x = 0;

@@ -2,7 +2,7 @@ package com.crane.compress;
 
 import com.badlogic.gdx.Game;
 import com.crane.CompressHelpers.AssetLoader;
-import com.crane.Screens.GameScreen;
+import com.crane.Screens.SplashScreen;
 
 public class Compress extends Game {
 		
@@ -10,8 +10,8 @@ public class Compress extends Game {
 	public void create() {
 		System.out.println("Compress Game created");
 		AssetLoader.load();
-		setScreen(new GameScreen());
-		//setScreen(new SplashScreen(this));
+		//setScreen(new GameScreen());
+		setScreen(new SplashScreen(this));
 	}
 	
 	@Override

@@ -5,6 +5,8 @@ import com.crane.CompressHelpers.AssetLoader;
 import com.crane.GameObjects.Hero;
 import com.crane.GameObjects.ScrollHandler;
 import com.crane.GameObjects.ScrollHandler.RunningState;
+import com.crane.Screens.GameScreen;
+import com.crane.compress.Compress;
 
 public class GameWorld {
 	
@@ -13,6 +15,8 @@ public class GameWorld {
 	
 	private int midPointY;
 	
+    private float runTime = 0;
+
 	private int score = 0;
 	private int distance = 0;
 	
@@ -23,11 +27,11 @@ public class GameWorld {
 	private GameState currentState;
 		
 	public enum GameState {
-		READY, RUNNING, GAMEOVER, HIGHSCORE;
+		MENU, READY, RUNNING, GAMEOVER, HIGHSCORE;
 	}
 	
 	public GameWorld(int midPointY) {
-		currentState = GameState.READY;
+		currentState = GameState.MENU;
 		randRushNumber = MathUtils.random(1, 10) * MathUtils.random(1, 10) * MathUtils.random(1, 10);
 		hero = new Hero(30, 104, 25, 25);
 		scroller = new ScrollHandler(this, midPointY);
@@ -36,22 +40,26 @@ public class GameWorld {
 	}
 	
 	public void update(float delta) {
-		switch(currentState) {
-		case READY:
-			updateReady(delta);
-			break;
-			
-		case RUNNING:
-			updateRunning(delta);
-			break;
-			
-		default:
-			break;
-		}
+		runTime += delta;
+
+        switch (currentState) {
+        case READY:
+        case MENU:
+            updateReady(delta);
+            break;
+
+        case RUNNING:
+            updateRunning(delta);
+            break;
+        default:
+            break;
+        }
+
 	}
 	
 	public void updateReady(float delta) {
-		
+		//hero.updateReady(runTime);
+        //scroller.updateReady(delta);
 	}
 	
 	public void updateRunning(float delta) {
@@ -124,6 +132,13 @@ public class GameWorld {
     public void start() {
         currentState = GameState.RUNNING;
     }
+    
+    public void ready(Compress game) {
+        currentState = GameState.READY;
+    	game.setScreen(new GameScreen(this));
+
+    }
+
 
     public void restart() {
         currentState = GameState.READY;
@@ -150,6 +165,11 @@ public class GameWorld {
     public boolean isHighScore() {
         return currentState == GameState.HIGHSCORE;
     }
+    
+    public boolean isMenu() {
+        return currentState == GameState.MENU;
+    }
+
     
     private void checkState() {
     	

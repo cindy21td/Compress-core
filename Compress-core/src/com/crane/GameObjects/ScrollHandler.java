@@ -114,6 +114,21 @@ public class ScrollHandler {
 		e.setIsVisible(true);
 	}
 
+	public void updateReady(float delta) {
+
+        bgFront.update(delta);
+        bgBack.update(delta);
+
+        // Same with grass
+        if (bgFront.isScrolledLeft()) {
+			bgFront.reset(bgBack.getTailX());
+		} else if (bgBack.isScrolledLeft()) {
+			bgBack.reset(bgFront.getTailX());
+		}
+
+    }
+
+	
 	public void update(float delta) {
 		bgFront.update(delta);
 		bgBack.update(delta);

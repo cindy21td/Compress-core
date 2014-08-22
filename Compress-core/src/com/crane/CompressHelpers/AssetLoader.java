@@ -117,10 +117,10 @@ public class AssetLoader {
         buttonTexture = new Texture(Gdx.files.internal("Button Sprite ver One.png"));
         buttonTexture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
         
-        buttonUp = new TextureRegion(logoTexture, 0, 0, 100, 50);
+        buttonUp = new TextureRegion(buttonTexture, 0, 0, 100, 50);
         buttonUp.flip(false, true);
         
-        buttonDown = new TextureRegion(logoTexture, 0, 50, 100, 50);
+        buttonDown = new TextureRegion(buttonTexture, 0, 50, 100, 50);
         buttonDown.flip(false, true);
 
 
