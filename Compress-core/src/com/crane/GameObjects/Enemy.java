@@ -17,11 +17,10 @@ public class Enemy extends Scrollable {
 
 	protected Rectangle boundingCollisionRect;
 	protected Circle boundingCollisionCirc;
-	
+
 	protected Soul soul;
 
 	private EnemyType type;
-	
 
 	public Enemy(int width, int height, float scrollSpeed, EnemyType type) {
 		super(0, 0, width, height, scrollSpeed);
@@ -35,7 +34,7 @@ public class Enemy extends Scrollable {
 
 		boundingCollisionRect = new Rectangle();
 		boundingCollisionCirc = new Circle();
-		
+
 		soul = new Soul();
 
 	}
@@ -56,8 +55,6 @@ public class Enemy extends Scrollable {
 			}
 		}
 
-
-
 		return false;
 	}
 
@@ -71,7 +68,7 @@ public class Enemy extends Scrollable {
 
 	public void setEaten(boolean check) {
 		eaten = check;
-		if(check) {
+		if (check) {
 			soul.setIsVisible(false);
 		}
 	}
@@ -99,7 +96,7 @@ public class Enemy extends Scrollable {
 	public void setBossFight(boolean check) {
 		bossFight = true;
 	}
-	
+
 	public Soul getSoul() {
 		return soul;
 	}

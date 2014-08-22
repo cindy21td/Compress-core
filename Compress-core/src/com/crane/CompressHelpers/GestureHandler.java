@@ -13,70 +13,56 @@ public class GestureHandler implements GestureListener {
 
 	private GameWorld myWorld;
 	private Hero hero;
-	
-	private List<SimpleButton> menuButtons;
 
-    private SimpleButton playButton;
+	private float scaleFactorX;
+	private float scaleFactorY;
 
-    private float scaleFactorX;
-    private float scaleFactorY;
-
-	
-	public GestureHandler(GameWorld world, float scaleFactorX, float scaleFactorY) {
+	public GestureHandler(GameWorld world, float scaleFactorX,
+			float scaleFactorY) {
 		this.myWorld = world;
 		this.hero = myWorld.getHero();
-		
+
 		int midPointY = myWorld.getMidPointY();
 
-        this.scaleFactorX = scaleFactorX;
-        this.scaleFactorY = scaleFactorY;
+		this.scaleFactorX = scaleFactorX;
+		this.scaleFactorY = scaleFactorY;
 
-        menuButtons = new ArrayList<SimpleButton>();
-        playButton = new SimpleButton(
-                136 / 2 - (AssetLoader.buttonUp.getRegionWidth() / 2),
-                midPointY + 50, 29, 16, AssetLoader.buttonUp,
-                AssetLoader.buttonDown);
-        menuButtons.add(playButton);
 	}
 
 	@Override
 	public boolean tap(float screenX, float screenY, int count, int button) {
 		screenX = scaleX(screenX);
-        screenY = scaleY(screenY);
-        System.out.println(screenX + " " + screenY);
-        
-        System.out.println("tapped");		
-		
-		if(myWorld.isReady()) {
-			
-			
+		screenY = scaleY(screenY);
+		System.out.println(screenX + " " + screenY);
+
+		if (myWorld.isReady()) {
+
 			myWorld.start();
-			
-		} 
-		
-		if(myWorld.isRunning()) {
+
+		}
+
+		if (myWorld.isRunning()) {
 			hero.onClick();
 		}
-		
-		if(myWorld.isGameOver() || myWorld.isHighScore()) {
-			
+
+		if (myWorld.isGameOver() || myWorld.isHighScore()) {
+
 			myWorld.restart();
-			
-		} 
-		
-		
+
+		}
+
 		return true;
 	}
-	
+
 	@Override
 	public boolean fling(float velocityX, float velocityY, int button) {
-		if(velocityX > 0) {
+		if (velocityX > 0) {
 			hero.onSwipe();
 			return true;
 		}
 		return false;
 	}
-	
+
 	@Override
 	public boolean touchDown(float x, float y, int pointer, int button) {
 		// TODO Auto-generated method stub
@@ -113,17 +99,12 @@ public class GestureHandler implements GestureListener {
 		// TODO Auto-generated method stub
 		return false;
 	}
-	
+
 	private int scaleX(float screenX) {
-        return (int) (screenX / scaleFactorX);
-    }
+		return (int) (screenX / scaleFactorX);
+	}
 
-    private int scaleY(float screenY) {
-        return (int) (screenY / scaleFactorY);
-    }
-
-    public List<SimpleButton> getMenuButtons() {
-        return menuButtons;
-    }
-
+	private int scaleY(float screenY) {
+		return (int) (screenY / scaleFactorY);
+	}
 }

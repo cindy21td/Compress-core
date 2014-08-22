@@ -8,33 +8,37 @@ import com.crane.GameWorld.GameRenderer;
 import com.crane.GameWorld.GameWorld;
 
 public class GameScreen implements Screen {
-	
+
 	private GameWorld world;
 	private GameRenderer renderer;
-	
+
 	private float runTime = 0;
 
-	public GameScreen(GameWorld world) {
-		
+	public GameScreen(GameWorld world, GameRenderer renderer) {
+
 		float screenWidth = Gdx.graphics.getWidth();
 		float screenHeight = Gdx.graphics.getHeight();
 		float gameWidth = 204;
 		float gameHeight = screenHeight / (screenWidth / gameWidth);
-		
+
 		int midPointY = (int) (gameHeight / 2);
-		
-		this.world = world;				// Initializes GameWorld
-		renderer = new GameRenderer(world, (int) gameHeight, midPointY);			// Initializes GameRenderer
-		
-		GestureDetector gestureDetect = new GestureDetector(new GestureHandler(world, gameWidth, gameHeight));
+
+		// Initializes GameWorld
+		this.world = world;
+		// Initializes GameRenderer
+		this.renderer = renderer;
+
+		// InputProcessor
+		GestureDetector gestureDetect = new GestureDetector(new GestureHandler(
+				world, gameWidth, gameHeight));
 		Gdx.input.setInputProcessor(gestureDetect);
 	}
 
 	@Override
 	public void render(float delta) {
 		runTime += delta;
-		world.update(delta);					// GameWorld updates
-		renderer.render(delta, runTime);						// GameRenderer renders
+		world.update(delta); // GameWorld updates
+		renderer.render(delta, runTime); // GameRenderer renders
 	}
 
 	@Override
@@ -65,7 +69,7 @@ public class GameScreen implements Screen {
 	@Override
 	public void dispose() {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 }

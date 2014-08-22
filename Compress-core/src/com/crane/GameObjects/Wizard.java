@@ -11,10 +11,9 @@ public class Wizard extends Enemy {
 
 	private float attackTimeStart;
 	private float actionDuration;
-	
+
 	private List<Integer> posX;
 	private int currPos;
-
 
 	private ArrayList<Projectile> projectiles = new ArrayList<Projectile>();
 
@@ -24,7 +23,6 @@ public class Wizard extends Enemy {
 		currPos = -1;
 		this.posX = posX;
 
-		
 		position.x = getRanPosX();
 		position.y = getRanPosY();
 
@@ -34,16 +32,16 @@ public class Wizard extends Enemy {
 
 	@Override
 	public void update(float delta) {
-		if(soul.isVisible) {
-			soul.update(delta);		
+		if (soul.isVisible()) {
+			soul.update(delta);
 		}
 
 		position.add(velocity.cpy().scl(delta));
-        // If the Scrollable object is no longer visible:
-        if (position.x + width < 0) {
-            isScrolledLeft = true;
-            isVisible = false;
-        }
+		// If the Scrollable object is no longer visible:
+		if (position.x + width < 0) {
+			isScrolledLeft = true;
+			isVisible = false;
+		}
 		setBoundingCollision();
 
 		if (alive && attackTimeStart > actionDuration) {
@@ -61,6 +59,10 @@ public class Wizard extends Enemy {
 
 	}
 
+	public void setBoundingCollision() {
+		boundingCollisionCirc.set(position.x + 10, position.y + 12f, 6f);
+	}
+
 	@Override
 	public void reset(float newVelX, boolean startOver) {
 		attackTimeStart = 1.5f;
@@ -70,16 +72,16 @@ public class Wizard extends Enemy {
 		velocity.x = -59 - newVelX;
 		alive = true;
 		eaten = false;
-		//soulVisible = false;
-		
+		// soulVisible = false;
+
 		bossFight = false;
 
 		position.x = getRanPosX();
 		isScrolledLeft = false;
 		isVisible = false;
-		
-		if(startOver) {
-			soul.setIsVisible(false);
+
+		if (startOver) {
+			soul.reset();
 		}
 
 	}
@@ -106,10 +108,6 @@ public class Wizard extends Enemy {
 		}
 	}
 
-	public void setBoundingCollision() {
-		boundingCollisionCirc.set(position.x + 10, position.y + 12f, 6f);
-	}
-
 	public void shoot() {
 		Projectile p = new Projectile(position.x, position.y + 5, velocity.x);
 		p.setIsVisible(true);
@@ -120,36 +118,35 @@ public class Wizard extends Enemy {
 	public ArrayList<Projectile> getProjectiles() {
 		return projectiles;
 	}
-	
+
 	@Override
 	public void setIsVisible(boolean check) {
 		attackTimeStart = 1;
 		isVisible = check;
-		if(bossFight && check) {
+		if (bossFight && check) {
 			position.y = getRanPosY();
 		}
 	}
-	
+
 	@Override
 	public float getRanPosX() {
 		int ranIndex = MathUtils.random(0, posX.size() - 1);
 		int pos = posX.get(ranIndex);
 		posX.remove(ranIndex);
-		if(currPos != -1) {
+		if (currPos != -1) {
 			posX.add(currPos);
 		}
 		currPos = pos;
 		return 204 + currPos * 5;
-		//return MathUtils.random(204, 235);
+		// return MathUtils.random(204, 235);
 	}
 
 	@Override
 	public float getRanPosY() {
-		if(bossFight) {
+		if (bossFight) {
 			return MathUtils.random(90, 96);
 		}
 		return MathUtils.random(50, 81);
 	}
-
 
 }

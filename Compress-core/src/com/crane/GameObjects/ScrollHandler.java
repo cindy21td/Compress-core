@@ -14,7 +14,7 @@ public class ScrollHandler {
 			enemySix, enemySeven;
 	private List<Enemy> enemyCollOriginal;
 	private List<Enemy> enemyColl;
-	
+
 	private List<Integer> posXKnight;
 	private List<Integer> posXWizard;
 
@@ -29,11 +29,11 @@ public class ScrollHandler {
 		NORMAL, RUSH;
 	}
 
-	public static final int SCROLL_SPEED = -59;
-
 	public enum EnemyType {
 		WIZARD, KNIGHT, SUMMONER;
 	}
+
+	public static final int SCROLL_SPEED = -59;
 
 	public ScrollHandler(GameWorld world, float yPos) {
 
@@ -44,14 +44,13 @@ public class ScrollHandler {
 		initializePosX();
 
 		initializeEnemy();
-		
 
 		bgFront = new Background(0, 0, 204, 136, SCROLL_SPEED);
 		bgBack = new Background(204, 0, 204, 136, SCROLL_SPEED);
 
 		boss = new Boss(-157, -80, 157, 120, 10, this);
 	}
-	
+
 	public void initializePosX() {
 		posXWizard = new ArrayList<Integer>();
 		posXWizard.add(0);
@@ -62,7 +61,6 @@ public class ScrollHandler {
 		posXWizard.add(5);
 		posXWizard.add(6);
 
-		
 		posXKnight = new ArrayList<Integer>(posXWizard);
 	}
 
@@ -74,9 +72,12 @@ public class ScrollHandler {
 		enemyTwo = new Wizard(20, 20, SCROLL_SPEED, posXWizard);
 		enemyThree = new Wizard(20, 20, SCROLL_SPEED, posXWizard);
 
-		enemyFour = new Knight(22, 22, SCROLL_SPEED - getEnemyRanVelX(), posXKnight);
-		enemyFive = new Knight(22, 22, SCROLL_SPEED - getEnemyRanVelX(), posXKnight);
-		enemySix = new Knight(22, 22, SCROLL_SPEED - getEnemyRanVelX(), posXKnight);
+		enemyFour = new Knight(22, 22, SCROLL_SPEED - getEnemyRanVelX(),
+				posXKnight);
+		enemyFive = new Knight(22, 22, SCROLL_SPEED - getEnemyRanVelX(),
+				posXKnight);
+		enemySix = new Knight(22, 22, SCROLL_SPEED - getEnemyRanVelX(),
+				posXKnight);
 
 		enemySeven = new Summoner(18, 18, SCROLL_SPEED + 10);
 
@@ -116,19 +117,18 @@ public class ScrollHandler {
 
 	public void updateReady(float delta) {
 
-        bgFront.update(delta);
-        bgBack.update(delta);
+		bgFront.update(delta);
+		bgBack.update(delta);
 
-        // Same with grass
-        if (bgFront.isScrolledLeft()) {
+		// Same with grass
+		if (bgFront.isScrolledLeft()) {
 			bgFront.reset(bgBack.getTailX());
 		} else if (bgBack.isScrolledLeft()) {
 			bgBack.reset(bgFront.getTailX());
 		}
 
-    }
+	}
 
-	
 	public void update(float delta) {
 		bgFront.update(delta);
 		bgBack.update(delta);
@@ -153,6 +153,33 @@ public class ScrollHandler {
 			boss.update(delta);
 		}
 
+	}
+
+	private void enemyUpdate(float delta, Enemy enemy) {
+		if (enemy.isVisible()) {
+			enemy.update(delta);
+			if (enemy.isScrolledLeft()) {
+				if (enemy.equals(enemyOne) || enemy.equals(enemyTwo)
+						|| enemy.equals(enemyThree)) {
+					enemy.reset(0, false);
+					enemyColl.add(enemy);
+
+				} else if (enemy.equals(enemySeven)) {
+					if (enemy.isAlive()) {
+						setBossAlive(true);
+						toogleBossFight(true);
+					} else {
+						enemyColl.add(enemy);
+					}
+					enemy.reset(-10, false);
+				} else {
+					enemy.reset(getEnemyRanVelX(), false);
+					enemyColl.add(enemy);
+
+				}
+				setRandomVisibility();
+			}
+		}
 	}
 
 	public void stop() {
@@ -209,8 +236,8 @@ public class ScrollHandler {
 
 			return (enemyOne.collides(hero) || enemyTwo.collides(hero)
 					|| enemyThree.collides(hero) || enemyFour.collides(hero)
-					|| enemyFive.collides(hero) || enemySix.collides(hero) || enemySeven
-						.collides(hero) || boss.collides(hero));
+					|| enemyFive.collides(hero) || enemySix.collides(hero)
+					|| enemySeven.collides(hero) || boss.collides(hero));
 		}
 	}
 
@@ -241,33 +268,6 @@ public class ScrollHandler {
 
 		}
 
-	}
-
-	private void enemyUpdate(float delta, Enemy enemy) {
-		if (enemy.isVisible()) {
-			enemy.update(delta);
-			if (enemy.isScrolledLeft()) {
-				if (enemy.equals(enemyOne) || enemy.equals(enemyTwo)
-						|| enemy.equals(enemyThree)) {
-					enemy.reset(0, false);
-					enemyColl.add(enemy);
-
-				} else if (enemy.equals(enemySeven)) {
-					if (enemy.isAlive()) {
-						setBossAlive(true);
-						toogleBossFight(true);
-					} else {
-						enemyColl.add(enemy);
-					}
-					enemy.reset(-10, false);
-				} else {
-					enemy.reset(getEnemyRanVelX(), false);
-					enemyColl.add(enemy);
-
-				}
-				setRandomVisibility();
-			}
-		}
 	}
 
 	public void changeStage(RunningState newStage) {
@@ -327,7 +327,7 @@ public class ScrollHandler {
 	}
 
 	public void toogleBossFight(boolean check) {
-		for(Enemy e : enemyColl) {
+		for (Enemy e : enemyColl) {
 			e.setBossFight(check);
 		}
 		if (check) {

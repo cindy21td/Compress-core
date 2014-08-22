@@ -16,8 +16,8 @@ public class Summoner extends Enemy {
 
 	@Override
 	public void update(float delta) {
-		if(soul.isVisible) {
-			soul.update(delta);		
+		if (soul.isVisible()) {
+			soul.update(delta);
 		}
 
 		position.add(velocity.cpy().scl(delta));
@@ -30,38 +30,40 @@ public class Summoner extends Enemy {
 		setBoundingCollision();
 	}
 
+	public void setBoundingCollision() {
+		boundingCollisionCirc.set(position.x + 9, position.y + 10, 5f);
+	}
+
 	@Override
 	public void reset(float newVelX, boolean startOver) {
 		position.y = getRanPosY();
 		velocity.x = -59 - newVelX;
 		alive = true;
 		eaten = false;
-		
-		if(startOver) {
-			soul.setIsVisible(false);
-		}
 
-			
 		bossFight = false;
 
 		position.x = getRanPosX();
 		isScrolledLeft = false;
 		isVisible = false;
+
+		if (startOver) {
+			soul.reset();
+			;
+		}
+
 	}
 
 	@Override
 	public boolean collides(Hero hero) {
-		if (alive && isVisible && position.x < hero.getX() + hero.getWidth() && !hero.isDashing()) {
+		if (alive && isVisible && position.x < hero.getX() + hero.getWidth()
+				&& !hero.isDashing()) {
 			return Intersector.overlaps(hero.getBoundingBody(),
 					boundingCollisionCirc);
 
 		} else {
 			return false;
 		}
-	}
-
-	public void setBoundingCollision() {
-		boundingCollisionCirc.set(position.x + 9, position.y + 10, 5f);
 	}
 
 	@Override

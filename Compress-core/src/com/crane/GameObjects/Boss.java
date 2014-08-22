@@ -59,6 +59,11 @@ public class Boss extends Scrollable {
 		setBoundingCollision();
 	}
 
+	public void setBoundingCollision() {
+		boundingCollision.set(position.x, position.y + height - 12, width - 10,
+				4);
+	}
+
 	public void onRestart() {
 		position.x = -157;
 		position.y = -80;
@@ -107,11 +112,6 @@ public class Boss extends Scrollable {
 
 	public boolean dropped() {
 		return dropped;
-	}
-
-	public void setBoundingCollision() {
-		boundingCollision.set(position.x, position.y + height - 12, width - 10,
-				4);
 	}
 
 	public Rectangle getBoundingCollision() {

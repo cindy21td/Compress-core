@@ -8,7 +8,7 @@ public class Projectile extends Scrollable {
 
 	private Circle boundingCollision;
 	private boolean isMoving;
-	
+
 	private float delayTime;
 
 	public Projectile(float x, float y, float scrollSpeed) {
@@ -23,12 +23,13 @@ public class Projectile extends Scrollable {
 
 		// Collision
 		boundingCollision.set(position.x + 3, position.y + 6, 3);
-		
-		if(delayTime > 0.6f) {
+
+		if (delayTime > 0.6f) {
 			move();
 			delayTime = 0;
 		}
-		if(isVisible && !isMoving) {
+
+		if (isVisible && !isMoving) {
 			delayTime += delta;
 		}
 	}
@@ -58,12 +59,12 @@ public class Projectile extends Scrollable {
 	public Circle getBoundingCollision() {
 		return boundingCollision;
 	}
-	
+
 	public void move() {
 		velocity.x -= 10;
 		isMoving = true;
 	}
-	
+
 	public boolean isMoving() {
 		return isMoving;
 	}

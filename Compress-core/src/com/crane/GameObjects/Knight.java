@@ -14,23 +14,22 @@ public class Knight extends Enemy {
 	private float attackTimeStart;
 	private float actionDuration;
 	private float attackDuration;
-	
+
 	private List<Integer> posX;
 	private int currPos;
-	
 
 	public Knight(int width, int height, float scrollSpeed, List<Integer> posX) {
 		super(width, height, scrollSpeed, EnemyType.KNIGHT);
 
 		currPos = -1;
 		this.posX = posX;
-		
+
 		position.x = getRanPosX();
 		position.y = getRanPosY();
-		
+
 		attacking = false;
 		swordThrust = false;
-		
+
 		attackDuration = 0.8f;
 		attackTimeStart = 2;
 		actionDuration = 1.5f;
@@ -38,16 +37,16 @@ public class Knight extends Enemy {
 
 	@Override
 	public void update(float delta) {
-		if(soul.isVisible) {
-			soul.update(delta);		
+		if (soul.isVisible()) {
+			soul.update(delta);
 		}
-		
+
 		position.add(velocity.cpy().scl(delta));
-        // If the Scrollable object is no longer visible:
-        if (position.x + width < 0) {
-            isScrolledLeft = true;
-            isVisible = false;
-        }
+		// If the Scrollable object is no longer visible:
+		if (position.x + width < 0) {
+			isScrolledLeft = true;
+			isVisible = false;
+		}
 
 		setBoundingCollision();
 
@@ -65,6 +64,15 @@ public class Knight extends Enemy {
 		}
 	}
 
+	public void setBoundingCollision() {
+		if (swordThrust) {
+			boundingCollisionRect.set(position.x + 1, position.y + 17, 7, 2);
+		} else {
+			boundingCollisionRect.set(position.x + 3, position.y + 17, 7, 2);
+		}
+		boundingCollisionCirc.set(position.x + 13, position.y + 15, 7f);
+	}
+
 	@Override
 	public void reset(float newVelX, boolean startOver) {
 		attacking = false;
@@ -75,22 +83,17 @@ public class Knight extends Enemy {
 		velocity.x = -59 - newVelX;
 		alive = true;
 		eaten = false;
-		
+
 		bossFight = false;
-		
+
 		position.x = getRanPosX();
 		isScrolledLeft = false;
 		isVisible = false;
-		
-		if(startOver) {
-			soul.setIsVisible(false);
+
+		if (startOver) {
+			soul.reset();
 		}
 
-	}
-
-
-	public void attack() {
-		attacking = true;
 	}
 
 	@Override
@@ -113,13 +116,8 @@ public class Knight extends Enemy {
 		}
 	}
 
-	public void setBoundingCollision() {
-		if (swordThrust) {
-			boundingCollisionRect.set(position.x + 1, position.y + 17, 7, 2);
-		} else {
-			boundingCollisionRect.set(position.x + 3, position.y + 17, 7, 2);
-		}
-		boundingCollisionCirc.set(position.x + 13, position.y + 15, 7f);
+	public void attack() {
+		attacking = true;
 	}
 
 	@Override
@@ -131,7 +129,7 @@ public class Knight extends Enemy {
 	public void swordThrust(boolean check) {
 		swordThrust = check;
 	}
-	
+
 	@Override
 	public void setIsVisible(boolean check) {
 		attackTimeStart = 2;
@@ -143,18 +141,17 @@ public class Knight extends Enemy {
 		int ranIndex = MathUtils.random(0, posX.size() - 1);
 		int pos = posX.get(ranIndex);
 		posX.remove(ranIndex);
-		if(currPos != -1) {
+		if (currPos != -1) {
 			posX.add(currPos);
 		}
 		currPos = pos;
 		return 204 + currPos * 5;
-		//return MathUtils.random(204, 235);
+		// return MathUtils.random(204, 235);
 	}
 
 	@Override
 	public float getRanPosY() {
 		return MathUtils.random(95, 105);
 	}
-
 
 }

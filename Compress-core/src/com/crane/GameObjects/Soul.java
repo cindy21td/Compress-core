@@ -34,11 +34,12 @@ public class Soul extends Scrollable {
 	}
 
 	public void reset() {
-		
+		isVisible = false;
+		isScrolledLeft = false;
 	}
 
 	public void setBoundingCollision() {
-		boundingCollision.set(position.x + 7 , position.y + 3 , 4f);
+		boundingCollision.set(position.x + 7, position.y + 3, 4f);
 	}
 
 	public void setIsVisible(boolean check) {

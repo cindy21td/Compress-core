@@ -10,7 +10,6 @@ public class Compress extends Game {
 	public void create() {
 		System.out.println("Compress Game created");
 		AssetLoader.load();
-		//setScreen(new GameScreen());
 		setScreen(new SplashScreen(this));
 	}
 	

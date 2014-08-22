@@ -51,19 +51,25 @@ public class GameRenderer {
 	private TextureRegion bg;
 	private TextureRegion bgFrontBody, bgBackBody;
 
+	// Enemies
 	private Animation enemyWizardAnimation, enemyKnightAnimation,
 			enemySummonerAnimation;
-	private Animation flameAnimation;
-	private Animation lightAnimation;
 
+	// Wizard Attack
+	private Animation flameAnimation, lightAnimation;
+
+	// Knight Attack
 	private TextureRegion enemyKnightSwingTwo;
 	private Animation enemyKnightAttackAnimation;
 
+	// Soul
 	private Animation soulAnimation;
 
+	// Hero
 	private Animation heroRunAnimation, heroStillAnimation;
 	private TextureRegion heroJump, heroFall, heroDash;
 
+	// Boss
 	private TextureRegion bossOne;
 	private Animation bossAnimation;
 
@@ -80,9 +86,6 @@ public class GameRenderer {
 		this.midPointY = midPointY;
 		this.gameHeight = gameHeight;
 
-		//this.menuButtons = ((InputHandler) Gdx.input.getInputProcessor())
-		//		.getMenuButtons();
-
 		cam = new OrthographicCamera();
 		cam.setToOrtho(true, 204, 136);
 
@@ -98,32 +101,26 @@ public class GameRenderer {
 		setupTweens();
 	}
 
-	private void setupTweens() {
-		Tween.registerAccessor(Value.class, new ValueAccessor());
-		manager = new TweenManager();
-		Tween.to(alpha, -1, .5f).target(0).ease(TweenEquations.easeOutQuad)
-				.start(manager);
-	}
-
-	public void initGameObjects() {
+	private void initGameObjects() {
 		hero = myWorld.getHero();
 		scroller = myWorld.getScroller();
+
 		bgFront = scroller.getBgFront();
 		bgBack = scroller.getBgBack();
+
 		enemyOne = scroller.getEnemyOne();
 		enemyTwo = scroller.getEnemyTwo();
 		enemyThree = scroller.getEnemyThree();
 		enemyFour = scroller.getEnemyFour();
 		enemyFive = scroller.getEnemyFive();
 		enemySix = scroller.getEnemySix();
-
 		enemySeven = scroller.getEnemySeven();
 
 		boss = scroller.getBoss();
 
 	}
 
-	public void initAssets() {
+	private void initAssets() {
 		bg = AssetLoader.bg;
 		bgFrontBody = bg;
 		bgBackBody = bg;
@@ -151,13 +148,34 @@ public class GameRenderer {
 
 	}
 
+	private void setupTweens() {
+		Tween.registerAccessor(Value.class, new ValueAccessor());
+		manager = new TweenManager();
+		Tween.to(alpha, -1, .5f).target(0).ease(TweenEquations.easeOutQuad)
+				.start(manager);
+	}
+
 	public void renderMenu(float delta, InputHandler input) {
+		Gdx.gl.glClearColor(255, 255, 255, 1);
+		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
 		batcher.begin();
 		batcher.draw(bgFrontBody, 0, 0, 204, 136);
-		
 
 		drawMenuUI(input.getMenuButtons());
+
 		batcher.end();
+	}
+
+	private void drawMenuUI(List<SimpleButton> menuButtons) {
+		// batcher.draw(AssetLoader.zbLogo, 136 / 2 - 56, midPointY - 50,
+		// AssetLoader.zbLogo.getRegionWidth() / 1.2f,
+		// AssetLoader.zbLogo.getRegionHeight() / 1.2f);
+
+		for (SimpleButton button : menuButtons) {
+			button.draw(batcher);
+		}
+
 	}
 
 	// runTime is for animation (determining which frame to render);
@@ -177,72 +195,25 @@ public class GameRenderer {
 		batcher.draw(bgBackBody, bgBack.getX(), 0, 204, 136);
 
 		batcher.enableBlending();
-		
+
 		drawHero(runTime);
-
 		drawEnemy(runTime);
-
-		// Draw Boss
-		if (boss.hasWon()) {
-			batcher.draw(bossOne, boss.getX(), boss.getY(),
-					boss.getWidth() / 2.0f, boss.getHeight() / 2.0f,
-					boss.getWidth(), boss.getHeight(), 1, 1, 0);
-
-		} else {
-			batcher.draw(bossAnimation.getKeyFrame(runTime), boss.getX(),
-					boss.getY(), boss.getWidth() / 2.0f,
-					boss.getHeight() / 2.0f, boss.getWidth(), boss.getHeight(),
-					1, 1, 0);
-		}
+		drawBoss(runTime);
 
 		drawScore();
-		
+
 		// End SpriteBatch
 		batcher.end();
 
-		// Draw DashGauge (NEED FIX)
-		int barHeight = hero.getDashGauge() * 10;
+		// Need Fix!!
+		drawGauge();
 
-		shapeRenderer.begin(ShapeType.Filled);
-		shapeRenderer.setColor(Color.RED);
-		shapeRenderer.rect(195, 10 + 50 - barHeight, 5, barHeight);
-		shapeRenderer.end();
-
-		shapeRenderer.begin(ShapeType.Line);
-		shapeRenderer.setColor(Color.BLACK);
-		shapeRenderer.rect(195, 10, 5, 50);
-		shapeRenderer.end();
-
-		// Check Collision
-		//drawCollisionCheck();
-
+		// Transition
 		drawTransition(delta);
 
-	}
+		// Check Collision
+		// drawCollisionCheck();
 
-	private void drawMenuUI(List<SimpleButton> menuButtons) {
-		// batcher.draw(AssetLoader.zbLogo, 136 / 2 - 56, midPointY - 50,
-		// AssetLoader.zbLogo.getRegionWidth() / 1.2f,
-		// AssetLoader.zbLogo.getRegionHeight() / 1.2f);
-
-		for (SimpleButton button : menuButtons) {
-			button.draw(batcher);
-		}
-
-	}
-
-	private void drawTransition(float delta) {
-		if (alpha.getValue() > 0) {
-			manager.update(delta);
-			Gdx.gl.glEnable(GL20.GL_BLEND);
-			Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-			shapeRenderer.begin(ShapeType.Filled);
-			shapeRenderer.setColor(1, 1, 1, alpha.getValue());
-			shapeRenderer.rect(0, 0, 136, 300);
-			shapeRenderer.end();
-			Gdx.gl.glDisable(GL20.GL_BLEND);
-
-		}
 	}
 
 	private void drawHero(float runTime) {
@@ -250,13 +221,13 @@ public class GameRenderer {
 		// Check case
 		int val = 0;
 		if (!hero.isAlive()) {
-			val = 2;
+			val = 1;
 		} else if (hero.actionIsDisabled()) {
-			val = 4;
+			val = 2;
 		} else if (hero.isFalling()) {
 			val = 3;
 		} else if (hero.isJumping()) {
-			val = 1;
+			val = 4;
 		} else if (hero.isDashing()) {
 			val = 5;
 		}
@@ -274,17 +245,18 @@ public class GameRenderer {
 
 		case 1:
 
-			// Hero Jumping (alive)
-			batcher.draw(heroJump, hero.getX(), hero.getY(),
-					hero.getWidth() / 2.0f, hero.getHeight() / 2.0f,
-					hero.getWidth(), hero.getHeight(), 1, 1, 0);
+			// Hero is dead
+			batcher.draw(soulAnimation.getKeyFrame(runTime), hero.getX(),
+					hero.getY(), hero.getWidth() / 2.0f,
+					hero.getHeight() / 2.0f, hero.getWidth(), hero.getHeight(),
+					1, 1, 0);
 
 			break;
 
 		case 2:
 
-			// Hero is dead
-			batcher.draw(soulAnimation.getKeyFrame(runTime), hero.getX(),
+			// Hero's starting position
+			batcher.draw(heroStillAnimation.getKeyFrame(runTime), hero.getX(),
 					hero.getY(), hero.getWidth() / 2.0f,
 					hero.getHeight() / 2.0f, hero.getWidth(), hero.getHeight(),
 					1, 1, 0);
@@ -302,15 +274,16 @@ public class GameRenderer {
 
 		case 4:
 
-			batcher.draw(heroStillAnimation.getKeyFrame(runTime), hero.getX(),
-					hero.getY(), hero.getWidth() / 2.0f,
-					hero.getHeight() / 2.0f, hero.getWidth(), hero.getHeight(),
-					1, 1, 0);
+			// Hero Jumping (alive)
+			batcher.draw(heroJump, hero.getX(), hero.getY(),
+					hero.getWidth() / 2.0f, hero.getHeight() / 2.0f,
+					hero.getWidth(), hero.getHeight(), 1, 1, 0);
 
 			break;
 
 		case 5:
 
+			// Hero Dashing (alive)
 			batcher.draw(heroDash, hero.getX(), hero.getY(),
 					hero.getWidth() / 2.0f, hero.getHeight() / 2.0f,
 					hero.getWidth(), hero.getHeight(), 1, 1, 0);
@@ -323,43 +296,18 @@ public class GameRenderer {
 
 	private void drawEnemy(float runTime) {
 
+		// Wizard
 		drawEnemyWizard(runTime, enemyOne, enemyWizardAnimation);
 		drawEnemyWizard(runTime, enemyTwo, enemyWizardAnimation);
 		drawEnemyWizard(runTime, enemyThree, enemyWizardAnimation);
+
+		// Knight
 		drawEnemyKnight(runTime, enemyFour, enemyKnightAnimation);
 		drawEnemyKnight(runTime, enemyFive, enemyKnightAnimation);
 		drawEnemyKnight(runTime, enemySix, enemyKnightAnimation);
 
+		// Summoner
 		drawEnemySummoner(runTime, enemySeven, enemySummonerAnimation);
-
-	}
-
-	private void drawEnemyKnight(float runTime, Enemy enemy, Animation animation) {
-		if (!enemy.isAlive()) {
-			batcher.draw(soulAnimation.getKeyFrame(runTime), enemy.getSoul()
-					.getX(), enemy.getSoul().getY(), 15 / 2.0f, 15 / 2.0f, 15,
-					15, 1, 1, 0);
-
-		} else if (enemy.isVisible()) {
-			if (enemy.isAttacking()) {
-				TextureRegion frame = enemyKnightAttackAnimation
-						.getKeyFrame(runTime);
-				if (frame.equals(enemyKnightSwingTwo)) {
-					enemy.swordThrust(true);
-				} else {
-					enemy.swordThrust(false);
-				}
-				batcher.draw(frame, enemy.getX(), enemy.getY(),
-						enemy.getWidth() / 2.0f, enemy.getHeight() / 2.0f,
-						enemy.getWidth(), enemy.getHeight(), 1, 1, 0);
-
-			} else {
-				batcher.draw(animation.getKeyFrame(runTime), enemy.getX(),
-						enemy.getY(), enemy.getWidth() / 2.0f,
-						enemy.getHeight() / 2.0f, enemy.getWidth(),
-						enemy.getHeight(), 1, 1, 0);
-			}
-		}
 
 	}
 
@@ -397,6 +345,35 @@ public class GameRenderer {
 
 	}
 
+	private void drawEnemyKnight(float runTime, Enemy enemy, Animation animation) {
+		if (!enemy.isAlive()) {
+			batcher.draw(soulAnimation.getKeyFrame(runTime), enemy.getSoul()
+					.getX(), enemy.getSoul().getY(), 15 / 2.0f, 15 / 2.0f, 15,
+					15, 1, 1, 0);
+
+		} else if (enemy.isVisible()) {
+			if (enemy.isAttacking()) {
+				TextureRegion frame = enemyKnightAttackAnimation
+						.getKeyFrame(runTime);
+				if (frame.equals(enemyKnightSwingTwo)) {
+					enemy.swordThrust(true);
+				} else {
+					enemy.swordThrust(false);
+				}
+				batcher.draw(frame, enemy.getX(), enemy.getY(),
+						enemy.getWidth() / 2.0f, enemy.getHeight() / 2.0f,
+						enemy.getWidth(), enemy.getHeight(), 1, 1, 0);
+
+			} else {
+				batcher.draw(animation.getKeyFrame(runTime), enemy.getX(),
+						enemy.getY(), enemy.getWidth() / 2.0f,
+						enemy.getHeight() / 2.0f, enemy.getWidth(),
+						enemy.getHeight(), 1, 1, 0);
+			}
+		}
+
+	}
+
 	private void drawEnemySummoner(float runTime, Enemy enemy,
 			Animation animation) {
 		if (!enemy.isAlive()) {
@@ -413,13 +390,45 @@ public class GameRenderer {
 
 	}
 
+	private void drawBoss(float runTime) {
+		// Draw Boss
+		if (boss.hasWon()) {
+			batcher.draw(bossOne, boss.getX(), boss.getY(),
+					boss.getWidth() / 2.0f, boss.getHeight() / 2.0f,
+					boss.getWidth(), boss.getHeight(), 1, 1, 0);
+
+		} else {
+			batcher.draw(bossAnimation.getKeyFrame(runTime), boss.getX(),
+					boss.getY(), boss.getWidth() / 2.0f,
+					boss.getHeight() / 2.0f, boss.getWidth(), boss.getHeight(),
+					1, 1, 0);
+		}
+
+	}
+
+	private void drawGauge() {
+		// Draw DashGauge (NEED FIX)
+		int barHeight = hero.getDashGauge() * 10;
+
+		shapeRenderer.begin(ShapeType.Filled);
+		shapeRenderer.setColor(Color.RED);
+		shapeRenderer.rect(195, 10 + 50 - barHeight, 5, barHeight);
+		shapeRenderer.end();
+
+		shapeRenderer.begin(ShapeType.Line);
+		shapeRenderer.setColor(Color.BLACK);
+		shapeRenderer.rect(195, 10, 5, 50);
+		shapeRenderer.end();
+
+	}
+
 	private void drawScore() {
 
 		// TEMPORARY CODE! We will fix this section later:
 		if (myWorld.isReady()) {
 			// Draw text
 			AssetLoader.font.draw(batcher, "Touch me", 100, 75);
-			
+
 		} else {
 
 			if (myWorld.isGameOver() || myWorld.isHighScore()) {
@@ -452,47 +461,61 @@ public class GameRenderer {
 
 		}
 
-		/*
-		 * // Draw score and distance AssetLoader.font.draw(batcher, "" +
-		 * myWorld.getScore(), 10, 5); AssetLoader.font.draw(batcher, "" +
-		 * myWorld.getDistance(), 10, 15);
-		 */
 	}
 
+	private void drawTransition(float delta) {
+		if (alpha.getValue() > 0) {
+			manager.update(delta);
+			Gdx.gl.glEnable(GL20.GL_BLEND);
+			Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+			shapeRenderer.begin(ShapeType.Filled);
+			shapeRenderer.setColor(1, 1, 1, alpha.getValue());
+			shapeRenderer.rect(0, 0, 136, 300);
+			shapeRenderer.end();
+			Gdx.gl.glDisable(GL20.GL_BLEND);
+
+		}
+	}
+
+	// For Checking Collision
 	private void drawCollisionCheck() {
 		// Draw bounding collision
 		shapeRenderer.begin(ShapeType.Filled);
 		shapeRenderer.setColor(Color.RED);
 
-		/*
-		 * shapeRenderer.circle(hero.getBoundingBody().x,
-		 * hero.getBoundingBody().y, hero.getBoundingBody().radius);
-		 * 
-		 * if (hero.isJumping()) { shapeRenderer.setColor(Color.BLUE);
-		 * shapeRenderer.rect(hero.getBoundingFeet().x,
-		 * hero.getBoundingFeet().y, hero.getBoundingFeet().getWidth(),
-		 * hero.getBoundingFeet() .getHeight()); }
-		 * 
-		 * drawWizardCollision(enemyOne); drawWizardCollision(enemyTwo);
-		 * drawWizardCollision(enemyThree);
-		 * 
-		 * drawKnightCollision(enemyFour); drawKnightCollision(enemyFive);
-		 * drawKnightCollision(enemySix);
-		 * 
-		 * // Summoner
-		 * shapeRenderer.circle(enemySeven.getBoundingCollisionCircle().x,
-		 * enemySeven.getBoundingCollisionCircle().y,
-		 * enemySeven.getBoundingCollisionCircle().radius);
-		 * 
-		 * shapeRenderer.circle(enemySeven.getSoul().getBoundingCollision().x,
-		 * enemySeven.getSoul().getBoundingCollision().y,
-		 * enemySeven.getSoul().getBoundingCollision().radius);
-		 * 
-		 * 
-		 * // Boss shapeRenderer.rect(boss.getBoundingCollision().x, boss
-		 * .getBoundingCollision().y, boss.getBoundingCollision() .getWidth(),
-		 * boss.getBoundingCollision().getHeight());
-		 */
+		shapeRenderer.circle(hero.getBoundingBody().x,
+				hero.getBoundingBody().y, hero.getBoundingBody().radius);
+
+		if (hero.isJumping()) {
+			shapeRenderer.setColor(Color.BLUE);
+			shapeRenderer.rect(hero.getBoundingFeet().x,
+					hero.getBoundingFeet().y,
+					hero.getBoundingFeet().getWidth(), hero.getBoundingFeet()
+							.getHeight());
+		}
+
+		drawWizardCollision(enemyOne);
+		drawWizardCollision(enemyTwo);
+		drawWizardCollision(enemyThree);
+
+		drawKnightCollision(enemyFour);
+		drawKnightCollision(enemyFive);
+		drawKnightCollision(enemySix);
+
+		// Summoner
+		shapeRenderer.circle(enemySeven.getBoundingCollisionCircle().x,
+				enemySeven.getBoundingCollisionCircle().y,
+				enemySeven.getBoundingCollisionCircle().radius);
+
+		shapeRenderer.circle(enemySeven.getSoul().getBoundingCollision().x,
+				enemySeven.getSoul().getBoundingCollision().y, enemySeven
+						.getSoul().getBoundingCollision().radius);
+
+		// Boss
+		shapeRenderer.rect(boss.getBoundingCollision().x, boss
+				.getBoundingCollision().y, boss.getBoundingCollision()
+				.getWidth(), boss.getBoundingCollision().getHeight());
+
 		// Bar
 		shapeRenderer.rect(0, 88, 204, 2);
 
