@@ -14,6 +14,10 @@ public class AssetLoader {
 
 	public static TextureRegion bg;
 
+	public static Texture titleTexture, menuTexture;
+	public static TextureRegion title, stillOne, stillTwo, backgroundMenu;
+	public static Animation stillAnimation, startInstructionAnimation;
+
 	// Hero
 	public static Animation heroRunAnimation, heroStillAnimation;
 	public static TextureRegion heroJump, heroFall, heroDash;
@@ -41,8 +45,18 @@ public class AssetLoader {
 	public static TextureRegion logo;
 
 	// Button
-	public static Texture buttonTexture;
+	public static Texture buttonTexture, button;
 	public static TextureRegion buttonUp, buttonDown;
+	public static TextureRegion rateButtonUp, rateButtonDown, scoreButtonUp,
+			scoreButtonDown, helpButtonUp, helpButtonDown, playButtonUp,
+			playButtonDown;
+
+	// Icon
+	public static TextureRegion kill, distance;
+
+	// Scoreboard
+	public static Texture board;
+	public static TextureRegion scoreboard;
 
 	// Font
 	public static BitmapFont font;
@@ -85,7 +99,7 @@ public class AssetLoader {
 
 	private static void loadBackground() {
 		// Background Sprite
-		texture = new Texture(Gdx.files.internal("Background.png"));
+		texture = new Texture(Gdx.files.internal("Background Texture.png"));
 		texture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
 
 		bg = new TextureRegion(texture, 0, 0, 816, 544);
@@ -252,7 +266,7 @@ public class AssetLoader {
 		bossAnimation = new Animation(0.2f, bossColl);
 		bossAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
 	}
-	
+
 	private static void loadEffect() {
 		// Effect
 		TextureRegion soulOne = new TextureRegion(enemy, 0, 300, 100, 100);
@@ -275,12 +289,48 @@ public class AssetLoader {
 		font = new BitmapFont(Gdx.files.internal("Trash3.fnt"));
 		font.setScale(.15f, -.15f);
 
+		// Logo
 		logoTexture = new Texture(Gdx.files.internal("Logo ver One.png"));
 		logoTexture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
 
 		logo = new TextureRegion(logoTexture, 0, 0, 204, 136);
 		logo.flip(false, true);
 
+		// Title
+		titleTexture = new Texture(Gdx.files.internal("Title Texture.png"));
+		titleTexture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
+
+		title = new TextureRegion(titleTexture, 0, 0, 306, 272);
+		title.flip(false, true);
+
+		menuTexture = new Texture(Gdx.files.internal("Menu Texture.png"));
+		menuTexture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
+
+		backgroundMenu = new TextureRegion(menuTexture, 0, 0, 612, 408);
+		backgroundMenu.flip(false, true);
+
+		TextureRegion startInstruction = new TextureRegion(menuTexture, 612, 0,
+				250, 150);
+		startInstruction.flip(false, true);
+
+		TextureRegion blank = new TextureRegion(menuTexture, 612, 150, 250, 150);
+		blank.flip(false, true);
+
+		TextureRegion[] start = { startInstruction, blank };
+		startInstructionAnimation = new Animation(0.4f, start);
+		startInstructionAnimation.setPlayMode(Animation.PlayMode.LOOP);
+
+		stillOne = new TextureRegion(menuTexture, 0, 408, 400, 400);
+		stillOne.flip(false, true);
+
+		stillTwo = new TextureRegion(menuTexture, 400, 408, 400, 400);
+		stillTwo.flip(false, true);
+
+		TextureRegion[] still = { stillOne, stillTwo };
+		stillAnimation = new Animation(0.5f, still);
+		stillAnimation.setPlayMode(Animation.PlayMode.LOOP);
+
+		// Buttons
 		buttonTexture = new Texture(
 				Gdx.files.internal("Button Sprite ver One.png"));
 		buttonTexture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
@@ -291,12 +341,51 @@ public class AssetLoader {
 		buttonDown = new TextureRegion(buttonTexture, 0, 50, 100, 50);
 		buttonDown.flip(false, true);
 
+		button = new Texture(Gdx.files.internal("Button Texture.png"));
+		button.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
+
+		helpButtonUp = new TextureRegion(button, 0, 0, 100, 58);
+		helpButtonUp.flip(false, true);
+
+		helpButtonDown = new TextureRegion(button, 100, 0, 100, 58);
+		helpButtonDown.flip(false, true);
+
+		scoreButtonUp = new TextureRegion(button, 0, 58, 100, 58);
+		scoreButtonUp.flip(false, true);
+
+		scoreButtonDown = new TextureRegion(button, 100, 58, 100, 58);
+		scoreButtonDown.flip(false, true);
+
+		rateButtonUp = new TextureRegion(button, 0, 116, 100, 58);
+		rateButtonUp.flip(false, true);
+
+		rateButtonDown = new TextureRegion(button, 100, 116, 100, 58);
+		rateButtonDown.flip(false, true);
+		
+		playButtonUp = new TextureRegion(button, 0, 174, 100, 58);
+		playButtonUp.flip(false, true);
+
+		playButtonDown = new TextureRegion(button, 100, 174, 100, 58);
+		playButtonDown.flip(false, true);
+
+		// Icon
+		kill = new TextureRegion(menuTexture, 612, 150, 100, 100);
+		kill.flip(false, true);
+
+		distance = new TextureRegion(menuTexture, 712, 150, 100, 100);
+		distance.flip(false, true);
+
+		// Scoreboard
+		board = new Texture(Gdx.files.internal("Scoreboard Texture.png"));
+		board.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
+
+		scoreboard = new TextureRegion(board, 0, 0, 816, 544);
+		scoreboard.flip(false, true);
+
 		// example =
 		// Gdx.audio.newSound(Gdx.files.internal("path/to/sound/file");
 
 	}
-
-	
 
 	public static void setHighScore(int val) {
 		prefs.putInteger("highScore", val);
@@ -323,9 +412,14 @@ public class AssetLoader {
 		enemy.dispose();
 		boss.dispose();
 
+		button.dispose();
+
 		logoTexture.dispose();
 		buttonTexture.dispose();
-		
+		titleTexture.dispose();
+		menuTexture.dispose();
+		board.dispose();
+
 		font.dispose();
 
 	}

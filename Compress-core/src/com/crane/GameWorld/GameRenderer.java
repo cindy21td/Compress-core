@@ -79,6 +79,11 @@ public class GameRenderer {
 
 	// Buttons
 	private List<SimpleButton> menuButtons;
+	
+	// Title
+	private TextureRegion title;
+	private TextureRegion backgroundMenu;
+	private Animation stillAnimation, startInstructionAnimation;
 
 	public GameRenderer(GameWorld world, int gameHeight, int midPointY) {
 		myWorld = world;
@@ -146,6 +151,10 @@ public class GameRenderer {
 
 		soulAnimation = AssetLoader.soulAnimation;
 
+		title = AssetLoader.title;
+		backgroundMenu = AssetLoader.backgroundMenu;
+		startInstructionAnimation = AssetLoader.startInstructionAnimation;
+		stillAnimation = AssetLoader.stillAnimation;
 	}
 
 	private void setupTweens() {
@@ -155,16 +164,36 @@ public class GameRenderer {
 				.start(manager);
 	}
 
-	public void renderMenu(float delta, InputHandler input) {
+	public void renderMenu(float runTime, InputHandler input) {
 		Gdx.gl.glClearColor(255, 255, 255, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
 		batcher.begin();
-		batcher.draw(bgFrontBody, 0, 0, 204, 136);
+		
+		batcher.draw(backgroundMenu, 0, 0, 204, 136);
 
+		batcher.draw(title, 250 / 3f, 0, 350 / 3f, 278 / 3f);
+		
+		batcher.draw(stillAnimation.getKeyFrame(runTime), -110 / 3f,
+				-10 / 3f, (500 / 3f) / 2.0f,
+				(500 / 3f) / 2.0f, 500 / 3f, 500 / 3f,
+				1, 1, 0);
+		
+		
+		batcher.draw(startInstructionAnimation.getKeyFrame(runTime), 20 / 3f,
+				0 , (250 / 3f) / 2.0f,
+				(150 / 3f) / 2.0f, 250 / 3f, 150 / 3f,
+				1, 1, 0);
+		
+		
 		drawMenuUI(input.getMenuButtons());
 
 		batcher.end();
+		
+		//shapeRenderer.begin(ShapeType.Filled);
+		//shapeRenderer.setColor(Color.RED);
+		//shapeRenderer.circle(input.getPlay().x, input.getPlay().y, input.getPlay().radius);
+		//shapeRenderer.end();
 	}
 
 	private void drawMenuUI(List<SimpleButton> menuButtons) {

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.badlogic.gdx.InputProcessor;
+import com.badlogic.gdx.math.Circle;
 import com.crane.GameWorld.GameRenderer;
 import com.crane.GameWorld.GameWorld;
 import com.crane.compress.Compress;
@@ -17,14 +18,17 @@ public class InputHandler implements InputProcessor {
 	private List<SimpleButton> menuButtons;
 
 	private SimpleButton playButton;
+	private SimpleButton rateButton, scoreButton, helpButton;
+
+	private Circle play;
 
 	private float scaleFactorX;
 	private float scaleFactorY;
 
 	private Compress game;
 
-	public InputHandler(Compress game, GameWorld myWorld, GameRenderer renderer, float scaleFactorX,
-			float scaleFactorY) {
+	public InputHandler(Compress game, GameWorld myWorld,
+			GameRenderer renderer, float scaleFactorX, float scaleFactorY) {
 		this.game = game;
 		this.myWorld = myWorld;
 		this.renderer = renderer;
@@ -35,11 +39,23 @@ public class InputHandler implements InputProcessor {
 		this.scaleFactorY = scaleFactorY;
 
 		menuButtons = new ArrayList<SimpleButton>();
-		playButton = new SimpleButton(
-				102 - (AssetLoader.buttonUp.getRegionWidth() / 2), midPointY
-						- (AssetLoader.buttonUp.getRegionHeight() / 2), 100,
-				50, AssetLoader.buttonUp, AssetLoader.buttonDown);
-		menuButtons.add(playButton);
+
+		rateButton = new SimpleButton(390 / 3f, 340 / 3f, 100 / 3f, 58 / 3,
+				AssetLoader.rateButtonUp, AssetLoader.rateButtonDown);
+
+		scoreButton = new SimpleButton(460 / 3f, 265 / 3f, 100 / 3f, 58 / 3,
+				AssetLoader.scoreButtonUp, AssetLoader.scoreButtonDown);
+
+		helpButton = new SimpleButton(320 / 3f, 265 / 3f, 100 / 3f, 58 / 3,
+				AssetLoader.helpButtonUp, AssetLoader.helpButtonDown);
+
+		menuButtons.add(rateButton);
+		menuButtons.add(scoreButton);
+		menuButtons.add(helpButton);
+
+		play = new Circle(50, 92, 50f);
+
+		playButton = new SimpleButton(50, 92, 50f);
 
 	}
 
@@ -50,6 +66,11 @@ public class InputHandler implements InputProcessor {
 		System.out.println(screenX + " " + screenY);
 		if (myWorld.isMenu()) {
 			playButton.isTouchDown(screenX, screenY);
+
+			rateButton.isTouchDown(screenX, screenY);
+			scoreButton.isTouchDown(screenX, screenY);
+			helpButton.isTouchDown(screenX, screenY);
+
 		} else if (myWorld.isReady()) {
 			myWorld.start();
 		}
@@ -67,9 +88,29 @@ public class InputHandler implements InputProcessor {
 
 				return true;
 			}
+
+			if (rateButton.isTouchUp(screenX, screenY)) {
+
+				return true;
+			}
+
+			if (scoreButton.isTouchUp(screenX, screenY)) {
+
+				return true;
+			}
+
+			if (helpButton.isTouchUp(screenX, screenY)) {
+
+				return true;
+			}
+
 		}
 
 		return false;
+	}
+
+	public Circle getPlay() {
+		return play;
 	}
 
 	private int scaleX(int screenX) {

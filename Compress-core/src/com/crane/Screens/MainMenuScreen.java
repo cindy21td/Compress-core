@@ -12,6 +12,8 @@ public class MainMenuScreen implements Screen {
 	private GameWorld world;
 	private GameRenderer renderer;
 
+	private float runTime = 0;
+	
 	private Compress game;
 
 	public MainMenuScreen(Compress game) {
@@ -34,7 +36,8 @@ public class MainMenuScreen implements Screen {
 
 	@Override
 	public void render(float delta) {
-		renderer.renderMenu(delta, (InputHandler) Gdx.input.getInputProcessor());
+		runTime += delta;
+		renderer.renderMenu(runTime, (InputHandler) Gdx.input.getInputProcessor());
 	}
 
 	@Override
