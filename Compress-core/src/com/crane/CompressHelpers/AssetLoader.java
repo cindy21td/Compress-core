@@ -2,6 +2,7 @@ package com.crane.CompressHelpers;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Preferences;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.Animation;
@@ -61,8 +62,9 @@ public class AssetLoader {
 	// Font
 	public static BitmapFont font;
 
-	// Placeholder for Sounds
-	// public static Sound example;
+	// Sounds
+	public static Sound bossFall, bossGround, bossTheme, deathSound, hitSound,
+			jumpSound, knightAttack, runTheme, wizardAttack;
 
 	// Storing Scores
 	public static Preferences prefs;
@@ -84,6 +86,8 @@ public class AssetLoader {
 		loadEffect();
 
 		loadUtilities();
+		
+		loadSounds();
 
 		// Create (or retrieve existing) preferences file
 		prefs = Gdx.app.getPreferences("Compress");
@@ -290,11 +294,11 @@ public class AssetLoader {
 		font.setScale(.15f, -.15f);
 
 		// Logo
-		logoTexture = new Texture(Gdx.files.internal("Logo ver One.png"));
+		logoTexture = new Texture(Gdx.files.internal("Logo.png"));
 		logoTexture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
 
 		logo = new TextureRegion(logoTexture, 0, 0, 204, 136);
-		logo.flip(false, true);
+		logo.flip(false, false);
 
 		// Title
 		titleTexture = new Texture(Gdx.files.internal("Title Texture.png"));
@@ -361,7 +365,7 @@ public class AssetLoader {
 
 		rateButtonDown = new TextureRegion(button, 100, 116, 100, 58);
 		rateButtonDown.flip(false, true);
-		
+
 		playButtonUp = new TextureRegion(button, 0, 174, 100, 58);
 		playButtonUp.flip(false, true);
 
@@ -369,10 +373,10 @@ public class AssetLoader {
 		playButtonDown.flip(false, true);
 
 		// Icon
-		kill = new TextureRegion(menuTexture, 612, 150, 100, 100);
+		kill = new TextureRegion(menuTexture, 612, 300, 100, 100);
 		kill.flip(false, true);
 
-		distance = new TextureRegion(menuTexture, 712, 150, 100, 100);
+		distance = new TextureRegion(menuTexture, 712, 300, 100, 100);
 		distance.flip(false, true);
 
 		// Scoreboard
@@ -382,8 +386,22 @@ public class AssetLoader {
 		scoreboard = new TextureRegion(board, 0, 0, 816, 544);
 		scoreboard.flip(false, true);
 
+	}
+	
+	private static void loadSounds() {
 		// example =
 		// Gdx.audio.newSound(Gdx.files.internal("path/to/sound/file");
+		
+		bossFall = Gdx.audio.newSound(Gdx.files.internal("sound/Boss Fall.m4a"));
+		bossGround = Gdx.audio.newSound(Gdx.files.internal("sound/Boss Ground.m4a"));
+		bossTheme = Gdx.audio.newSound(Gdx.files.internal("sound/Boss Theme.m4a"));
+		deathSound = Gdx.audio.newSound(Gdx.files.internal("sound/Death Sound.m4a"));
+		hitSound = Gdx.audio.newSound(Gdx.files.internal("sound/Hit Sound.m4a"));
+		jumpSound = Gdx.audio.newSound(Gdx.files.internal("sound/Jump Sound.m4a"));
+		knightAttack = Gdx.audio.newSound(Gdx.files.internal("sound/Knight Attack.m4a"));
+		runTheme = Gdx.audio.newSound(Gdx.files.internal("sound/Run Theme.m4a"));
+		wizardAttack = Gdx.audio.newSound(Gdx.files.internal("sound/Wizard Attack.m4a"));
+
 
 	}
 
@@ -421,6 +439,18 @@ public class AssetLoader {
 		board.dispose();
 
 		font.dispose();
+		
+		
+		// Dispose Sounds
+		bossFall.dispose();
+		bossGround.dispose();
+		bossTheme.dispose();
+		deathSound.dispose();
+		hitSound.dispose();
+		jumpSound.dispose();
+		knightAttack.dispose();
+		runTheme.dispose();
+		wizardAttack.dispose();
 
 	}
 

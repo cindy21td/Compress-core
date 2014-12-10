@@ -3,6 +3,7 @@ package com.crane.GameObjects;
 import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+import com.crane.CompressHelpers.AssetLoader;
 
 public class Hero {
 
@@ -131,10 +132,16 @@ public class Hero {
 		} else if (alive && !actionDisabled && jumped && !doubleJumped) {
 			doubleJumped = true;
 			velocity.y = -200;
+			
+			AssetLoader.jumpSound.play(0.3f);
+			
 		} else if (alive && !actionDisabled && !jumped) {
 			jumped = true;
 			velocity.y = -200;
 			acceleration.y = 460;
+			
+			AssetLoader.jumpSound.play(0.3f);
+			
 		}
 	}
 
@@ -156,6 +163,9 @@ public class Hero {
 			if (dashGauge < 5) {
 				dashGauge++;
 			}
+			
+			AssetLoader.hitSound.play(0.3f);
+			
 		}
 	}
 

@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.input.GestureDetector;
 import com.crane.CompressHelpers.GestureHandler;
+import com.crane.CompressHelpers.InputHandler;
 import com.crane.GameWorld.GameRenderer;
 import com.crane.GameWorld.GameWorld;
 
@@ -13,8 +14,11 @@ public class GameScreen implements Screen {
 	private GameRenderer renderer;
 
 	private float runTime = 0;
+	
+	private InputHandler inputDetect;
+	private GestureDetector gestureDetect;
 
-	public GameScreen(GameWorld world, GameRenderer renderer) {
+	public GameScreen(GameWorld world, GameRenderer renderer, InputHandler input) {
 
 		float screenWidth = Gdx.graphics.getWidth();
 		float screenHeight = Gdx.graphics.getHeight();
@@ -29,9 +33,20 @@ public class GameScreen implements Screen {
 		this.renderer = renderer;
 
 		// InputProcessor
-		GestureDetector gestureDetect = new GestureDetector(new GestureHandler(
+		
+		inputDetect = input;
+		
+		gestureDetect = new GestureDetector(new GestureHandler(
 				world, gameWidth, gameHeight));
 		Gdx.input.setInputProcessor(gestureDetect);
+	}
+	
+	public void changeInputProcessor(boolean input) {
+		if(input) {
+			Gdx.input.setInputProcessor(inputDetect);
+		} else {
+			Gdx.input.setInputProcessor(gestureDetect);
+		}
 	}
 
 	@Override

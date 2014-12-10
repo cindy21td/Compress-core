@@ -13,8 +13,9 @@ public class MainMenuScreen implements Screen {
 	private GameRenderer renderer;
 
 	private float runTime = 0;
-	
+
 	private Compress game;
+	private InputHandler inputDetect;
 
 	public MainMenuScreen(Compress game) {
 		this.game = game;
@@ -29,15 +30,18 @@ public class MainMenuScreen implements Screen {
 		world = new GameWorld(midPointY); // Initializes GameWorld
 		renderer = new GameRenderer(world, (int) gameHeight, midPointY); // Initializes
 																			// GameRenderer
+		inputDetect = new InputHandler(game, world, renderer, screenWidth
+				/ gameWidth, screenHeight / gameHeight);
 
-		Gdx.input.setInputProcessor(new InputHandler(game, world, renderer,
-				screenWidth / gameWidth, screenHeight / gameHeight));
+		renderer.setInputDetect(inputDetect);
+
+		Gdx.input.setInputProcessor(inputDetect);
 	}
 
 	@Override
 	public void render(float delta) {
 		runTime += delta;
-		renderer.renderMenu(runTime, (InputHandler) Gdx.input.getInputProcessor());
+		renderer.renderMenu(runTime);
 	}
 
 	@Override

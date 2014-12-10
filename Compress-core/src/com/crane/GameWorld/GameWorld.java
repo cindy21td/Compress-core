@@ -2,6 +2,7 @@ package com.crane.GameWorld;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.crane.CompressHelpers.AssetLoader;
+import com.crane.CompressHelpers.InputHandler;
 import com.crane.GameObjects.Hero;
 import com.crane.GameObjects.ScrollHandler;
 import com.crane.GameObjects.ScrollHandler.RunningState;
@@ -10,6 +11,8 @@ import com.crane.compress.Compress;
 
 public class GameWorld {
 
+	private GameScreen screen;
+	
 	private Hero hero;
 	private ScrollHandler scroller;
 
@@ -19,6 +22,7 @@ public class GameWorld {
 
 	private int score = 0;
 	private int distance = 0;
+	private int totalScore = 0;
 
 	private int rushDistance = 0;
 	private final static int RUSH_DURATION = 60;
@@ -38,6 +42,7 @@ public class GameWorld {
 		scroller = new ScrollHandler(this, midPointY);
 
 		this.midPointY = midPointY;
+		
 	}
 
 	public void update(float delta) {
@@ -83,13 +88,18 @@ public class GameWorld {
 		// Collision
 		if (scroller.collides(hero) || scroller.bossWins()) {
 			// Clean up on game over
+			
+			AssetLoader.runTheme.stop();
+						
 			scroller.stop();
 			hero.isDead(true);
+			
+			AssetLoader.deathSound.play(0.3f);
 
 			currentState = GameState.GAMEOVER;
-
-			if (score > AssetLoader.getHighScore()) {
-				AssetLoader.setHighScore(score);
+			totalScore = distance / 200 + score;
+			if (totalScore > AssetLoader.getHighScore()) {
+				AssetLoader.setHighScore(totalScore);
 				currentState = GameState.HIGHSCORE;
 			}
 
@@ -98,6 +108,7 @@ public class GameWorld {
 				currentState = GameState.HIGHSCORE;
 			}
 
+			screen.changeInputProcessor(true);
 		}
 
 		// Distance
@@ -107,6 +118,7 @@ public class GameWorld {
 
 		// Sound Play
 		// AssetLoader.example.play();
+		
 	}
 
 	private void checkState() {
@@ -129,15 +141,24 @@ public class GameWorld {
 
 	public void start() {
 		currentState = GameState.RUNNING;
+		
+		AssetLoader.runTheme.loop(0.3f);
+
 	}
 
-	public void ready(Compress game, GameRenderer renderer) {
+	public void ready(Compress game, GameRenderer renderer, InputHandler input) {
 		currentState = GameState.READY;
-		game.setScreen(new GameScreen(this, renderer));
+		
+		screen = new GameScreen(this, renderer, input);
+		
+		game.setScreen(screen);
 	}
 
 	public void restart() {
 		currentState = GameState.READY;
+		
+		screen.changeInputProcessor(false);
+		
 		scroller.changeStage(RunningState.NORMAL);
 
 		randRushNumber = MathUtils.random(1, 10) * MathUtils.random(1, 10)
@@ -146,6 +167,7 @@ public class GameWorld {
 
 		score = 0;
 		distance = 0;
+		totalScore = 0;
 
 		hero.onRestart();
 		scroller.onRestart();
@@ -189,6 +211,10 @@ public class GameWorld {
 
 	public int getDistance() {
 		return distance / 8;
+	}
+	
+	public int getTotalScore() {
+		return totalScore;
 	}
 
 	public int getMidPointY() {

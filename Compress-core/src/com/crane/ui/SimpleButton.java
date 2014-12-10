@@ -49,6 +49,11 @@ public class SimpleButton {
 			batcher.draw(buttonUp, x, y, width, height);
 		}
 	}
+	
+	public void changePosition(float newX, float newY) {
+		this.x = newX;
+		this.y = newY;
+	}
 
 	public boolean isTouchDown(int screenX, int screenY) {
 

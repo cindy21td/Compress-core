@@ -45,11 +45,11 @@ public class GestureHandler implements GestureListener {
 			hero.onClick();
 		}
 
-		if (myWorld.isGameOver() || myWorld.isHighScore()) {
-
-			myWorld.restart();
-
-		}
+		// if (myWorld.isGameOver() || myWorld.isHighScore()) {
+		//
+		// myWorld.restart();
+		//
+		// }
 
 		return true;
 	}

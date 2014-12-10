@@ -80,10 +80,19 @@ public class GameRenderer {
 	// Buttons
 	private List<SimpleButton> menuButtons;
 	
+	// Icons
+	private TextureRegion kill, distance;
+	
+	// Scoreboard
+	private TextureRegion scoreboard;
+	
 	// Title
 	private TextureRegion title;
 	private TextureRegion backgroundMenu;
 	private Animation stillAnimation, startInstructionAnimation;
+	
+	// InputHandler
+	private InputHandler input;
 
 	public GameRenderer(GameWorld world, int gameHeight, int midPointY) {
 		myWorld = world;
@@ -104,6 +113,12 @@ public class GameRenderer {
 		initGameObjects();
 		initAssets();
 		setupTweens();
+		
+	}
+	
+	public void setInputDetect(InputHandler input) {
+		this.input = input;
+
 	}
 
 	private void initGameObjects() {
@@ -150,6 +165,11 @@ public class GameRenderer {
 		enemyKnightAttackAnimation = AssetLoader.enemyKnightAttackAnimation;
 
 		soulAnimation = AssetLoader.soulAnimation;
+		
+		kill = AssetLoader.kill;
+		distance = AssetLoader.distance;
+		
+		scoreboard = AssetLoader.scoreboard;
 
 		title = AssetLoader.title;
 		backgroundMenu = AssetLoader.backgroundMenu;
@@ -164,7 +184,8 @@ public class GameRenderer {
 				.start(manager);
 	}
 
-	public void renderMenu(float runTime, InputHandler input) {
+	public void renderMenu(float runTime) {
+		
 		Gdx.gl.glClearColor(255, 255, 255, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
@@ -235,7 +256,7 @@ public class GameRenderer {
 		batcher.end();
 
 		// Need Fix!!
-		drawGauge();
+		//drawGauge();
 
 		// Transition
 		drawTransition(delta);
@@ -456,12 +477,31 @@ public class GameRenderer {
 		// TEMPORARY CODE! We will fix this section later:
 		if (myWorld.isReady()) {
 			// Draw text
-			AssetLoader.font.draw(batcher, "Touch me", 100, 75);
+			AssetLoader.font.draw(batcher, "Tap To Start", 100, 65);
 
 		} else {
 
 			if (myWorld.isGameOver() || myWorld.isHighScore()) {
 
+				
+				batcher.draw(scoreboard, 0, 0, 204, 136);
+
+				AssetLoader.font.draw(batcher, "Game Over", 80, 10);
+
+				String score = myWorld.getScore() + "";
+				String highScore = AssetLoader.getHighScore() + "";
+				String distance = myWorld.getDistance() + "";
+				String totalScore = myWorld.getTotalScore() + "";
+
+				// Draw Text
+				AssetLoader.font.draw(batcher, score, 80, 27);
+				AssetLoader.font.draw(batcher, distance, 80, 45);
+				AssetLoader.font.draw(batcher, totalScore, 120, 40);
+				AssetLoader.font.draw(batcher, highScore, 110, 73);
+
+				drawMenuUI(input.getMenuButtons());
+
+				/*
 				if (myWorld.isGameOver()) {
 					AssetLoader.font.draw(batcher, "Game Over", 100, 55);
 
@@ -482,11 +522,16 @@ public class GameRenderer {
 
 				// Draw text
 				AssetLoader.font.draw(batcher, score, 100, 115);
+				*/
 			}
 
+			// Draw Icon
+			batcher.draw(kill, 0, 2, 13, 13);
+			batcher.draw(distance, -2, 13, 13, 13);
+			
 			// Draw score and distance
-			AssetLoader.font.draw(batcher, "" + myWorld.getScore(), 10, 5);
-			AssetLoader.font.draw(batcher, "" + myWorld.getDistance(), 10, 15);
+			AssetLoader.font.draw(batcher, "" + myWorld.getScore(), 15, 5);
+			AssetLoader.font.draw(batcher, "" + myWorld.getDistance(), 15, 15);
 
 		}
 

@@ -17,8 +17,8 @@ public class InputHandler implements InputProcessor {
 
 	private List<SimpleButton> menuButtons;
 
-	private SimpleButton playButton;
-	private SimpleButton rateButton, scoreButton, helpButton;
+	private SimpleButton playButton, replayButton;
+	//private SimpleButton rateButton, scoreButton, helpButton, replayButton;
 
 	private Circle play;
 
@@ -40,18 +40,21 @@ public class InputHandler implements InputProcessor {
 
 		menuButtons = new ArrayList<SimpleButton>();
 
-		rateButton = new SimpleButton(390 / 3f, 340 / 3f, 100 / 3f, 58 / 3,
-				AssetLoader.rateButtonUp, AssetLoader.rateButtonDown);
+		//rateButton = new SimpleButton(390 / 3f, 340 / 3f, 100 / 3f, 58 / 3,
+		//		AssetLoader.rateButtonUp, AssetLoader.rateButtonDown);
 
-		scoreButton = new SimpleButton(460 / 3f, 265 / 3f, 100 / 3f, 58 / 3,
-				AssetLoader.scoreButtonUp, AssetLoader.scoreButtonDown);
+		//scoreButton = new SimpleButton(460 / 3f, 265 / 3f, 100 / 3f, 58 / 3,
+		//		AssetLoader.scoreButtonUp, AssetLoader.scoreButtonDown);
 
-		helpButton = new SimpleButton(320 / 3f, 265 / 3f, 100 / 3f, 58 / 3,
-				AssetLoader.helpButtonUp, AssetLoader.helpButtonDown);
+		//helpButton = new SimpleButton(320 / 3f, 265 / 3f, 100 / 3f, 58 / 3,
+		//		AssetLoader.helpButtonUp, AssetLoader.helpButtonDown);
 
-		menuButtons.add(rateButton);
-		menuButtons.add(scoreButton);
-		menuButtons.add(helpButton);
+		replayButton = new SimpleButton(263 / 3f, 275 / 3f, 100 / 3f, 58 / 3,
+				AssetLoader.playButtonUp, AssetLoader.playButtonDown);
+
+		//menuButtons.add(rateButton);
+		//menuButtons.add(scoreButton);
+		//menuButtons.add(helpButton);
 
 		play = new Circle(50, 92, 50f);
 
@@ -67,12 +70,14 @@ public class InputHandler implements InputProcessor {
 		if (myWorld.isMenu()) {
 			playButton.isTouchDown(screenX, screenY);
 
-			rateButton.isTouchDown(screenX, screenY);
-			scoreButton.isTouchDown(screenX, screenY);
-			helpButton.isTouchDown(screenX, screenY);
+			//rateButton.isTouchDown(screenX, screenY);
+			//scoreButton.isTouchDown(screenX, screenY);
+			//helpButton.isTouchDown(screenX, screenY);
 
-		} else if (myWorld.isReady()) {
-			myWorld.start();
+		} else if (myWorld.isGameOver() || myWorld.isHighScore()) {
+			replayButton.isTouchDown(screenX, screenY);
+			//rateButton.isTouchDown(screenX, screenY);
+			//scoreButton.isTouchDown(screenX, screenY);
 		}
 		return true;
 	}
@@ -84,11 +89,17 @@ public class InputHandler implements InputProcessor {
 
 		if (myWorld.isMenu()) {
 			if (playButton.isTouchUp(screenX, screenY)) {
-				myWorld.ready(game, renderer);
+				myWorld.ready(game, renderer, this);
 
+				//rateButton.changePosition(160 / 3f, 280 / 3f);
+				//scoreButton.changePosition(360 / 3f, 280 / 3f);
+				menuButtons.add(replayButton);
+				//menuButtons.remove(helpButton);
+				
 				return true;
 			}
-
+			
+			/*
 			if (rateButton.isTouchUp(screenX, screenY)) {
 
 				return true;
@@ -103,7 +114,26 @@ public class InputHandler implements InputProcessor {
 
 				return true;
 			}
+			*/
 
+		} else if(myWorld.isGameOver() || myWorld.isHighScore()) {
+			if (replayButton.isTouchUp(screenX, screenY)) {
+
+				myWorld.restart();
+				
+				return true;
+			}
+			/*
+			if (rateButton.isTouchUp(screenX, screenY)) {
+
+				return true;
+			}
+
+			if (scoreButton.isTouchUp(screenX, screenY)) {
+
+				return true;
+			}
+			*/
 		}
 
 		return false;
