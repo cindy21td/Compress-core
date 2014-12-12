@@ -89,7 +89,7 @@ public class InputHandler implements InputProcessor {
 
 		if (myWorld.isMenu()) {
 			if (playButton.isTouchUp(screenX, screenY)) {
-				myWorld.ready(game, renderer, this);
+				myWorld.ready(renderer, this);
 
 				//rateButton.changePosition(160 / 3f, 280 / 3f);
 				//scoreButton.changePosition(360 / 3f, 280 / 3f);

@@ -11,6 +11,7 @@ import com.crane.compress.Compress;
 
 public class GameWorld {
 
+	private Compress game;
 	private GameScreen screen;
 	
 	private Hero hero;
@@ -34,7 +35,9 @@ public class GameWorld {
 		MENU, READY, RUNNING, GAMEOVER, HIGHSCORE;
 	}
 
-	public GameWorld(int midPointY) {
+	public GameWorld(Compress game, int midPointY) {
+		this.game = game;
+		
 		currentState = GameState.MENU;
 		randRushNumber = MathUtils.random(1, 10) * MathUtils.random(1, 10)
 				* MathUtils.random(1, 10);
@@ -97,6 +100,7 @@ public class GameWorld {
 			AssetLoader.deathSound.play(0.3f);
 
 			currentState = GameState.GAMEOVER;
+			game.showAd(true);
 			totalScore = distance / 200 + score;
 			if (totalScore > AssetLoader.getHighScore()) {
 				AssetLoader.setHighScore(totalScore);
@@ -146,17 +150,19 @@ public class GameWorld {
 
 	}
 
-	public void ready(Compress game, GameRenderer renderer, InputHandler input) {
+	public void ready(GameRenderer renderer, InputHandler input) {
 		currentState = GameState.READY;
 		
 		screen = new GameScreen(this, renderer, input);
 		
 		game.setScreen(screen);
+		game.showAd(false);
 	}
 
 	public void restart() {
 		currentState = GameState.READY;
-		
+		game.showAd(false);
+
 		screen.changeInputProcessor(false);
 		
 		scroller.changeStage(RunningState.NORMAL);

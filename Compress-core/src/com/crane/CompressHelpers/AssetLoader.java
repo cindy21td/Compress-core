@@ -46,8 +46,7 @@ public class AssetLoader {
 	public static TextureRegion logo;
 
 	// Button
-	public static Texture buttonTexture, button;
-	public static TextureRegion buttonUp, buttonDown;
+	public static Texture button;
 	public static TextureRegion rateButtonUp, rateButtonDown, scoreButtonUp,
 			scoreButtonDown, helpButtonUp, helpButtonDown, playButtonUp,
 			playButtonDown;
@@ -335,16 +334,6 @@ public class AssetLoader {
 		stillAnimation.setPlayMode(Animation.PlayMode.LOOP);
 
 		// Buttons
-		buttonTexture = new Texture(
-				Gdx.files.internal("Button Sprite ver One.png"));
-		buttonTexture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
-
-		buttonUp = new TextureRegion(buttonTexture, 0, 0, 100, 50);
-		buttonUp.flip(false, true);
-
-		buttonDown = new TextureRegion(buttonTexture, 0, 50, 100, 50);
-		buttonDown.flip(false, true);
-
 		button = new Texture(Gdx.files.internal("Button Texture.png"));
 		button.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
 
@@ -433,7 +422,6 @@ public class AssetLoader {
 		button.dispose();
 
 		logoTexture.dispose();
-		buttonTexture.dispose();
 		titleTexture.dispose();
 		menuTexture.dispose();
 		board.dispose();

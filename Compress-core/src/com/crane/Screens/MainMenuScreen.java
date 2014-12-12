@@ -27,7 +27,7 @@ public class MainMenuScreen implements Screen {
 
 		int midPointY = (int) (gameHeight / 2);
 
-		world = new GameWorld(midPointY); // Initializes GameWorld
+		world = new GameWorld(game, midPointY); // Initializes GameWorld
 		renderer = new GameRenderer(world, (int) gameHeight, midPointY); // Initializes
 																			// GameRenderer
 		inputDetect = new InputHandler(game, world, renderer, screenWidth
