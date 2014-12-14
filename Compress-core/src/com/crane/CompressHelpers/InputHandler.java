@@ -49,7 +49,7 @@ public class InputHandler implements InputProcessor {
 		//helpButton = new SimpleButton(320 / 3f, 265 / 3f, 100 / 3f, 58 / 3,
 		//		AssetLoader.helpButtonUp, AssetLoader.helpButtonDown);
 
-		replayButton = new SimpleButton(263 / 3f, 275 / 3f, 100 / 3f, 58 / 3,
+		replayButton = new SimpleButton(263 / 3f, 265 / 3f, 100 / 3f, 70 / 3f,
 				AssetLoader.playButtonUp, AssetLoader.playButtonDown);
 
 		//menuButtons.add(rateButton);

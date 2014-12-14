@@ -500,7 +500,12 @@ public class GameRenderer {
 				AssetLoader.font.draw(batcher, highScore, 110, 73);
 
 				drawMenuUI(input.getMenuButtons());
-
+				
+				//shapeRenderer.begin(ShapeType.Filled);
+				//shapeRenderer.setColor(Color.RED);
+				//shapeRenderer.rect(263 / 3f, 265 / 3f, 100 / 3f, 70 / 3f);
+				//shapeRenderer.end();
+				
 				/*
 				if (myWorld.isGameOver()) {
 					AssetLoader.font.draw(batcher, "Game Over", 100, 55);
