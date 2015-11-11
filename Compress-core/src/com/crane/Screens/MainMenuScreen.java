@@ -7,6 +7,11 @@ import com.crane.GameWorld.GameRenderer;
 import com.crane.GameWorld.GameWorld;
 import com.crane.compress.Compress;
 
+/**
+ * Main menu screen
+ * @author Cindy
+ *
+ */
 public class MainMenuScreen implements Screen {
 
 	private GameWorld world;

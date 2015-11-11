@@ -82,9 +82,6 @@ public class Knight extends Enemy {
 		position.y = getRanPosY();
 		velocity.x = -59 - newVelX;
 		alive = true;
-		eaten = false;
-
-		bossFight = false;
 
 		position.x = getRanPosX();
 		isScrolledLeft = false;
@@ -98,7 +95,7 @@ public class Knight extends Enemy {
 
 	@Override
 	public boolean collides(Hero hero) {
-		if (alive && isVisible && !hero.isDashing()) {
+		if (alive && isVisible) {
 			boolean hitBySword = false;
 			if (attacking) {
 				hitBySword = Intersector.overlaps(hero.getBoundingBody(),

@@ -2,7 +2,6 @@ package com.crane.GameObjects;
 
 import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.Intersector;
-import com.badlogic.gdx.math.Vector2;
 
 public class Projectile extends Scrollable {
 
@@ -18,6 +17,7 @@ public class Projectile extends Scrollable {
 		delayTime = 0;
 	}
 
+	@Override
 	public void update(float delta) {
 		super.update(delta);
 

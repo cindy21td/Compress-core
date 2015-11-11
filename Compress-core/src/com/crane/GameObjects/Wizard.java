@@ -52,7 +52,7 @@ public class Wizard extends Enemy {
 		}
 
 		for (int i = 0; i < projectiles.size(); i++) {
-			Projectile p = (Projectile) projectiles.get(i);
+			Projectile p = projectiles.get(i);
 			p.update(delta);
 
 		}
@@ -71,10 +71,6 @@ public class Wizard extends Enemy {
 		position.y = getRanPosY();
 		velocity.x = -59 - newVelX;
 		alive = true;
-		eaten = false;
-		// soulVisible = false;
-
-		bossFight = false;
 
 		position.x = getRanPosX();
 		isScrolledLeft = false;
@@ -91,14 +87,14 @@ public class Wizard extends Enemy {
 		if (alive && isVisible) {
 			boolean hitByProjectile = false;
 			for (int i = 0; i < projectiles.size(); i++) {
-				Projectile p = (Projectile) projectiles.get(i);
+				Projectile p = projectiles.get(i);
 				if (p.collides(hero)) {
 					hitByProjectile = true;
 				}
 			}
 
 			boolean isHit = false;
-			if (!hero.isDashing() && position.x < hero.getX() + hero.getWidth()) {
+			if (position.x < hero.getX() + hero.getWidth()) {
 				isHit = Intersector.overlaps(hero.getBoundingBody(),
 						boundingCollisionCirc);
 			}
@@ -123,7 +119,7 @@ public class Wizard extends Enemy {
 	public void setIsVisible(boolean check) {
 		attackTimeStart = 1;
 		isVisible = check;
-		if (bossFight && check) {
+		if (check) {
 			position.y = getRanPosY();
 		}
 	}
@@ -143,9 +139,6 @@ public class Wizard extends Enemy {
 
 	@Override
 	public float getRanPosY() {
-		if (bossFight) {
-			return MathUtils.random(90, 96);
-		}
 		return MathUtils.random(50, 81);
 	}
 

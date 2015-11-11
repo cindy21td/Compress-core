@@ -17,6 +17,7 @@ public class Soul extends Scrollable {
 		boundingCollision = new Circle();
 	}
 
+	@Override
 	public void update(float delta) {
 		if (isVisible) {
 			position.add(velocity.cpy().scl(delta));

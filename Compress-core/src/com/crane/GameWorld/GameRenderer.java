@@ -19,7 +19,6 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.crane.CompressHelpers.AssetLoader;
 import com.crane.CompressHelpers.InputHandler;
 import com.crane.GameObjects.Background;
-import com.crane.GameObjects.Boss;
 import com.crane.GameObjects.Enemy;
 import com.crane.GameObjects.Hero;
 import com.crane.GameObjects.Projectile;
@@ -28,16 +27,22 @@ import com.crane.TweenAccessors.Value;
 import com.crane.TweenAccessors.ValueAccessor;
 import com.crane.ui.SimpleButton;
 
+// TODO: Use midpointY.
 public class GameRenderer {
 
+	// Game's main object.
 	private GameWorld myWorld;
 	private OrthographicCamera cam;
 	private ShapeRenderer shapeRenderer;
 
+	// Bacther to draw sprite.
 	private SpriteBatch batcher;
 
 	private int midPointY;
 	private int gameHeight;
+	
+	// Rate Prompt variable
+	private boolean ratePrompt;
 
 	// Game Objects
 	private Hero hero;
@@ -45,10 +50,8 @@ public class GameRenderer {
 	private Background bgFront, bgBack;
 	private Enemy enemyOne, enemyTwo, enemyThree, enemyFour, enemyFive,
 			enemySix, enemySeven;
-	private Boss boss;
 
 	// Game Assets
-	private TextureRegion bg;
 	private TextureRegion bgFrontBody, bgBackBody;
 
 	// Enemies
@@ -69,37 +72,46 @@ public class GameRenderer {
 	private Animation heroRunAnimation, heroStillAnimation;
 	private TextureRegion heroJump, heroFall, heroDash;
 
-	// Boss
-	private TextureRegion bossOne;
-	private Animation bossAnimation;
-
 	// Tween stuff
 	private TweenManager manager;
 	private Value alpha = new Value();
 
-	// Buttons
-	private List<SimpleButton> menuButtons;
-	
 	// Icons
 	private TextureRegion kill, distance;
-	
-	// Scoreboard
-	private TextureRegion scoreboard;
-	
-	// Title
+
+	// Score board
+	private TextureRegion scoreboard, highscoreMark;
+	private Animation ratePromptAnimation;
+
+	// Medals
+	private TextureRegion bronzeMedal, silverMedal, goldMedal, emptyMedal;
+	private Animation medalAnimation;
+
+	// Title and main menu
 	private TextureRegion title;
-	private TextureRegion backgroundMenu;
-	private Animation stillAnimation, startInstructionAnimation;
-	
+	private Animation stillAnimation, startInstructionAnimation,
+			backgroundMenuAnimation;
+
 	// InputHandler
 	private InputHandler input;
 
+	// Transition Color
+	private Color transitionColor;
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param world
+	 * @param gameHeight
+	 * @param midPointY
+	 */
 	public GameRenderer(GameWorld world, int gameHeight, int midPointY) {
 		myWorld = world;
 
 		this.midPointY = midPointY;
 		this.gameHeight = gameHeight;
 
+		// Camera.
 		cam = new OrthographicCamera();
 		cam.setToOrtho(true, 204, 136);
 
@@ -109,18 +121,30 @@ public class GameRenderer {
 
 		shapeRenderer = new ShapeRenderer();
 		shapeRenderer.setProjectionMatrix(cam.combined);
+		
+		// Rate prompt
+		ratePrompt = false;
 
 		initGameObjects();
 		initAssets();
-		setupTweens();
-		
+
+		transitionColor = new Color();
+		prepareTransition(0, 0, 0, 1.5f);
+
 	}
-	
+
+	/**
+	 * Sets input handler.
+	 * 
+	 * @param input
+	 */
 	public void setInputDetect(InputHandler input) {
 		this.input = input;
-
 	}
 
+	/**
+	 * Initializes game's objects.
+	 */
 	private void initGameObjects() {
 		hero = myWorld.getHero();
 		scroller = myWorld.getScroller();
@@ -128,6 +152,7 @@ public class GameRenderer {
 		bgFront = scroller.getBgFront();
 		bgBack = scroller.getBgBack();
 
+		// Enemies
 		enemyOne = scroller.getEnemyOne();
 		enemyTwo = scroller.getEnemyTwo();
 		enemyThree = scroller.getEnemyThree();
@@ -136,98 +161,108 @@ public class GameRenderer {
 		enemySix = scroller.getEnemySix();
 		enemySeven = scroller.getEnemySeven();
 
-		boss = scroller.getBoss();
-
 	}
 
+	/**
+	 * Initializes assets.
+	 */
 	private void initAssets() {
-		bg = AssetLoader.bg;
-		bgFrontBody = bg;
-		bgBackBody = bg;
+		// Background
+		bgFrontBody = AssetLoader.bgFront;
+		bgBackBody = AssetLoader.bgBack;
 
+		// Hero
 		heroRunAnimation = AssetLoader.heroRunAnimation;
 		heroStillAnimation = AssetLoader.heroStillAnimation;
 		heroJump = AssetLoader.heroJump;
 		heroFall = AssetLoader.heroFall;
-		heroDash = AssetLoader.heroDash;
 
+		// Enemies.
 		enemyWizardAnimation = AssetLoader.enemyWizardAnimation;
 		enemyKnightAnimation = AssetLoader.enemyKnightAnimation;
 		enemySummonerAnimation = AssetLoader.enemySummonerAnimation;
 
-		bossOne = AssetLoader.bossOne;
-		bossAnimation = AssetLoader.bossAnimation;
-
+		// Wizard's effects
 		flameAnimation = AssetLoader.flameAnimation;
 		lightAnimation = AssetLoader.lightAnimation;
 
+		// Knight's attack
 		enemyKnightSwingTwo = AssetLoader.enemyKnightSwingTwo;
 		enemyKnightAttackAnimation = AssetLoader.enemyKnightAttackAnimation;
 
+		// Soul
 		soulAnimation = AssetLoader.soulAnimation;
-		
+
+		// Score icons
 		kill = AssetLoader.kill;
 		distance = AssetLoader.distance;
-		
-		scoreboard = AssetLoader.scoreboard;
 
+		// Score board
+		scoreboard = AssetLoader.scoreboard;
+		highscoreMark = AssetLoader.highscoreMark;
+		ratePromptAnimation = AssetLoader.ratePromptAnimation;
+
+		// Medals
+		bronzeMedal = AssetLoader.bronzeMedal;
+		silverMedal = AssetLoader.silverMedal;
+		goldMedal = AssetLoader.goldMedal;
+		emptyMedal = AssetLoader.emptyMedal;
+		medalAnimation = AssetLoader.medalAnimation;
+
+		// Main menu.
 		title = AssetLoader.title;
-		backgroundMenu = AssetLoader.backgroundMenu;
+		backgroundMenuAnimation = AssetLoader.backgroundMenuAnimation;
 		startInstructionAnimation = AssetLoader.startInstructionAnimation;
 		stillAnimation = AssetLoader.stillAnimation;
 	}
 
-	private void setupTweens() {
-		Tween.registerAccessor(Value.class, new ValueAccessor());
-		manager = new TweenManager();
-		Tween.to(alpha, -1, .5f).target(0).ease(TweenEquations.easeOutQuad)
-				.start(manager);
-	}
-
+	/**
+	 * Renders the main menu.
+	 * 
+	 * @param runTime
+	 */
 	public void renderMenu(float runTime) {
-		
+
 		Gdx.gl.glClearColor(255, 255, 255, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
 		batcher.begin();
-		
-		batcher.draw(backgroundMenu, 0, 0, 204, 136);
 
+		batcher.draw(backgroundMenuAnimation.getKeyFrame(runTime), 0, 0, 204,
+				136);
 		batcher.draw(title, 250 / 3f, 0, 350 / 3f, 278 / 3f);
-		
-		batcher.draw(stillAnimation.getKeyFrame(runTime), -110 / 3f,
-				-10 / 3f, (500 / 3f) / 2.0f,
-				(500 / 3f) / 2.0f, 500 / 3f, 500 / 3f,
-				1, 1, 0);
-		
-		
-		batcher.draw(startInstructionAnimation.getKeyFrame(runTime), 20 / 3f,
-				0 , (250 / 3f) / 2.0f,
-				(150 / 3f) / 2.0f, 250 / 3f, 150 / 3f,
-				1, 1, 0);
-		
-		
-		drawMenuUI(input.getMenuButtons());
+
+		batcher.draw(stillAnimation.getKeyFrame(runTime), -110 / 3f, -10 / 3f,
+				280 / 1.8f, 300 / 1.8f);
+
+		batcher.draw(startInstructionAnimation.getKeyFrame(runTime), 100 / 3f,
+				100, (374 / 3f) / 2.0f, (60 / 3f) / 2.0f, 374 / 3f, 60 / 3f, 1,
+				1, 0);
+
+		// TODO: Handles more button. it's only replay presently.
+		// drawMenuUI(input.getMenuButtons());
 
 		batcher.end();
-		
-		//shapeRenderer.begin(ShapeType.Filled);
-		//shapeRenderer.setColor(Color.RED);
-		//shapeRenderer.circle(input.getPlay().x, input.getPlay().y, input.getPlay().radius);
-		//shapeRenderer.end();
 	}
 
+	/**
+	 * Draws buttons.
+	 * 
+	 * @param menuButtons
+	 */
 	private void drawMenuUI(List<SimpleButton> menuButtons) {
-		// batcher.draw(AssetLoader.zbLogo, 136 / 2 - 56, midPointY - 50,
-		// AssetLoader.zbLogo.getRegionWidth() / 1.2f,
-		// AssetLoader.zbLogo.getRegionHeight() / 1.2f);
-
 		for (SimpleButton button : menuButtons) {
 			button.draw(batcher);
 		}
 
 	}
 
+	/**
+	 * Render the main game loop.
+	 * 
+	 * @param delta
+	 * @param runTime
+	 */
 	// runTime is for animation (determining which frame to render);
 	public void render(float delta, float runTime) {
 
@@ -248,26 +283,26 @@ public class GameRenderer {
 
 		drawHero(runTime);
 		drawEnemy(runTime);
-		drawBoss(runTime);
-
-		drawScore();
+		drawScore(runTime);
 
 		// End SpriteBatch
 		batcher.end();
 
-		// Need Fix!!
-		//drawGauge();
-
 		// Transition
 		drawTransition(delta);
 
+		// TODO: (Only for debugging).
 		// Check Collision
 		// drawCollisionCheck();
 
 	}
 
+	/**
+	 * Draws hero.
+	 * 
+	 * @param runTime
+	 */
 	private void drawHero(float runTime) {
-
 		// Check case
 		int val = 0;
 		if (!hero.isAlive()) {
@@ -278,13 +313,10 @@ public class GameRenderer {
 			val = 3;
 		} else if (hero.isJumping()) {
 			val = 4;
-		} else if (hero.isDashing()) {
-			val = 5;
 		}
 
 		switch (val) {
 		case 0:
-
 			// Hero Running (alive)
 			batcher.draw(heroRunAnimation.getKeyFrame(runTime), hero.getX(),
 					hero.getY(), hero.getWidth() / 2.0f,
@@ -294,7 +326,6 @@ public class GameRenderer {
 			break;
 
 		case 1:
-
 			// Hero is dead
 			batcher.draw(soulAnimation.getKeyFrame(runTime), hero.getX(),
 					hero.getY(), hero.getWidth() / 2.0f,
@@ -304,7 +335,6 @@ public class GameRenderer {
 			break;
 
 		case 2:
-
 			// Hero's starting position
 			batcher.draw(heroStillAnimation.getKeyFrame(runTime), hero.getX(),
 					hero.getY(), hero.getWidth() / 2.0f,
@@ -314,7 +344,6 @@ public class GameRenderer {
 			break;
 
 		case 3:
-
 			// Hero Falling (alive)
 			batcher.draw(heroFall, hero.getX(), hero.getY(),
 					hero.getWidth() / 2.0f, hero.getHeight() / 2.0f,
@@ -323,7 +352,6 @@ public class GameRenderer {
 			break;
 
 		case 4:
-
 			// Hero Jumping (alive)
 			batcher.draw(heroJump, hero.getX(), hero.getY(),
 					hero.getWidth() / 2.0f, hero.getHeight() / 2.0f,
@@ -331,19 +359,14 @@ public class GameRenderer {
 
 			break;
 
-		case 5:
-
-			// Hero Dashing (alive)
-			batcher.draw(heroDash, hero.getX(), hero.getY(),
-					hero.getWidth() / 2.0f, hero.getHeight() / 2.0f,
-					hero.getWidth(), hero.getHeight(), 1, 1, 0);
-
-			break;
-
 		}
-
 	}
 
+	/**
+	 * Draws enemies.
+	 * 
+	 * @param runTime
+	 */
 	private void drawEnemy(float runTime) {
 
 		// Wizard
@@ -361,6 +384,13 @@ public class GameRenderer {
 
 	}
 
+	/**
+	 * Draws wizard.
+	 * 
+	 * @param runTime
+	 * @param enemy
+	 * @param animation
+	 */
 	private void drawEnemyWizard(float runTime, Enemy enemy, Animation animation) {
 		if (!enemy.isAlive()) {
 			batcher.draw(soulAnimation.getKeyFrame(runTime), enemy.getSoul()
@@ -373,9 +403,10 @@ public class GameRenderer {
 					enemy.getHeight(), 1, 1, 0);
 		}
 
+		// Draws projectiles.
 		ArrayList<Projectile> projectiles = enemy.getProjectiles();
 		for (int i = 0; i < projectiles.size(); i++) {
-			Projectile p = (Projectile) projectiles.get(i);
+			Projectile p = projectiles.get(i);
 			if (p.isVisible()) {
 				if (p.isMoving()) {
 					batcher.draw(flameAnimation.getKeyFrame(runTime), p.getX(),
@@ -395,6 +426,13 @@ public class GameRenderer {
 
 	}
 
+	/**
+	 * Draws knights.
+	 * 
+	 * @param runTime
+	 * @param enemy
+	 * @param animation
+	 */
 	private void drawEnemyKnight(float runTime, Enemy enemy, Animation animation) {
 		if (!enemy.isAlive()) {
 			batcher.draw(soulAnimation.getKeyFrame(runTime), enemy.getSoul()
@@ -402,6 +440,7 @@ public class GameRenderer {
 					15, 1, 1, 0);
 
 		} else if (enemy.isVisible()) {
+			// Handles attack animation.
 			if (enemy.isAttacking()) {
 				TextureRegion frame = enemyKnightAttackAnimation
 						.getKeyFrame(runTime);
@@ -424,6 +463,13 @@ public class GameRenderer {
 
 	}
 
+	/**
+	 * Draws summoner.
+	 * 
+	 * @param runTime
+	 * @param enemy
+	 * @param animation
+	 */
 	private void drawEnemySummoner(float runTime, Enemy enemy,
 			Animation animation) {
 		if (!enemy.isAlive()) {
@@ -440,128 +486,135 @@ public class GameRenderer {
 
 	}
 
-	private void drawBoss(float runTime) {
-		// Draw Boss
-		if (boss.hasWon()) {
-			batcher.draw(bossOne, boss.getX(), boss.getY(),
-					boss.getWidth() / 2.0f, boss.getHeight() / 2.0f,
-					boss.getWidth(), boss.getHeight(), 1, 1, 0);
-
-		} else {
-			batcher.draw(bossAnimation.getKeyFrame(runTime), boss.getX(),
-					boss.getY(), boss.getWidth() / 2.0f,
-					boss.getHeight() / 2.0f, boss.getWidth(), boss.getHeight(),
-					1, 1, 0);
-		}
-
-	}
-
-	private void drawGauge() {
-		// Draw DashGauge (NEED FIX)
-		int barHeight = hero.getDashGauge() * 10;
-
-		shapeRenderer.begin(ShapeType.Filled);
-		shapeRenderer.setColor(Color.RED);
-		shapeRenderer.rect(195, 10 + 50 - barHeight, 5, barHeight);
-		shapeRenderer.end();
-
-		shapeRenderer.begin(ShapeType.Line);
-		shapeRenderer.setColor(Color.BLACK);
-		shapeRenderer.rect(195, 10, 5, 50);
-		shapeRenderer.end();
-
-	}
-
-	private void drawScore() {
-
-		// TEMPORARY CODE! We will fix this section later:
+	/**
+	 * Draws score board.
+	 */
+	private void drawScore(float runTime) {
 		if (myWorld.isReady()) {
+			// TODO: Clean and fix starting instruction.
 			// Draw text
-			AssetLoader.font.draw(batcher, "Tap To Start", 100, 65);
+			AssetLoader.font.draw(batcher, "--Instructions--", 65, 25);
+			AssetLoader.font.draw(batcher, "1. Tap Once to Jump", 70, 35);
+			AssetLoader.font.draw(batcher, "2. Tap Twice to Double Jump", 70, 45);
+			AssetLoader.font.draw(batcher, "3. Jump on Enemies for Points", 70, 55);
+			AssetLoader.font.draw(batcher, "4. Dodge Enemies", 70, 65);
+
+			AssetLoader.font.draw(batcher, "--> Tap To Begin <--", 60, 85);
 
 		} else {
-
+			// Handles game over.
 			if (myWorld.isGameOver() || myWorld.isHighScore()) {
 
-				
-				batcher.draw(scoreboard, 0, 0, 204, 136);
+				batcher.draw(scoreboard, 33, 0, 426 / 3.0f, 200 / 3.0f);
 
-				AssetLoader.font.draw(batcher, "Game Over", 80, 10);
-
-				String score = myWorld.getScore() + "";
 				String highScore = AssetLoader.getHighScore() + "";
-				String distance = myWorld.getDistance() + "";
-				String totalScore = myWorld.getTotalScore() + "";
+				int totalScore = myWorld.getTotalScore();
 
 				// Draw Text
-				AssetLoader.font.draw(batcher, score, 80, 27);
-				AssetLoader.font.draw(batcher, distance, 80, 45);
-				AssetLoader.font.draw(batcher, totalScore, 120, 40);
-				AssetLoader.font.draw(batcher, highScore, 110, 73);
+				AssetLoader.font.draw(batcher, totalScore + "", 75, 47);
+				AssetLoader.font.draw(batcher, highScore, 125, 47);
 
-				drawMenuUI(input.getMenuButtons());
-				
-				//shapeRenderer.begin(ShapeType.Filled);
-				//shapeRenderer.setColor(Color.RED);
-				//shapeRenderer.rect(263 / 3f, 265 / 3f, 100 / 3f, 70 / 3f);
-				//shapeRenderer.end();
-				
-				/*
-				if (myWorld.isGameOver()) {
-					AssetLoader.font.draw(batcher, "Game Over", 100, 55);
-
-					AssetLoader.font.draw(batcher, "High Score:", 100, 75);
-
-					String highScore = AssetLoader.getHighScore() + "";
-
-					// Draw text
-					AssetLoader.font.draw(batcher, highScore, 150, 75);
-				} else {
-					AssetLoader.font.draw(batcher, "High Score!", 100, 55);
+				// Handles high score.
+				if (myWorld.isHighScore()) {
+					batcher.draw(highscoreMark, 80, 43, 183 / 4.0f, 173 / 4.0f);
 				}
 
-				AssetLoader.font.draw(batcher, "Try again?", 100, 95);
+				// Draw Medal
+				if (totalScore > 150) {
+					batcher.draw(medalAnimation.getKeyFrame(runTime), 87, 73,
+							100 / 3.0f, 100 / 3.0f);
+					batcher.draw(goldMedal, 87, 75, 100 / 3.0f, 100 / 3.0f);
+				} else if (totalScore > 75) {
+					batcher.draw(medalAnimation.getKeyFrame(runTime), 87, 73,
+							100 / 3.0f, 100 / 3.0f);
+					batcher.draw(silverMedal, 87, 75, 100 / 3.0f, 100 / 3.0f);
+				} else if (totalScore > 25) {
+					batcher.draw(medalAnimation.getKeyFrame(runTime), 87, 73,
+							100 / 3.0f, 100 / 3.0f);
+					batcher.draw(bronzeMedal, 87, 75, 100 / 3.0f, 100 / 3.0f);
+				} else {
+					batcher.draw(emptyMedal, 87, 75, 100 / 3.0f, 100 / 3.0f);
+				}
 
-				// Convert integer into String
-				String score = myWorld.getScore() + "";
 
-				// Draw text
-				AssetLoader.font.draw(batcher, score, 100, 115);
-				*/
+				// Draw rate button prompt
+				if(ratePrompt) {
+					batcher.draw(ratePromptAnimation.getKeyFrame(runTime), 144, 42,
+							110 / 3.0f, 110 / 3.0f);
+				}
+
+				// TODO: handle additional buttons.
+				drawMenuUI(input.getMenuButtons());
+
 			}
 
 			// Draw Icon
 			batcher.draw(kill, 0, 2, 13, 13);
 			batcher.draw(distance, -2, 13, 13, 13);
-			
+
 			// Draw score and distance
 			AssetLoader.font.draw(batcher, "" + myWorld.getScore(), 15, 5);
 			AssetLoader.font.draw(batcher, "" + myWorld.getDistance(), 15, 15);
 
 		}
-
 	}
 
+	/**
+	 * Draws transitions.
+	 * 
+	 * @param delta
+	 */
 	private void drawTransition(float delta) {
 		if (alpha.getValue() > 0) {
 			manager.update(delta);
 			Gdx.gl.glEnable(GL20.GL_BLEND);
 			Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 			shapeRenderer.begin(ShapeType.Filled);
-			shapeRenderer.setColor(1, 1, 1, alpha.getValue());
-			shapeRenderer.rect(0, 0, 136, 300);
+			shapeRenderer.setColor(transitionColor.r, transitionColor.g,
+					transitionColor.b, alpha.getValue());
+			shapeRenderer.rect(0, 0, 204, 136);
 			shapeRenderer.end();
 			Gdx.gl.glDisable(GL20.GL_BLEND);
 
 		}
 	}
 
-	// For Checking Collision
+	/**
+	 * Sets up tween.
+	 * 
+	 * @param r
+	 * @param g
+	 * @param b
+	 * @param duration
+	 */
+	public void prepareTransition(int r, int g, int b, float duration) {
+		transitionColor.set(r / 255.0f, g / 255.0f, b / 255.0f, 1);
+		alpha.setValue(1);
+		Tween.registerAccessor(Value.class, new ValueAccessor());
+		manager = new TweenManager();
+		Tween.to(alpha, -1, duration).target(0)
+				.ease(TweenEquations.easeOutQuad).start(manager);
+	}
+	
+	/**
+	 * Toogle ratePrompt to true.
+	 */
+	public void showRatePrompt(boolean val) {
+		ratePrompt = val;
+	}
+	
+	//====================================================
+	// TODO:For Checking Collision
+	//====================================================
+	/**
+	 * Draws collision objects.
+	 */
 	private void drawCollisionCheck() {
 		// Draw bounding collision
 		shapeRenderer.begin(ShapeType.Filled);
 		shapeRenderer.setColor(Color.RED);
 
+		// Hero
 		shapeRenderer.circle(hero.getBoundingBody().x,
 				hero.getBoundingBody().y, hero.getBoundingBody().radius);
 
@@ -573,10 +626,12 @@ public class GameRenderer {
 							.getHeight());
 		}
 
+		// Wizard
 		drawWizardCollision(enemyOne);
 		drawWizardCollision(enemyTwo);
 		drawWizardCollision(enemyThree);
 
+		// Knight
 		drawKnightCollision(enemyFour);
 		drawKnightCollision(enemyFive);
 		drawKnightCollision(enemySix);
@@ -590,23 +645,17 @@ public class GameRenderer {
 				enemySeven.getSoul().getBoundingCollision().y, enemySeven
 						.getSoul().getBoundingCollision().radius);
 
-		// Boss
-		shapeRenderer.rect(boss.getBoundingCollision().x, boss
-				.getBoundingCollision().y, boss.getBoundingCollision()
-				.getWidth(), boss.getBoundingCollision().getHeight());
-
 		// Bar
 		shapeRenderer.rect(0, 88, 204, 2);
-
 		shapeRenderer.end();
-
 	}
 
+	/**
+	 * Knight's collision
+	 * 
+	 * @param enemy
+	 */
 	private void drawKnightCollision(Enemy enemy) {
-		shapeRenderer.circle(enemy.getSoul().getBoundingCollision().x, enemy
-				.getSoul().getBoundingCollision().y, enemy.getSoul()
-				.getBoundingCollision().radius);
-
 		shapeRenderer.circle(enemy.getBoundingCollisionCircle().x,
 				enemy.getBoundingCollisionCircle().y,
 				enemy.getBoundingCollisionCircle().radius);
@@ -617,25 +666,25 @@ public class GameRenderer {
 
 	}
 
+	/**
+	 * Wizard's collision
+	 * 
+	 * @param enemy
+	 */
 	private void drawWizardCollision(Enemy enemy) {
-		shapeRenderer.circle(enemy.getSoul().getBoundingCollision().x, enemy
-				.getSoul().getBoundingCollision().y, enemy.getSoul()
-				.getBoundingCollision().radius);
-
 		shapeRenderer.circle(enemy.getBoundingCollisionCircle().x,
 				enemy.getBoundingCollisionCircle().y,
 				enemy.getBoundingCollisionCircle().radius);
 
 		ArrayList<Projectile> projectiles = enemy.getProjectiles();
 		for (int i = 0; i < projectiles.size(); i++) {
-			Projectile p = (Projectile) projectiles.get(i);
+			Projectile p = projectiles.get(i);
 			if (p.isVisible()) {
 				shapeRenderer.circle(p.getBoundingCollision().x,
 						p.getBoundingCollision().y,
 						p.getBoundingCollision().radius);
 			}
 		}
-
 	}
 
 }

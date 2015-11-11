@@ -2,7 +2,6 @@ package com.crane.ui;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.Rectangle;
 
 public class SimpleButton {
@@ -13,11 +12,8 @@ public class SimpleButton {
 	private TextureRegion buttonDown;
 
 	private Rectangle boundsRect;
-	private Circle boundsCirc;
 
 	private boolean isPressed = false;
-
-	private boolean isRectButton;
 
 	public SimpleButton(float x, float y, float width, float height,
 			TextureRegion buttonUp, TextureRegion buttonDown) {
@@ -28,17 +24,7 @@ public class SimpleButton {
 		this.buttonUp = buttonUp;
 		this.buttonDown = buttonDown;
 
-		boundsRect = new Rectangle(x, y, width, height);
-
-		isRectButton = true;
-
-	}
-
-	public SimpleButton(float x, float y, float radius) {
-
-		boundsCirc = new Circle(x, y, radius);
-
-		isRectButton = false;
+		boundsRect = new Rectangle(x - 10, y - 10, width + 20, height + 20);
 
 	}
 
@@ -49,7 +35,7 @@ public class SimpleButton {
 			batcher.draw(buttonUp, x, y, width, height);
 		}
 	}
-	
+
 	public void changePosition(float newX, float newY) {
 		this.x = newX;
 		this.y = newY;
@@ -57,17 +43,9 @@ public class SimpleButton {
 
 	public boolean isTouchDown(int screenX, int screenY) {
 
-		if (isRectButton) {
-
-			if (boundsRect.contains(screenX, screenY)) {
-				isPressed = true;
-				return true;
-			}
-		} else {
-			if (boundsCirc.contains(screenX, screenY)) {
-				isPressed = true;
-				return true;
-			}
+		if (boundsRect.contains(screenX, screenY)) {
+			isPressed = true;
+			return true;
 		}
 
 		return false;
@@ -76,17 +54,9 @@ public class SimpleButton {
 	public boolean isTouchUp(int screenX, int screenY) {
 
 		// It only counts as a touchUp if the button is in a pressed state.
-		if (isRectButton) {
-			if (boundsRect.contains(screenX, screenY) && isPressed) {
-				isPressed = false;
-				return true;
-			}
-		} else {
-			if (boundsCirc.contains(screenX, screenY) && isPressed) {
-				isPressed = false;
-				return true;
-			}
-
+		if (boundsRect.contains(screenX, screenY) && isPressed) {
+			isPressed = false;
+			return true;
 		}
 
 		// Whenever a finger is released, we will cancel any presses.

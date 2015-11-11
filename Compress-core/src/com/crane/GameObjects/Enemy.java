@@ -5,15 +5,11 @@ import java.util.ArrayList;
 import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.math.Vector2;
 import com.crane.GameObjects.ScrollHandler.EnemyType;
 
 public class Enemy extends Scrollable {
 
-	protected boolean eaten;
 	protected boolean alive;
-
-	protected boolean bossFight;
 
 	protected Rectangle boundingCollisionRect;
 	protected Circle boundingCollisionCirc;
@@ -25,10 +21,7 @@ public class Enemy extends Scrollable {
 	public Enemy(int width, int height, float scrollSpeed, EnemyType type) {
 		super(0, 0, width, height, scrollSpeed);
 
-		eaten = false;
 		alive = true;
-
-		bossFight = false;
 
 		this.type = type;
 
@@ -43,9 +36,7 @@ public class Enemy extends Scrollable {
 		if (hero.isAlive() && alive && isVisible
 				&& (position.x < hero.getX() + hero.getWidth())) {
 			if ((hero.isJumping() && Intersector.overlaps(
-					boundingCollisionCirc, hero.getBoundingFeet()))
-					|| (hero.isDashing() && Intersector.overlaps(
-							boundingCollisionCirc, hero.getBoundingBody()))) {
+					boundingCollisionCirc, hero.getBoundingFeet()))) {
 				alive = false;
 				hero.hitEnemy();
 				soul.position.x = position.x;
@@ -60,17 +51,6 @@ public class Enemy extends Scrollable {
 
 	public boolean isAlive() {
 		return alive;
-	}
-
-	public boolean isEaten() {
-		return eaten;
-	}
-
-	public void setEaten(boolean check) {
-		eaten = check;
-		if (check) {
-			soul.setIsVisible(false);
-		}
 	}
 
 	public float getVelX() {
@@ -93,15 +73,12 @@ public class Enemy extends Scrollable {
 		return soul.isVisible;
 	}
 
-	public void setBossFight(boolean check) {
-		bossFight = true;
-	}
-
 	public Soul getSoul() {
 		return soul;
 	}
 
 	// Overriden Methods
+	@Override
 	public void update(float delta) {
 	}
 

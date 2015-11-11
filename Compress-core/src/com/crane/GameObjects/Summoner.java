@@ -39,9 +39,6 @@ public class Summoner extends Enemy {
 		position.y = getRanPosY();
 		velocity.x = -59 - newVelX;
 		alive = true;
-		eaten = false;
-
-		bossFight = false;
 
 		position.x = getRanPosX();
 		isScrolledLeft = false;
@@ -56,8 +53,7 @@ public class Summoner extends Enemy {
 
 	@Override
 	public boolean collides(Hero hero) {
-		if (alive && isVisible && position.x < hero.getX() + hero.getWidth()
-				&& !hero.isDashing()) {
+		if (alive && isVisible && position.x < hero.getX() + hero.getWidth()) {
 			return Intersector.overlaps(hero.getBoundingBody(),
 					boundingCollisionCirc);
 

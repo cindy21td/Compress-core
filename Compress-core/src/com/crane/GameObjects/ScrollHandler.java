@@ -20,9 +20,6 @@ public class ScrollHandler {
 
 	private Background bgFront, bgBack;
 
-	private Boss boss;
-	private boolean bossFight;
-
 	private RunningState state;
 
 	public enum RunningState {
@@ -39,7 +36,6 @@ public class ScrollHandler {
 
 		this.gameWorld = world;
 		this.state = RunningState.NORMAL;
-		this.bossFight = false;
 
 		initializePosX();
 
@@ -48,7 +44,6 @@ public class ScrollHandler {
 		bgFront = new Background(0, 0, 204, 136, SCROLL_SPEED);
 		bgBack = new Background(204, 0, 204, 136, SCROLL_SPEED);
 
-		boss = new Boss(-157, -80, 157, 120, 10, this);
 	}
 
 	public void initializePosX() {
@@ -107,10 +102,6 @@ public class ScrollHandler {
 	public void setRandomVisibility() {
 		int ranIndex = MathUtils.random(0, enemyColl.size() - 1);
 		Enemy e = enemyColl.get(ranIndex);
-		// if (e.getType() == EnemyType.SUMMONER) {
-		// ranIndex = MathUtils.random(0, enemyColl.size() - 1);
-		// e = enemyColl.get(ranIndex);
-		// }
 		enemyColl.remove(e);
 		e.setIsVisible(true);
 	}
@@ -149,10 +140,6 @@ public class ScrollHandler {
 
 		enemyUpdate(delta, enemySeven);
 
-		if (bossFight) {
-			boss.update(delta);
-		}
-
 	}
 
 	private void enemyUpdate(float delta, Enemy enemy) {
@@ -165,12 +152,7 @@ public class ScrollHandler {
 					enemyColl.add(enemy);
 
 				} else if (enemy.equals(enemySeven)) {
-					if (enemy.isAlive()) {
-						setBossAlive(true);
-						toogleBossFight(true);
-					} else {
-						enemyColl.add(enemy);
-					}
+					enemyColl.add(enemy);
 					enemy.reset(-10, false);
 				} else {
 					enemy.reset(getEnemyRanVelX(), false);
@@ -195,7 +177,6 @@ public class ScrollHandler {
 		bgFront.stop();
 		bgBack.stop();
 
-		boss.stop();
 	}
 
 	public void onRestart() {
@@ -218,27 +199,18 @@ public class ScrollHandler {
 		bgFront.onRestart();
 		bgBack.onRestart();
 
-		bossFight = false;
-		boss.onRestart();
 	}
 
 	public boolean collides(Hero hero) {
-		if (boss.hasWon()) {
-			return false;
-		} else {
-			if (enemyIsHit(hero)) {
-				gameWorld.addScore(1);
-			}
-
-			if (bossFight && bossIsHit()) {
-				gameWorld.addScore(2);
-			}
-
-			return (enemyOne.collides(hero) || enemyTwo.collides(hero)
-					|| enemyThree.collides(hero) || enemyFour.collides(hero)
-					|| enemyFive.collides(hero) || enemySix.collides(hero)
-					|| enemySeven.collides(hero) || boss.collides(hero));
+		
+		if (enemyIsHit(hero)) {
+			gameWorld.addScore(1);
 		}
+
+		return (enemyOne.collides(hero) || enemyTwo.collides(hero)
+				|| enemyThree.collides(hero) || enemyFour.collides(hero)
+				|| enemyFive.collides(hero) || enemySix.collides(hero)
+				|| enemySeven.collides(hero));
 	}
 
 	public boolean enemyIsHit(Hero hero) {
@@ -246,12 +218,6 @@ public class ScrollHandler {
 				|| enemyThree.isHit(hero) || enemyFour.isHit(hero)
 				|| enemyFive.isHit(hero) || enemySix.isHit(hero) || enemySeven
 					.isHit(hero));
-	}
-
-	public boolean bossIsHit() {
-		return (boss.isHit(enemyOne) || boss.isHit(enemyTwo)
-				|| boss.isHit(enemyThree) || boss.isHit(enemyFour)
-				|| boss.isHit(enemyFive) || boss.isHit(enemySix));
 	}
 
 	public float getEnemyRanVelX() {
@@ -272,14 +238,6 @@ public class ScrollHandler {
 
 	public void changeStage(RunningState newStage) {
 		state = newStage;
-	}
-
-	public void setBossAlive(boolean check) {
-		boss.setAlive(check);
-	}
-
-	public boolean bossWins() {
-		return boss.dropped();
 	}
 
 	public Enemy getEnemyOne() {
@@ -317,26 +275,4 @@ public class ScrollHandler {
 	public Background getBgBack() {
 		return bgBack;
 	}
-
-	public Boss getBoss() {
-		return boss;
-	}
-
-	public boolean getBossFight() {
-		return bossFight;
-	}
-
-	public void toogleBossFight(boolean check) {
-		for (Enemy e : enemyColl) {
-			e.setBossFight(check);
-		}
-		if (check) {
-			boss.onRestart();
-		} else {
-			enemyColl.add(enemySeven);
-			gameWorld.addScore(10);
-		}
-		bossFight = check;
-	}
-
 }
