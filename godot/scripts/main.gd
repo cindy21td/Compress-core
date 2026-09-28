@@ -342,7 +342,7 @@ func _draw_world(ci: CanvasItem) -> void:
 
 
 func _region(ci: CanvasItem, region: Rect2, rect: Rect2, modulate := Color.WHITE) -> void:
-	ci.draw_texture_rect_region(Assets.texture, rect, region, modulate)
+	Assets.draw_sprite(ci, region, rect, modulate)
 
 
 func _hires(ci: CanvasItem, region: Rect2, rect: Rect2, modulate := Color.WHITE) -> void:

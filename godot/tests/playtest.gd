@@ -82,6 +82,7 @@ func _run() -> void:
 	await _wait(1.6)
 	await _shot("03_tutorial")
 
+	w.invincible = true  # random enemies must not end the scripted steps early
 	await _click(Vector2(100, 60))
 	_check(w.state == GameWorld.State.RUNNING, "tap -> running")
 	await _click(Vector2(100, 60))
@@ -100,8 +101,7 @@ func _run() -> void:
 	await _click(main.resume_button.rect.get_center())
 	_check(not main.paused, "resume button resumes")
 
-	# Long demo run: invincible so it reaches later stages.
-	w.invincible = true
+	# Long demo run: still invincible, so it reaches later stages.
 	var shots := {6.0: "06_running", 24.0: "07_stage2", 44.0: "09_stage3"}
 	var rush_shot := false
 	var was_rush := true  # ignore a rush already underway

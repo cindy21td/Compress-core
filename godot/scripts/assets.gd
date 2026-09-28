@@ -73,6 +73,11 @@ var title_texture: Texture2D
 const MENU_TEX_ORIGIN := Vector2(0, 408)
 const MENU_TEX_SCALE := 4.0 / 3.0
 
+# enemy_texture.png is the enemy block of the sprite sheet (x 1224-1599,
+# y 0-300) at 4/3 resolution, from the Enemy Sprite.pxm project.
+var enemy_texture: Texture2D
+const ENEMY_TEX_RECT := Rect2(1224, 0, 375, 300)
+
 var muted := false
 
 var _sounds := {}
@@ -96,6 +101,7 @@ func _ready() -> void:
 		stages.append(load("res://assets/art/stage_%d.png" % i))
 	menu_texture = load("res://assets/art/menu_texture.png")
 	title_texture = load("res://assets/art/Title.png")
+	enemy_texture = load("res://assets/art/enemy_texture.png")
 	ui_font = load(UI_FONT)
 
 	for key in SOUND_FILES:
@@ -147,6 +153,15 @@ func set_muted(value: bool) -> void:
 	AudioServer.set_bus_mute(0, muted)
 	_prefs.set_value("settings", "muted", muted)
 	_prefs.save(PREFS_PATH)
+
+
+## Draws a sprite-sheet region, using the hi-res enemy art when it covers it.
+func draw_sprite(ci: CanvasItem, region: Rect2, rect: Rect2, modulate := Color.WHITE) -> void:
+	if ENEMY_TEX_RECT.encloses(region):
+		var r := Rect2((region.position - ENEMY_TEX_RECT.position) * MENU_TEX_SCALE, region.size * MENU_TEX_SCALE)
+		ci.draw_texture_rect_region(enemy_texture, rect, r, modulate)
+	else:
+		ci.draw_texture_rect_region(texture, rect, region, modulate)
 
 
 ## Maps a sprite-sheet region inside the menu block to menu_texture.png.
