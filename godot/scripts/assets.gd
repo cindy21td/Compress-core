@@ -3,17 +3,20 @@
 extends Node
 
 const PREFS_PATH := "user://compress.cfg"
+# Loaded as .ogg (converted originals) or, failing that, .wav
+# (the synthesized replacements from tools/make_sounds.py).
 const SOUND_FILES := {
-	"death": "res://assets/sound/Death Sound.ogg",
-	"hit": "res://assets/sound/Hit Sound.ogg",
-	"jump": "res://assets/sound/Jump Sound.ogg",
-	"theme": "res://assets/sound/theme.ogg",
+	"death": "res://assets/sound/Death Sound",
+	"hit": "res://assets/sound/Hit Sound",
+	"jump": "res://assets/sound/Jump Sound",
+	"theme": "res://assets/sound/theme",
 }
+const FALLBACK_FONT := "res://assets/fonts/FredokaOne-Regular.ttf"
 
 var texture: Texture2D
-var logo: Texture2D  # optional splash image (libGdx.png)
 var font: Font
-var font_color := Color.WHITE
+var font_color := Color.BLACK
+var font_outline := 0  # outline width in font pixels, 0 = none
 var font_scale := 0.15  # Trash3.fnt is 72px; the original drew it at 0.15
 
 # Background
@@ -71,20 +74,21 @@ static func _enemy_anim(y: int) -> SpriteAnim:
 
 func _ready() -> void:
 	texture = load("res://assets/texture.png")
-	if ResourceLoader.exists("res://assets/libGdx.png"):
-		logo = load("res://assets/libGdx.png")
-
-	# The game's bitmap font, or Godot's default font until Trash3.fnt is added.
+	# The original bitmap font if it's been added, otherwise Fredoka One.
 	if ResourceLoader.exists("res://assets/Trash3.fnt"):
 		font = load("res://assets/Trash3.fnt")
+		font_color = Color.WHITE
 	else:
-		font = ThemeDB.fallback_font
-		font_color = Color.BLACK
-		font_scale = 0.11
+		font = load(FALLBACK_FONT)
+		font_scale = 0.1
+		font_outline = 14
 
 	for key in SOUND_FILES:
-		if ResourceLoader.exists(SOUND_FILES[key]):
-			_sounds[key] = load(SOUND_FILES[key])
+		for ext in [".ogg", ".wav"]:
+			var path: String = SOUND_FILES[key] + ext
+			if ResourceLoader.exists(path):
+				_sounds[key] = load(path)
+				break
 	if _sounds.has("theme"):
 		var theme: AudioStream = _sounds["theme"].duplicate()
 		theme.set("loop", true)

@@ -50,10 +50,12 @@ func _click(world_pos: Vector2) -> void:
 
 func _run() -> void:
 	var w: GameWorld = main.world
-	if Assets.logo:
-		await _wait(1.0)
-		await _shot("1_splash")
-		await _wait(1.3)
+	_check(Assets._sounds.size() == 4, "all four sounds loaded (%s)" % ", ".join(Assets._sounds.keys()))
+	_check(Assets.font is FontFile, "font loaded")
+	_check(main.screen == main.Screen.SPLASH, "starts on splash")
+	await _wait(1.0)
+	await _shot("1_splash")
+	await _wait(1.3)
 	_check(main.screen == main.Screen.MENU, "menu shown after splash")
 	await _shot("2_menu")
 

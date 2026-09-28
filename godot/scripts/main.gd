@@ -34,8 +34,6 @@ func _ready() -> void:
 		Assets.rate_button_up, Assets.rate_button_down)
 	# Prepared now, but only runs once the game screen is showing.
 	prepare_transition(Color.BLACK, 1.5)
-	if Assets.logo == null:
-		screen = Screen.MENU
 
 
 func _physics_process(delta: float) -> void:
@@ -144,6 +142,9 @@ func _region(region: Rect2, x: float, y: float, w: float, h: float, modulate := 
 ## libGDX draws text from its top-left corner.
 func _text(text: String, x: float, y: float) -> void:
 	draw_set_transform(Vector2(x, y), 0.0, Vector2(Assets.font_scale, Assets.font_scale))
+	if Assets.font_outline > 0:
+		draw_string_outline(Assets.font, Vector2(0, Assets.font.get_ascent(FONT_SIZE)), text,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE, Assets.font_outline, Color.WHITE)
 	draw_string(Assets.font, Vector2(0, Assets.font.get_ascent(FONT_SIZE)), text,
 		HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE, Assets.font_color)
 	draw_set_transform(Vector2.ZERO)
@@ -160,9 +161,10 @@ func _draw_splash() -> void:
 		a = 1.0
 	else:
 		a = 1.0 - _ease_in_out_quad(minf((t - 1.2) / 0.8, 1.0))
-	var w := WIDTH * 0.7
-	var h := w * Assets.logo.get_height() / Assets.logo.get_width()
-	draw_texture_rect(Assets.logo, Rect2((WIDTH - w) / 2, (HEIGHT - h) / 2, w, h), false, Color(1, 1, 1, a))
+	# The original showed the libGDX logo here; this port shows the game's title art.
+	var h := HEIGHT * 0.8
+	var w := h * Assets.title.size.x / Assets.title.size.y
+	_region(Assets.title, (WIDTH - w) / 2, (HEIGHT - h) / 2, w, h, Color(1, 1, 1, a))
 
 
 func _draw_menu() -> void:

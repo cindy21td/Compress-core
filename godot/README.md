@@ -7,14 +7,16 @@ A Godot 4.4 port of the 2015 libGDX game in `../Compress-core`. The rules, timin
 2. Press F5. Click or tap to play; Space/Enter also works as a tap.
 
 ## Assets
-The sprite sheet (`texture.png`), font page (`Trash3.png`), theme music and death sound are included. The game runs without the rest, but:
-- **`Trash3.fnt` missing**: text uses Godot's default font instead of the game's hand-drawn one.
-- **`libGdx.png` missing**: the splash screen is skipped.
-- **`Hit Sound`, `Jump Sound` missing**: those effects are silent.
+- **Art:** `texture.png` (sprite sheet) and `Trash3.png`, recovered from the original.
+- **Music and death sound:** the originals, converted to `.ogg` (Godot can't play `.m4a`).
+- **Jump and stomp sounds:** new effects synthesized by `tools/make_sounds.py`. Run it again to regenerate them.
+- **Font:** [Fredoka One](assets/fonts/OFL.txt) (SIL Open Font License), with a white outline. It stands in for the original Trash Hand bitmap font.
+- **Splash screen:** shows the game's title art instead of the libGDX logo.
 
-To add them, download the files listed in `../RECOVERY.md` into `../assets/`, then run `tools/sync_assets.sh`. It copies them here and converts the sounds to `.ogg`, since Godot can't play `.m4a`.
+The originals still take priority if you add them. Download them into `../assets/` (links in `../RECOVERY.md`) and run `tools/sync_assets.sh`. Its converted `.ogg` sounds are used ahead of the `.wav` replacements, and `Trash3.fnt` is used ahead of Fredoka One.
 
 ## Differences from the original
+- The splash shows the title art instead of the libGDX logo.
 - Ads and the "Rate" button do nothing: the store listing is gone, and the desktop build of the original disabled them too.
 - The window keeps a 3:2 aspect ratio with letterboxing. The original stretched to the phone's screen.
 - Game logic runs at a fixed 60 ticks per second. The original's distance counter counted rendered frames, so this keeps scores comparable.
