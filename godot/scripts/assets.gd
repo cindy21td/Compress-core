@@ -11,13 +11,10 @@ const SOUND_FILES := {
 	"jump": "res://assets/sound/Jump Sound",
 	"theme": "res://assets/sound/theme",
 }
-const FALLBACK_FONT := "res://assets/fonts/FredokaOne-Regular.ttf"
+const UI_FONT := "res://assets/fonts/FredokaOne-Regular.ttf"
 
 var texture: Texture2D
-var font: Font
-var font_color := Color.BLACK
-var font_outline := 0  # outline width in font pixels, 0 = none
-var font_scale := 0.15  # Trash3.fnt is 72px; the original drew it at 0.15
+var ui_font: Font  # Fredoka One
 
 # Background
 var bg_front := Rect2(0, 0, 612, 408)
@@ -63,6 +60,21 @@ var silver_medal := Rect2(1544, 570, 100, 100)
 var gold_medal := Rect2(1430, 570, 100, 100)
 var medal_glow_anim := SpriteAnim.new(0.6, [Rect2(1430, 795, 100, 100), Rect2(1430, 906, 100, 100)], SpriteAnim.Mode.LOOP)
 
+# Parallax layers and stages (built by tools/build_art.py) and hi-res art
+# from the 2016 backup. menu_texture.png is the sprite sheet's lower-left
+# block (x 0-918, y 408-1013) at 4/3 the resolution.
+var sky: Texture2D
+var hills: Texture2D
+var ground: Texture2D
+var clouds: Array[Texture2D] = []
+var stages: Array[Texture2D] = []  # index 0 unused: stage 0 is sky + hills
+var menu_texture: Texture2D
+var title_texture: Texture2D
+const MENU_TEX_ORIGIN := Vector2(0, 408)
+const MENU_TEX_SCALE := 4.0 / 3.0
+
+var muted := false
+
 var _sounds := {}
 var _theme_player: AudioStreamPlayer
 var _prefs := ConfigFile.new()
@@ -74,14 +86,17 @@ static func _enemy_anim(y: int) -> SpriteAnim:
 
 func _ready() -> void:
 	texture = load("res://assets/texture.png")
-	# The original bitmap font if it's been added, otherwise Fredoka One.
-	if ResourceLoader.exists("res://assets/Trash3.fnt"):
-		font = load("res://assets/Trash3.fnt")
-		font_color = Color.WHITE
-	else:
-		font = load(FALLBACK_FONT)
-		font_scale = 0.1
-		font_outline = 14
+	sky = load("res://assets/art/sky.png")
+	hills = load("res://assets/art/hills.png")
+	ground = load("res://assets/art/ground.png")
+	for i in 4:
+		clouds.append(load("res://assets/art/cloud_%d.png" % i))
+	stages.append(null)
+	for i in range(1, 5):
+		stages.append(load("res://assets/art/stage_%d.png" % i))
+	menu_texture = load("res://assets/art/menu_texture.png")
+	title_texture = load("res://assets/art/Title.png")
+	ui_font = load(UI_FONT)
 
 	for key in SOUND_FILES:
 		for ext in [".ogg", ".wav"]:
@@ -97,6 +112,7 @@ func _ready() -> void:
 		add_child(_theme_player)
 
 	_prefs.load(PREFS_PATH)
+	set_muted(_prefs.get_value("settings", "muted", false))
 
 
 func play_sound(key: String, volume: float) -> void:
@@ -119,6 +135,23 @@ func loop_theme(volume: float) -> void:
 func stop_theme() -> void:
 	if _theme_player:
 		_theme_player.stop()
+
+
+func pause_theme(paused: bool) -> void:
+	if _theme_player:
+		_theme_player.stream_paused = paused
+
+
+func set_muted(value: bool) -> void:
+	muted = value
+	AudioServer.set_bus_mute(0, muted)
+	_prefs.set_value("settings", "muted", muted)
+	_prefs.save(PREFS_PATH)
+
+
+## Maps a sprite-sheet region inside the menu block to menu_texture.png.
+func hires(region: Rect2) -> Rect2:
+	return Rect2((region.position - MENU_TEX_ORIGIN) * MENU_TEX_SCALE, region.size * MENU_TEX_SCALE)
 
 
 func get_pref(key: String) -> int:

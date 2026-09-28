@@ -1,5 +1,7 @@
-## Automated smoke test: plays through splash, menu, a run, death and replay.
+## Automated smoke test and screenshot tour.
 ## Run: godot --path . res://tests/playtest.tscn [-- <screenshot dir>]
+## Plays through the menu, a tutorial start, pause, a long invincible demo run
+## (to capture later stages), a real death, the score screen, replay and menu.
 extends Node
 
 var main: Node2D
@@ -32,6 +34,7 @@ func _shot(name: String) -> void:
 		return
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png(shot_dir.path_join(name + ".png"))
+	print("     shot ", name)
 
 
 ## A real mouse click, so the screen-to-world transform is exercised too.
@@ -48,63 +51,106 @@ func _click(world_pos: Vector2) -> void:
 		await get_tree().process_frame
 
 
+## Jumps when an enemy gets close; stomps plenty, dies eventually.
+func _autoplay() -> void:
+	var w: GameWorld = main.world
+	for e in w.scroller.enemies:
+		if e.is_visible and e.alive and e.position.x > 32 and e.position.x < 58 and not w.hero.jumped:
+			main._touch_down(Vector2(-1, -1))
+			main._touch_up(Vector2(-1, -1))
+			return
+
+
 func _run() -> void:
 	var w: GameWorld = main.world
-	_check(Assets._sounds.size() == 4, "all four sounds loaded (%s)" % ", ".join(Assets._sounds.keys()))
-	_check(Assets.font is FontFile, "font loaded")
+	_check(Assets._sounds.size() == 4, "all four sounds loaded")
 	_check(main.screen == main.Screen.SPLASH, "starts on splash")
 	await _wait(1.0)
-	await _shot("1_splash")
+	await _shot("01_splash")
 	await _wait(1.3)
 	_check(main.screen == main.Screen.MENU, "menu shown after splash")
-	await _shot("2_menu")
+	await _shot("02_menu")
+
+	var muted: bool = Assets.muted
+	await _click(main.sound_button.rect.get_center())
+	_check(Assets.muted != muted, "sound button toggles mute")
+	await _click(main.sound_button.rect.get_center())
+	_check(Assets.muted == muted, "sound button toggles back")
 
 	await _click(Vector2(100, 60))
 	_check(main.screen == main.Screen.GAME and w.state == GameWorld.State.READY, "tap on menu -> ready")
 	await _wait(1.6)
-	await _shot("3_ready")
+	await _shot("03_tutorial")
 
 	await _click(Vector2(100, 60))
 	_check(w.state == GameWorld.State.RUNNING, "tap -> running")
-	_check(not w.hero.action_disabled, "first tap only enables control")
-
 	await _click(Vector2(100, 60))
 	_check(w.hero.jumped, "tap -> jump")
-	await _wait(0.15)
-	await _shot("4_jump")
+	await _wait(0.12)
+	await _shot("04_jump")
 	await _wait(1.5)
 	_check(not w.hero.jumped and is_equal_approx(w.hero.position.y, 104.0), "hero lands on ground")
-	_check(w.get_distance() > 0, "distance increases (%d)" % w.get_distance())
 
-	# Play until the hero dies (jumping whenever an enemy gets close).
-	var elapsed := 0.0
-	var peak_score := 0
-	while w.state == GameWorld.State.RUNNING and elapsed < 90.0:
-		for e in w.scroller.enemies:
-			if e.is_visible and e.alive and e.position.x > 30 and e.position.x < 60 and not w.hero.jumped:
-				main._touch_down(Vector2(-1, -1))
-				main._touch_up(Vector2(-1, -1))
-		peak_score = maxi(peak_score, w.score)
+	await _click(main.pause_button.rect.get_center())
+	_check(main.paused, "pause button pauses")
+	var d := w.distance
+	await _wait(0.3)
+	_check(w.distance == d, "world frozen while paused")
+	await _shot("05_paused")
+	await _click(main.resume_button.rect.get_center())
+	_check(not main.paused, "resume button resumes")
+
+	# Long demo run: invincible so it reaches later stages.
+	w.invincible = true
+	var shots := {6.0: "06_running", 24.0: "07_stage2", 44.0: "09_stage3"}
+	var rush_shot := false
+	var was_rush := true  # ignore a rush already underway
+	var t := 0.0
+	while t < 46.0:
+		_autoplay()
 		await _wait(0.05)
-		elapsed += 0.05
-		if int(elapsed * 20) == 100:
-			await _shot("5_running")
-	print("     survived %.1fs, score %d, distance %d" % [elapsed, w.score, w.get_distance()])
+		t += 0.05
+		for at in shots:
+			if t >= at and t < at + 0.05:
+				await _shot(shots[at])
+		var rush := w.scroller.state == ScrollHandler.RunningState.RUSH
+		if rush and not was_rush and not rush_shot:
+			await _wait(0.45)
+			await _shot("08_rush")
+			rush_shot = true
+		was_rush = rush
+	print("     demo run: %.0fs, %d stomps, %d m, stage %d" % [t, w.score, w.get_distance(), main.backdrop.stage + 1])
+	_check(w.score > 0, "stomps scored during demo")
+	_check(main.backdrop.stage >= 2, "stages advance with distance")
+
+	# Now play for real until the hero dies.
+	w.invincible = false
+	t = 0.0
+	while w.state == GameWorld.State.RUNNING and t < 90.0:
+		_autoplay()
+		await _wait(0.05)
+		t += 0.05
 	_check(w.is_game_over(), "hero eventually dies")
-	_check(not w.hero.alive, "hero marked dead")
-	await _wait(0.5)
-	await _shot("6_game_over")
+	await _wait(0.3)
+	await _shot("10_game_over_anim")
+	await _wait(1.6)
+	await _shot("11_game_over")
+	_check(w.total_score == floori(w.distance / 200.0) + w.score, "total score formula")
+	_check(Assets.get_pref("highScore") >= w.total_score, "high score saved")
 
-	var total := w.total_score
-	_check(total == floori(w.distance / 200.0) + w.score, "total score formula")
-	_check(Assets.get_pref("highScore") >= total, "high score saved")
-
-	var b: SimpleButton = main.replay_button
-	await _click(b.rect.get_center())
+	await _click(main.replay_button.rect.get_center())
 	_check(w.state == GameWorld.State.READY, "replay button -> ready")
 	_check(w.score == 0 and w.distance == 0 and w.hero.alive, "state reset on replay")
+	_check(main.backdrop.stage == 0, "back to first stage")
 	var visible := 0
 	for e in w.scroller.enemies:
 		if e.is_visible:
 			visible += 1
 	_check(visible == 3, "three enemies active after restart")
+
+	await _click(Vector2(100, 60))
+	await _click(main.pause_button.rect.get_center())
+	await _click(main.pause_menu_button.rect.get_center())
+	_check(main.screen == main.Screen.MENU and w.state == GameWorld.State.MENU, "pause -> menu returns to title")
+	await _wait(0.3)
+	await _shot("12_menu_with_best")

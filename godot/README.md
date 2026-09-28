@@ -6,24 +6,28 @@ A Godot 4.4 port of the 2015 libGDX game in `../Compress-core`. The rules, timin
 1. Open this folder in Godot 4.4 or newer (Project Manager → Import → `project.godot`).
 2. Press F5. Click or tap to play; Space/Enter also works as a tap.
 
-## Assets
-- **Art:** `texture.png` (sprite sheet) and `Trash3.png`, recovered from the original.
-- **Music and death sound:** the originals, converted to `.ogg` (Godot can't play `.m4a`).
-- **Jump and stomp sounds:** new effects synthesized by `tools/make_sounds.py`. Run it again to regenerate them.
-- **Font:** [Fredoka One](assets/fonts/OFL.txt) (SIL Open Font License), with a white outline. It stands in for the original Trash Hand bitmap font.
-- **Splash screen:** shows the game's title art instead of the libGDX logo.
+## What's on top of the original
+The game rules are unchanged. The port adds a presentation layer:
+- **Stages:** the backdrop cycles every 150 m through the sky and four stage backgrounds from the 2016 art backup that never shipped, crossfading between them.
+- **Parallax:** sky, individually drifting clouds and hills scroll at different speeds over the ground. Built by `tools/build_art.py` from the originals in `../art-src`.
+- **Effects:** dust puffs, squash and stretch, a stomp burst with a "+1" popup and a brief freeze, screen shake, soft shadows, fireball glow and embers, soul sparkles, speed lines and a RUSH banner, and a vignette.
+- **Interface:** a menu with a best-score badge and sound toggle, a how-to-play card, a HUD with pause, and a pause menu (Resume / Restart / Menu). The game-over screen animates: the board drops in, the score counts up, the medal pops in and a high-score stamp appears.
+- **Sharper art:** hi-res title and menu art from the backup, drawn with smooth, mipmapped filtering.
 
-The originals still take priority if you add them. Download them into `../assets/` (links in `../RECOVERY.md`) and run `tools/sync_assets.sh`. Its converted `.ogg` sounds are used ahead of the `.wav` replacements, and `Trash3.fnt` is used ahead of Fredoka One.
+## Assets
+- **Art:** `texture.png` (the original sprite sheet), plus `assets/art/` (layers and hi-res art, from the backup).
+- **Music and death sound:** the originals, converted to `.ogg`.
+- **Jump and stomp sounds:** synthesized by `tools/make_sounds.py`. The originals are used instead if you add them to `../assets/sound` and run `tools/sync_assets.sh`.
+- **Font:** [Fredoka One](assets/fonts/OFL.txt) (SIL Open Font License).
 
 ## Differences from the original
-- The splash shows the title art instead of the libGDX logo.
-- Ads and the "Rate" button do nothing: the store listing is gone, and the desktop build of the original disabled them too.
-- The window keeps a 3:2 aspect ratio with letterboxing. The original stretched to the phone's screen.
-- Game logic runs at a fixed 60 ticks per second. The original's distance counter counted rendered frames, so this keeps scores comparable.
-- High score is saved to `user://compress.cfg`.
+- The Rate button and prompt are gone, since the store listing no longer exists. Ads are gone too.
+- The window keeps a 3:2 aspect ratio with letterboxing.
+- Game logic runs at a fixed 60 ticks per second, so the frame-counted distance stays comparable.
+- High score and the sound setting are saved to `user://compress.cfg`.
 
 ## Test
-`tests/playtest.tscn` plays a run end to end (menu → ready → jump → death → replay) and checks the state along the way:
+`tests/playtest.tscn` plays the whole game and checks state along the way: menu, sound toggle, tutorial, jump, pause, a 46-second invincible demo run through the stages, a real death, the score screen, replay, and pause → Menu. Pass a folder to also save screenshots:
 
 ```
 godot --path . res://tests/playtest.tscn -- /tmp/shots   # optional folder for screenshots

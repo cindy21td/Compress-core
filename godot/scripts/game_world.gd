@@ -4,6 +4,12 @@ extends RefCounted
 
 enum State { MENU, READY, RUNNING, GAMEOVER, HIGHSCORE }
 
+## For effects only; the rules don't depend on anyone listening.
+signal stomped(enemy: Enemy)
+signal died
+
+var invincible := false  # demo/testing only: collisions don't end the run
+
 const RUSH_DURATION := 60
 
 var state := State.MENU
@@ -40,15 +46,18 @@ func _update_running(delta: float) -> void:
 	hero.update(delta)
 	scroller.update(delta)
 
-	if scroller.enemy_is_hit(hero):
+	var stomp := scroller.stomped_enemy(hero)
+	if stomp:
 		add_score(1)
-	if scroller.collides(hero):
+		stomped.emit(stomp)
+	if not invincible and scroller.collides(hero):
 		Assets.stop_theme()
 		scroller.stop()
 		hero.alive = false
 		renderer.prepare_transition(Color.WHITE, 0.3)
 		Assets.play_sound("death", 0.3)
 		state = State.GAMEOVER
+		died.emit()
 
 		# The original showed a "rate me" bubble every 16 deaths.
 		var rate_val := Assets.get_pref("rateValue")
@@ -99,6 +108,12 @@ func restart() -> void:
 	renderer.show_rate_prompt(false)
 	hero.on_restart()
 	scroller.on_restart()
+
+
+## Back to the title screen with a fresh run prepared.
+func to_menu() -> void:
+	restart()
+	state = State.MENU
 
 
 func add_score(increment: int) -> void:

@@ -8,7 +8,7 @@ src="$here/../assets"
 dst="$here/assets"
 mkdir -p "$dst/sound"
 
-for f in texture.png Trash3.png Trash3.fnt; do
+for f in texture.png; do
   if [ -f "$src/$f" ]; then cp "$src/$f" "$dst/$f"; echo "copied   $f"
   else echo "missing  $f" >&2; fi
 done

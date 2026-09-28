@@ -91,12 +91,12 @@ func on_restart() -> void:
 	bg_back.on_restart()
 
 
-## True if the hero stomped an enemy this frame (at most one counts).
-func enemy_is_hit(hero: Hero) -> bool:
+## The enemy the hero stomped this frame, if any (at most one counts).
+func stomped_enemy(hero: Hero) -> Enemy:
 	for e in enemies:
 		if e.is_hit(hero):
-			return true
-	return false
+			return e
+	return null
 
 
 func collides(hero: Hero) -> bool:
