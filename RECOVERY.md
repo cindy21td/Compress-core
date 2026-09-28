@@ -10,7 +10,30 @@ App Store: https://apps.apple.com/us/app/run-hero-run/id1058214268 (libGDX, iOS 
 1. **Assets** (never committed): `texture.png`, `libGdx.png`, `Trash3.fnt` (+ its page png), and `sound/*.m4a` (Death Sound, Hit Sound, Jump Sound, Knight Attack, theme, Wizard Attack).
 2. **Launcher modules** (`ios`/`android`/`desktop`) and the root Gradle files. These were never pushed. The iOS launcher implemented `IActivityRequestHandler` (banner ads and the rate prompt).
 
-## Getting the assets back from the App Store build
+## Assets recovered from Google Drive
+The app is delisted, so the App Store route below no longer works. A May 2016 backup is in Google Drive under `Compress - Assets/` (subfolders `Reformed/img`, `Sound` and `Font`).
+
+Already in `assets/`:
+- `texture.png` (1650x1013, the sprite sheet `AssetLoader` slices)
+- `Trash3.png` (font page)
+- `sound/theme.m4a` (Drive name: `Run Theme.m4a`)
+- `sound/Death Sound.m4a`
+
+Still to copy into `assets/` (download each from Drive):
+| File | Drive link |
+| --- | --- |
+| `Trash3.fnt` | https://drive.google.com/file/d/1IkS9MUWlng_36D1eVRDbJ8S1no9vewLR/view |
+| `libGdx.png` | https://drive.google.com/file/d/1PfaUL4ecNfRim_7vuweXvbtxz4jG9zP5/view |
+| `sound/Hit Sound.m4a` | https://drive.google.com/file/d/1IBzKy5YQdMX5_VH16NoRfxEIukpIJK0g/view |
+| `sound/Jump Sound.m4a` | https://drive.google.com/file/d/1IFIywE0Jq8y9jCVgEmNO1GL19ZLr9_Ld/view |
+| `sound/Knight Attack.m4a` | https://drive.google.com/file/d/1I3LWXvpa9KimHFET4Ub4XojfW2Ihz8Xk/view |
+| `sound/Wizard Attack.m4a` | https://drive.google.com/file/d/1ICG-zlTKlTm9-q916NFZ8_S1GoCa6ZT9/view |
+
+The same folders also hold source art that the game doesn't load: the separate background layers, the menu and title art, `Scoreboard.png`, `Boss Theme.m4a` and the Pixelmator project files.
+
+Four regions in `AssetLoader` (`ratePrompt1/2`, `stillOne/Two`) extend 1–5px past the sheet's edge. libGDX tolerates this.
+
+## Getting the assets back from the App Store build (only if the app is relisted)
 Asset files inside an IPA are **not** encrypted. Only the executable is protected by FairPlay.
 1. On a Mac, install **Apple Configurator** and sign in with the Apple ID that owns or once downloaded the app.
 2. Choose Add → Apps, then select Run Hero Run. Configurator caches the `.ipa` under
