@@ -89,6 +89,35 @@ static func icon(ci: CanvasItem, kind: Icon, center: Vector2, s: float, color :=
 				ci.draw_line(center + Vector2(0.18, 0.2) * s, center + Vector2(0.48, -0.2) * s, color, 0.1 * s)
 
 
+static func powerup_color(kind: int) -> Color:
+	match kind:
+		PowerUp.Kind.SHIELD: return Color(0.25, 0.6, 1.0)
+		PowerUp.Kind.SLOWMO: return Color(0.62, 0.35, 0.95)
+		PowerUp.Kind.DOUBLE: return GOLD
+		_: return Color(0.9, 0.22, 0.2)
+
+
+## White glyph for a power-up, `s` units across.
+static func powerup_icon(ci: CanvasItem, kind: int, center: Vector2, s: float, color := Color.WHITE) -> void:
+	match kind:
+		PowerUp.Kind.SHIELD:
+			ci.draw_colored_polygon(PackedVector2Array([center + Vector2(-0.32, -0.34) * s,
+				center + Vector2(0, -0.42) * s, center + Vector2(0.32, -0.34) * s,
+				center + Vector2(0.28, 0.08) * s, center + Vector2(0, 0.4) * s,
+				center + Vector2(-0.28, 0.08) * s]), color)
+		PowerUp.Kind.SLOWMO:
+			ci.draw_arc(center, 0.33 * s, 0, TAU, 20, color, 0.1 * s)
+			ci.draw_line(center, center + Vector2(0, -0.22) * s, color, 0.09 * s)
+			ci.draw_line(center, center + Vector2(0.16, 0.06) * s, color, 0.09 * s)
+		PowerUp.Kind.DOUBLE:
+			text(ci, "x2", center + Vector2(0, -0.3) * s, 0.5 * s, color, HORIZONTAL_ALIGNMENT_CENTER, Color(0, 0, 0, 0))
+		_:
+			ci.draw_arc(center + Vector2(0, -0.04) * s, 0.24 * s, 0, PI, 12, color, 0.16 * s)
+			for sx in [-1, 1]:
+				ci.draw_rect(Rect2(center + Vector2(sx * 0.24 - 0.08, -0.34) * s, Vector2(0.16, 0.3) * s), color)
+				ci.draw_rect(Rect2(center + Vector2(sx * 0.24 - 0.08, -0.4) * s, Vector2(0.16, 0.1) * s), Color(0.85, 0.85, 0.9))
+
+
 static func ease_out_back(p: float) -> float:
 	var c1 := 1.70158
 	return 1 + (c1 + 1) * pow(p - 1, 3) + c1 * pow(p - 1, 2)

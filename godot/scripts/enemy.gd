@@ -2,7 +2,7 @@
 class_name Enemy
 extends Scrollable
 
-enum Type { WIZARD, KNIGHT, SUMMONER }
+enum Type { WIZARD, KNIGHT, SUMMONER, PIG }
 
 var alive := true
 var type: Type
@@ -23,6 +23,7 @@ func is_hit(hero: Hero) -> bool:
 			alive = false
 			hero.hit_enemy()
 			soul.position = position
+			soul.velocity = Vector2(-59, -120)
 			soul.is_visible = true
 			return true
 	return false

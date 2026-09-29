@@ -13,7 +13,7 @@ for f in texture.png; do
   else echo "missing  $f" >&2; fi
 done
 
-for f in "Death Sound" "Hit Sound" "Jump Sound" theme; do
+for f in "Death Sound" "Hit Sound" "Jump Sound" theme "Boss Theme" "Boss Fall"; do
   if [ -f "$src/sound/$f.m4a" ]; then
     ffmpeg -loglevel error -y -i "$src/sound/$f.m4a" -c:a libvorbis -q:a 5 "$dst/sound/$f.ogg"
     echo "converted sound/$f.ogg"

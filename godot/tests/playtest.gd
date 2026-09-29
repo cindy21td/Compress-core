@@ -1,7 +1,8 @@
 ## Automated smoke test and screenshot tour.
 ## Run: godot --path . res://tests/playtest.tscn [-- <screenshot dir>]
 ## Plays through the menu, a tutorial start, pause, a long invincible demo run
-## (to capture later stages), a real death, the score screen, replay and menu.
+## (to capture later stages), the Pig, a power-up, two Devourer boss fights,
+## a real death, the score screen, replay and menu.
 extends Node
 
 var main: Node2D
@@ -63,7 +64,7 @@ func _autoplay() -> void:
 
 func _run() -> void:
 	var w: GameWorld = main.world
-	_check(Assets._sounds.size() == 4, "all four sounds loaded")
+	_check(Assets._sounds.size() == Assets.SOUND_FILES.size(), "all sounds loaded")
 	_check(main.screen == main.Screen.SPLASH, "starts on splash")
 	await _wait(1.0)
 	await _shot("01_splash")
@@ -123,7 +124,12 @@ func _run() -> void:
 	_check(w.score > 0, "stomps scored during demo")
 	_check(main.backdrop.stage >= 2, "stages advance with distance")
 
-	# Now play for real until the hero dies.
+	await _gameplay_extras()
+
+	# Now play for real until the hero dies, starting with a shield.
+	var broke := [false]
+	w.shield_broken.connect(func(): broke[0] = true)
+	w._collect(PowerUp.Kind.SHIELD)
 	w.invincible = false
 	t = 0.0
 	while w.state == GameWorld.State.RUNNING and t < 90.0:
@@ -131,6 +137,7 @@ func _run() -> void:
 		await _wait(0.05)
 		t += 0.05
 	_check(w.is_game_over(), "hero eventually dies")
+	_check(broke[0], "shield absorbed a hit before death")
 	await _wait(0.3)
 	await _shot("10_game_over_anim")
 	await _wait(1.6)
@@ -154,3 +161,86 @@ func _run() -> void:
 	_check(main.screen == main.Screen.MENU and w.state == GameWorld.State.MENU, "pause -> menu returns to title")
 	await _wait(0.3)
 	await _shot("12_menu_with_best")
+
+
+func _play_for(seconds: float, until := func(): return false) -> float:
+	var t := 0.0
+	while t < seconds and not until.call():
+		_autoplay()
+		await _wait(0.05)
+		t += 0.05
+	return t
+
+
+func _gameplay_extras() -> void:
+	var w: GameWorld = main.world
+	var s := w.scroller
+	_check(w.best_combo >= 1, "combo tracked (best %d)" % w.best_combo)
+
+	# The Pig unlocks at 150 m.
+	_check(s.pig_unlocked, "pig unlocked past %d m" % GameWorld.PIG_UNLOCK_DISTANCE)
+	if not s.pig.is_visible:
+		s.pig.reset_enemy(0, false)
+		s.pig.is_visible = true
+	s.pig.position.x = 150
+	await _play_for(0.6)
+	await _shot("13_pig")
+	await _play_for(5.0, func(): return not s.pig.is_visible or not s.pig.alive)
+
+	# Magnet power-up, placed just ahead of the hero.
+	s.powerup.spawn(PowerUp.Kind.MAGNET)
+	await _play_for(3.0, func(): return not w.hero.jumped)
+	s.powerup.position = w.hero.body_center + Vector2(30, -6)
+	await _wait(0.1)
+	await _shot("14_powerup")
+	await _wait(0.4)
+	_check(w.magnet_time > 0, "magnet collected")
+
+	# Boss fight: stomped souls home in on the jaw and beat it back.
+	var events := {"summoned": 0, "hits": 0, "defeated": 0, "slammed": 0, "stomps": 0}
+	w.stomped.connect(func(_e, _p, _c): events.stomps += 1)
+	w.boss_summoned.connect(func(): events.summoned += 1)
+	w.boss_hit.connect(func(_p): events.hits += 1)
+	w.boss_defeated.connect(func(): events.defeated += 1)
+	w.boss_slammed.connect(func(): events.slammed += 1)
+	var score := w.score
+	s.boss.reset()  # in case the demo run already called one
+	await _play_for(0.1)
+	s.boss_cooldown = 0
+	s.hidden.erase(s.summoner)
+	s.summoner.alive = true
+	s.summoner.is_visible = true
+	s.summoner.position.x = -80  # an escaping Summoner calls the boss
+	await _play_for(0.2)
+	_check(events.summoned == 1 and s.boss.phase == Boss.Phase.CHASE, "escaped summoner summons the boss")
+	_check(Assets.current_music == "boss", "boss music plays")
+	await _play_for(5.0)
+	await _shot("15_boss")
+	# Release souls from the hero until it's beaten (autoplay stomps too rarely
+	# to be deterministic).
+	var t := 0.0
+	while s.boss.phase == Boss.Phase.CHASE and t < 20.0:
+		var e: Enemy = s.wizards[0]
+		if not e.soul.is_visible:
+			e.soul.position = w.hero.position
+			e.soul.velocity = Vector2(-59, -120)
+			e.soul.is_visible = true
+		await _play_for(0.3)
+		t += 0.3
+	print("     boss: %d stomps, %d hits, health %d" % [events.stomps, events.hits, s.boss.health])
+	_check(events.hits > 0 and w.score > score, "souls hurt the boss and score")
+	_check(events.defeated == 1 and s.boss.defeated, "boss beaten back")
+
+	# Second boss: let it reach mid-screen so it drops.
+	await _play_for(8.0, func(): return not s.boss.active())
+	s.boss_cooldown = 0
+	var slams: int = events.slammed
+	s.boss.summon()
+	s.boss.position.x = Boss.DROP_AT - Boss.W - 1
+	await _play_for(1.0, func(): return s.boss.phase == Boss.Phase.LANDED)
+	await _shot("16_boss_drop")
+	_check(events.slammed == slams + 1, "boss drops and slams the ground")
+	await _play_for(6.0, func(): return not s.boss.active())
+	_check(not s.boss.active(), "boss leaves after landing")
+	await _play_for(0.5)
+	_check(Assets.current_music == "theme", "theme music returns")

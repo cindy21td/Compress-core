@@ -10,7 +10,13 @@ const SOUND_FILES := {
 	"hit": "res://assets/sound/Hit Sound",
 	"jump": "res://assets/sound/Jump Sound",
 	"theme": "res://assets/sound/theme",
+	"boss": "res://assets/sound/Boss Theme",
+	"boss_fall": "res://assets/sound/Boss Fall",
+	"boss_ground": "res://assets/sound/Boss Ground",
+	"power_up": "res://assets/sound/Power Up",
+	"combo": "res://assets/sound/Combo",
 }
+const MUSIC := ["theme", "boss"]
 const UI_FONT := "res://assets/fonts/FredokaOne-Regular.ttf"
 
 var texture: Texture2D
@@ -80,8 +86,17 @@ const ENEMY_TEX_RECT := Rect2(1224, 0, 375, 300)
 
 var muted := false
 
+# Boss (Boss Texture.png: three 314x240 frames) and the Pig (Pig Sprite.png,
+# two 100x100 frames), both from the 2016 backup.
+var boss_texture: Texture2D
+var boss_anim := SpriteAnim.new(0.2, [Rect2(0, 0, 314, 240), Rect2(314, 0, 314, 240), Rect2(0, 240, 314, 240)], SpriteAnim.Mode.LOOP_PINGPONG)
+var boss_fire := Rect2(0, 240, 314, 240)
+var pig_texture: Texture2D
+var pig_anim := SpriteAnim.new(0.12, [Rect2(0, 0, 100, 100), Rect2(100, 0, 100, 100)], SpriteAnim.Mode.LOOP)
+
 var _sounds := {}
-var _theme_player: AudioStreamPlayer
+var _music := {}  # key -> AudioStreamPlayer
+var current_music := ""
 var _prefs := ConfigFile.new()
 
 
@@ -102,6 +117,9 @@ func _ready() -> void:
 	menu_texture = load("res://assets/art/menu_texture.png")
 	title_texture = load("res://assets/art/Title.png")
 	enemy_texture = load("res://assets/art/enemy_texture.png")
+	boss_texture = load("res://assets/art/boss_texture.png")
+	if ResourceLoader.exists("res://assets/art/pig.png"):
+		pig_texture = load("res://assets/art/pig.png")
 	ui_font = load(UI_FONT)
 
 	for key in SOUND_FILES:
@@ -110,42 +128,62 @@ func _ready() -> void:
 			if ResourceLoader.exists(path):
 				_sounds[key] = load(path)
 				break
-	if _sounds.has("theme"):
-		var theme: AudioStream = _sounds["theme"].duplicate()
-		theme.set("loop", true)
-		_theme_player = AudioStreamPlayer.new()
-		_theme_player.stream = theme
-		add_child(_theme_player)
+	for key in MUSIC:
+		if _sounds.has(key):
+			var stream: AudioStream = _sounds[key].duplicate()
+			stream.set("loop", true)
+			var player := AudioStreamPlayer.new()
+			player.stream = stream
+			add_child(player)
+			_music[key] = player
 
 	_prefs.load(PREFS_PATH)
 	set_muted(_prefs.get_value("settings", "muted", false))
 
 
-func play_sound(key: String, volume: float) -> void:
+func play_sound(key: String, volume: float, pitch := 1.0) -> void:
 	if not _sounds.has(key):
 		return
 	var player := AudioStreamPlayer.new()
 	player.stream = _sounds[key]
 	player.volume_db = linear_to_db(volume)
+	player.pitch_scale = pitch
 	player.finished.connect(player.queue_free)
 	add_child(player)
 	player.play()
 
 
+## Plays one music track on loop, stopping any other.
+func loop_music(key: String, volume: float) -> void:
+	for k in _music:
+		if k != key:
+			_music[k].stop()
+	current_music = key
+	if _music.has(key):
+		var p: AudioStreamPlayer = _music[key]
+		p.volume_db = linear_to_db(volume)
+		p.stream_paused = false
+		p.play()
+
+
 func loop_theme(volume: float) -> void:
-	if _theme_player:
-		_theme_player.volume_db = linear_to_db(volume)
-		_theme_player.play()
+	loop_music("theme", volume)
 
 
 func stop_theme() -> void:
-	if _theme_player:
-		_theme_player.stop()
+	for k in _music:
+		_music[k].stop()
+	current_music = ""
 
 
 func pause_theme(paused: bool) -> void:
-	if _theme_player:
-		_theme_player.stream_paused = paused
+	for k in _music:
+		_music[k].stream_paused = paused
+
+
+func set_music_pitch(pitch: float) -> void:
+	for k in _music:
+		_music[k].pitch_scale = pitch
 
 
 func set_muted(value: bool) -> void:

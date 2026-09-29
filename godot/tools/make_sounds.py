@@ -52,4 +52,20 @@ noise_len = int(0.03 * RATE)
 stomp = [s + (random.uniform(-1, 1) * 0.6 * (1 - i / noise_len) if i < noise_len else 0.0)
          for i, s in enumerate(tone)]
 write("Hit Sound.wav", stomp)
+# Boss slam: deep falling thump with a long rumble.
+random.seed(11)
+thump = sweep(0.6, 90, 35, math.sin, lambda t: math.exp(-4 * t))
+rumble_len = int(0.35 * RATE)
+slam = [s + (random.uniform(-1, 1) * 0.5 * (1 - i / rumble_len) ** 2 if i < rumble_len else 0.0)
+        for i, s in enumerate(thump)]
+write("Boss Ground.wav", slam)
+
+# Power-up pickup: bright rising arpeggio.
+pickup = []
+for f in (660, 880, 1320):
+    pickup += sweep(0.07, f, f * 1.02, soft_square, attack_decay(0.1))
+write("Power Up.wav", pickup)
+
+# Combo: short high "ding" (pitched up per combo in the game).
+write("Combo.wav", sweep(0.18, 1400, 1500, math.sin, lambda t: math.exp(-7 * t)))
 print("wrote", *sorted(p.name for p in OUT.glob("*.wav")))

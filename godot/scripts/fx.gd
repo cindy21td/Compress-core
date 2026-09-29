@@ -39,13 +39,24 @@ func dust(pos: Vector2, count: int, spread: float) -> void:
 			randf_range(0.3, 0.5), randf_range(1.2, 2.2), Color(0.55, 0.42, 0.25, 0.7))
 
 
-func stomp(pos: Vector2) -> void:
+func stomp(pos: Vector2, text := "+1") -> void:
 	emit(Kind.RING, pos, Vector2.ZERO, 0.3, 3, Color(1, 1, 1, 0.9))
 	for i in 8:
 		var a := TAU * i / 8.0 + randf_range(-0.2, 0.2)
 		emit(Kind.STAR, pos, Vector2.from_angle(a) * randf_range(45, 70), 0.45, randf_range(1.6, 2.4), Color(1, 0.85, 0.15))
-	popups.append({"text": "+1", "pos": pos + Vector2(0, -6), "life": 0.8, "max": 0.8})
+	popup(text, pos + Vector2(0, -6))
 	shake(1.2, 0.12)
+
+
+func popup(text: String, pos: Vector2, color := Color.WHITE, scale := 1.0) -> void:
+	popups.append({"text": text, "pos": pos, "life": 0.8, "max": 0.8, "color": color, "scale": scale})
+
+
+func burst(pos: Vector2, color: Color, count: int) -> void:
+	emit(Kind.RING, pos, Vector2.ZERO, 0.35, 3, Color(color, 0.9))
+	for i in count:
+		emit(Kind.STAR, pos, Vector2.from_angle(randf() * TAU) * randf_range(30, 80), randf_range(0.35, 0.6),
+			randf_range(1.2, 2.2), color)
 
 
 func death(pos: Vector2) -> void:
@@ -111,6 +122,16 @@ func draw(ci: CanvasItem) -> void:
 				ci.draw_rect(Rect2(p.pos - Vector2.ONE * p.size / 2, Vector2.ONE * p.size), Color(c, k))
 			Kind.SPEEDLINE:
 				ci.draw_line(p.pos, p.pos + Vector2(p.size, 0), Color(c, c.a * minf(1, k * 2)), 0.6)
+
+
+## Floating score text; drawn on the world view after the particles.
+func draw_popups(ci: CanvasItem) -> void:
+	for t in popups:
+		var k: float = t.life / t.max
+		var pop := 1.0 + 0.4 * maxf(0, (k - 0.8) / 0.2)
+		var c: Color = t.color
+		Ui.text(ci, t.text, t.pos, 5.0 * t.scale * pop, Color(c, minf(1, k * 2)),
+			HORIZONTAL_ALIGNMENT_CENTER, Color(Ui.INK, minf(1, k * 2)), 0.2)
 
 
 func _star(ci: CanvasItem, pos: Vector2, r: float, rot: float, color: Color) -> void:
