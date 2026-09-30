@@ -237,7 +237,10 @@ func _gameplay_extras() -> void:
 	var slams: int = events.slammed
 	s.boss.summon()
 	s.boss.position.x = Boss.DROP_AT - Boss.W - 1
-	await _play_for(1.0, func(): return s.boss.phase == Boss.Phase.LANDED)
+	await _play_for(3.0, func():
+		for e in s.enemies:
+			e.soul.is_visible = false  # no hits, so it gets through
+		return s.boss.phase == Boss.Phase.LANDED)
 	await _shot("16_boss_drop")
 	_check(events.slammed == slams + 1, "boss drops and slams the ground")
 	await _play_for(6.0, func(): return not s.boss.active())

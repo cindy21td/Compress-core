@@ -136,7 +136,8 @@ func _update_game(delta: float) -> void:
 		_ambient_effects(delta)
 	if backdrop.stage != last_stage:
 		last_stage = backdrop.stage
-		_show_banner("STAGE %d" % (backdrop.stage + 1), Ui.PAPER)
+		if running:
+			_show_banner("STAGE %d" % (backdrop.stage + 1), Ui.PAPER)
 	var rush := world.scroller.state == ScrollHandler.RunningState.RUSH
 	if rush and not was_rush and running:
 		_show_banner("RUSH!", Ui.RED)
@@ -245,6 +246,7 @@ func _on_shield_broken() -> void:
 
 
 func _on_death() -> void:
+	banner_time = 99.0  # no banners over the score screen
 	fx.death(world.hero.body_center)
 	game_over_time = 0.0
 
@@ -552,9 +554,12 @@ func _draw_boss(ci: CanvasItem, t: float) -> void:
 	elif b.phase == Boss.Phase.RETREAT:
 		region = Assets.boss_anim.frames[0]
 	var tint := Color(1, 0.45, 0.45) if b.hurt_time > 0 else Color.WHITE
+	var pos := b.position
 	if b.phase == Boss.Phase.RETREAT and b.defeated:
-		tint = Color(1, 1, 1, 0.75)
-	ci.draw_texture_rect_region(Assets.boss_texture, Rect2(b.position, Vector2(b.width, b.height)), region, tint)
+		# Beaten: flickers and shudders on the way out.
+		tint = Color(1, 0.6, 0.5, 0.8) if int(t * 12) % 2 == 0 else Color(1, 1, 1, 0.8)
+		pos += Vector2(sin(t * 70) * 1.5, 0)
+	ci.draw_texture_rect_region(Assets.boss_texture, Rect2(pos, Vector2(b.width, b.height)), region, tint)
 
 
 func _draw_powerup(ci: CanvasItem, t: float) -> void:

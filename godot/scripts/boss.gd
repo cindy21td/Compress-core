@@ -10,8 +10,8 @@ enum Phase { INACTIVE, CHASE, DROP, LANDED, RETREAT }
 
 const W := 157
 const H := 120
-const START := Vector2(-115, -64)
-const SPEED := 5.0
+const START := Vector2(-85, -50)  # head and jaw already on screen
+const SPEED := 3.5
 const KNOCKBACK := 16.0
 const MAX_HEALTH := 6
 const DROP_AT := 102.0  # right edge position that triggers the drop
@@ -48,7 +48,7 @@ func reset() -> void:
 	velocity = Vector2.ZERO
 
 
-## The jaw: souls that touch it are eaten; the hero dies if they touch it.
+## The jaw: souls that touch it are eaten.
 func jaw() -> Rect2:
 	return Rect2(position.x, position.y + height - 12, width - 10, 4)
 
@@ -79,14 +79,19 @@ func update(delta: float) -> void:
 			if landed_time > 1.0:  # only reached if the hero survived (shield)
 				retreat(false)
 		Phase.RETREAT:
-			position += Vector2(-70, -80) * delta
-			if position.y + height < -10 or position.x + width < -10:
+			if defeated:  # knocked out: hops, then tumbles off the bottom
+				velocity.y += GRAVITY * 0.25 * delta
+				position += Vector2(-12, velocity.y) * delta
+			else:
+				position += Vector2(-40, -50) * delta
+			if position.y + height < -5 or position.x + width < -5 or position.y > GROUND:
 				phase = Phase.INACTIVE
 
 
 func retreat(beaten: bool) -> void:
 	phase = Phase.RETREAT
 	defeated = beaten
+	velocity = Vector2(0, -60)
 
 
 ## Eats the soul if it reached the jaw. Returns true on a hit.
@@ -96,7 +101,7 @@ func try_eat(soul: Soul) -> bool:
 	if not Geo.circle_rect_overlap(soul.circle_center, soul.circle_radius, jaw()):
 		return false
 	soul.is_visible = false
-	position.x -= KNOCKBACK
+	position.x = maxf(position.x - KNOCKBACK, START.x)  # stays in view
 	health -= 1
 	hurt_time = 0.25
 	if health <= 0:
@@ -108,8 +113,6 @@ func collides(hero: Hero) -> bool:
 	if not hero.alive:
 		return false
 	match phase:
-		Phase.CHASE:
-			return Geo.circle_rect_overlap(hero.body_center, hero.body_radius, jaw())
 		Phase.DROP, Phase.LANDED:
 			return Geo.circle_rect_overlap(hero.body_center, hero.body_radius,
 				Rect2(position.x, position.y + height - 45, width - 10, 45))

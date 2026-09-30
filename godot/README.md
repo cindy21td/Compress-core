@@ -7,7 +7,7 @@ A Godot 4.4 port of the 2015 libGDX game in `../Compress-core`. The rules, timin
 2. Press F5. Click or tap to play; Space/Enter also works as a tap.
 
 ## New gameplay
-- **The Devourer (boss):** the dragon boss cut from the 2015 build, restored from `Boss.java` in git history. A Summoner that escapes alive calls it in. It creeps in from the top-left with its own music. Souls of stomped enemies are drawn into its jaw: each one hurts it (+2) and knocks it back, and six hits beat it (+20). If it reaches mid-screen it drops on you.
+- **The Devourer (boss):** the dragon boss cut from the 2015 build, restored from `Boss.java` in git history. A Summoner that escapes alive calls it in. It creeps in from the top-left with its own music; its jaw only eats souls, but if it reaches mid-screen it drops on you. Souls of stomped enemies are drawn into its jaw: each one hurts it (+2) and knocks it back, and six hits beat it (+20).
 - **Combos:** stomps chained without touching the ground score ×2, ×3, up to ×4.
 - **Power-ups:** orbs float in every 14–24 s. **Shield** takes one hit (and even repels the boss). **Slow-mo** slows time for 4.5 s. **×2** doubles points for 8 s. **Soul magnet** sends souls straight at the boss and adds +1 per stomp for 8 s.
 - **The Pig:** a new ground enemy from the 2016 art that charges in fast and hops at random. It appears after 150 m. The art is a stand-in drawn by `tools/make_pig.py`; put the original `Pig Sprite.png` in `../art-src/` and re-run the script to use it.
