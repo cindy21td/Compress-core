@@ -30,8 +30,8 @@ var pause_button := UiButton.new(Rect2(186, 3, 15, 15), "", Ui.Icon.PAUSE)
 var resume_button := UiButton.new(Rect2(64, 40, 76, 17), "Resume", Ui.Icon.PLAY, Ui.GOLD)
 var restart_button := UiButton.new(Rect2(64, 61, 76, 17), "Restart", Ui.Icon.REPLAY)
 var pause_menu_button := UiButton.new(Rect2(64, 82, 76, 17), "Menu", Ui.Icon.HOME)
-var replay_button := UiButton.new(Rect2(44, 80, 42, 27))
-var menu_button := UiButton.new(Rect2(126, 84, 38, 18), "Menu", Ui.Icon.HOME)
+var replay_button := UiButton.new(Rect2(58, 74, 42, 27))
+var menu_button := UiButton.new(Rect2(108, 78, 38, 18), "Menu", Ui.Icon.HOME)
 
 # Presentation state
 var game_over_time := 0.0
@@ -53,6 +53,7 @@ var view_w := WIDTH
 var pad := 0.0     # frame edge to safe edge, each side
 var safe_b := 0.0  # bottom inset (home indicator)
 var boss_named := false
+var stamp_buzzed := false
 
 # Full-screen fade (white flash on death, fade from black on entering the game)
 var transition_color := Color.BLACK
@@ -289,6 +290,7 @@ func _on_death() -> void:
 	banner_time = 99.0  # no banners over the score screen
 	fx.death(world.hero.body_center)
 	game_over_time = 0.0
+	stamp_buzzed = false
 	_buzz(80)
 
 
@@ -764,43 +766,29 @@ func _draw_game_over(ci: CanvasItem) -> void:
 	var total := world.total_score
 	var drop := lerpf(-80, 0, Ui.ease_out_back(clampf(t / 0.5, 0, 1)))
 
-	# Score board slides down; TOTAL counts up; high score on the right.
-	ci.draw_rect(_full(ci), Color(0, 0, 0, 0.25 * clampf(t / 0.4, 0, 1)))
-	_region(ci, Assets.scoreboard, Rect2(33, drop, 426 / 3.0, 200 / 3.0))
+	# Five things (principle 12): the total counting up, the HIGH SCORE stamp
+	# on it, one stats line, Run again and Menu.
+	ci.draw_rect(_full(ci), Color(0, 0, 0, 0.35 * clampf(t / 0.4, 0, 1)))
 	var counted := roundi(total * Ui.ease_out_quad(clampf((t - 0.4) / 0.7, 0, 1)))
-	Ui.text(ci, str(counted), Vector2(77, 46 + drop), 7.5, Ui.INK, HORIZONTAL_ALIGNMENT_CENTER)
-	Ui.text(ci, str(Assets.get_pref("highScore")), Vector2(131, 46 + drop), 7.5, Ui.INK, HORIZONTAL_ALIGNMENT_CENTER)
+	var cx := WIDTH / 2
+	Ui.text(ci, str(counted), Vector2(cx, 22 + drop * 0.3), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, Ui.INK, 0.16)
 	if t > 0.5:
 		var stats := "%d m  ·  best combo x%d" % [world.get_distance(), mini(world.best_combo, GameWorld.MAX_COMBO_MULTIPLIER)]
 		if world.bosses_defeated > 0:
 			stats += "  ·  %d Devourer%s" % [world.bosses_defeated, "s" if world.bosses_defeated > 1 else ""]
-		Ui.text(ci, stats, Vector2(WIDTH / 2, 67), 4.6, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, Ui.INK, 0.22)
+		Ui.text(ci, stats, Vector2(cx, 56), 5, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, Ui.INK, 0.22)
 
-	# Medal pops in with a glow behind it.
-	if t > 1.0:
-		var k := Ui.ease_out_back(clampf((t - 1.0) / 0.35, 0, 1))
-		var c := Vector2(105, 92)
-		var size := 34.0 * k
-		var medal := Assets.empty_medal
-		if total > 150:
-			medal = Assets.gold_medal
-		elif total > 75:
-			medal = Assets.silver_medal
-		elif total > 25:
-			medal = Assets.bronze_medal
-		if total > 25:
-			ci.draw_set_transform(c, t * 0.8, Vector2.ONE)
-			_region(ci, Assets.medal_glow_anim.key_frame(t), Rect2(-size * 0.75, -size * 0.75, size * 1.5, size * 1.5))
-			ci.draw_set_transform(Vector2.ZERO)
-		_region(ci, medal, Rect2(c - Vector2(size, size) / 2, Vector2(size, size)))
-
-	# "High score!" stamp slams onto the board.
-	if world.state == GameWorld.State.HIGHSCORE and t > 1.3:
-		var k := clampf((t - 1.3) / 0.25, 0, 1)
+	# "High score!" stamp slams onto the number.
+	if world.state == GameWorld.State.HIGHSCORE and t > 1.1:
+		var k := clampf((t - 1.1) / 0.25, 0, 1)
 		var sc := lerpf(2.2, 1.0, Ui.ease_out_quad(k))
-		ci.draw_set_transform(Vector2(166, 30 + drop), -0.25, Vector2(sc, sc))
-		_hires(ci, Assets.highscore_mark, Rect2(-20, -19, 40, 38), Color(1, 1, 1, k))
+		var w := Ui.text_width(str(total), 24)
+		ci.draw_set_transform(Vector2(cx + w / 2 + 10, 26), -0.25, Vector2(sc, sc))
+		_hires(ci, Assets.highscore_mark, Rect2(-15, -14, 30, 28), Color(1, 1, 1, k))
 		ci.draw_set_transform(Vector2.ZERO)
+		if k >= 1.0 and not stamp_buzzed:
+			stamp_buzzed = true
+			_buzz(25)
 
 	# Buttons fade in once input is accepted.
 	if t > GAME_OVER_INPUT_DELAY:
