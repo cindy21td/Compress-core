@@ -101,6 +101,10 @@ func _run() -> void:
 	await _shot("05_paused")
 	await _click(main.resume_button.rect.get_center())
 	_check(not main.paused, "resume button resumes")
+	main.propagate_notification(Node.NOTIFICATION_APPLICATION_PAUSED)
+	_check(main.paused, "leaving the app pauses the run")
+	await _click(main.resume_button.rect.get_center())
+	_check(not main.paused, "resume after returning")
 
 	# Long demo run: still invincible, so it reaches later stages.
 	var shots := {6.0: "06_running", 24.0: "07_stage2", 44.0: "09_stage3"}

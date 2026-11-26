@@ -196,6 +196,7 @@ func _on_stomp(enemy: Enemy, points: int, combo: int) -> void:
 	fx.stomp(enemy.circle_center, "+%d" % points)
 	hit_stop = 0.05
 	hero_scale = Vector2(1.2, 0.85)
+	_buzz(15)
 	if combo >= 2:
 		Assets.play_sound("combo", 0.35, 1.0 + 0.12 * mini(combo, 6))
 		fx.popup("COMBO x%d" % mini(combo, GameWorld.MAX_COMBO_MULTIPLIER), enemy.circle_center + Vector2(0, -14), Ui.GOLD, 1.2)
@@ -227,6 +228,7 @@ func _on_boss_defeated() -> void:
 func _on_boss_slammed() -> void:
 	fx.shake(5.0, 0.6)
 	Assets.play_sound("boss_ground", 0.7)
+	_buzz(40)
 	for x in range(0, 110, 10):
 		fx.dust(Vector2(x, GROUND_Y), 2, 30)
 
@@ -243,12 +245,14 @@ func _on_shield_broken() -> void:
 	fx.burst(world.hero.body_center, Ui.powerup_color(PowerUp.Kind.SHIELD), 18)
 	fx.shake(2.5, 0.25)
 	Assets.play_sound("hit", 0.45, 0.7)
+	_buzz(40)
 
 
 func _on_death() -> void:
 	banner_time = 99.0  # no banners over the score screen
 	fx.death(world.hero.body_center)
 	game_over_time = 0.0
+	_buzz(80)
 
 
 func _show_banner(text: String, color: Color) -> void:
@@ -307,6 +311,24 @@ func _reset_presentation() -> void:
 	banner_time = 99.0
 	game_over_time = 0.0
 	hero_scale = Vector2.ONE
+
+
+## A run never dies behind a phone call: leaving the app pauses it, and the
+## pause card is waiting on return.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		pause_for_background()
+
+
+func pause_for_background() -> void:
+	if screen == Screen.GAME and world.state == GameWorld.State.RUNNING and not paused:
+		_set_paused(true)
+
+
+## Felt reactions (principle 13), off with the sound toggle.
+func _buzz(ms: int) -> void:
+	if not Assets.muted:
+		Input.vibrate_handheld(ms)
 
 
 func _set_paused(value: bool) -> void:
