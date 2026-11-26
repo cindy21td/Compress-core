@@ -141,6 +141,7 @@ func _run() -> void:
 		await _wait(0.05)
 		t += 0.05
 	_check(w.is_game_over(), "hero eventually dies")
+	_check(main.killer_name != "", "game over names the killer (%s)" % main.killer_name)
 	_check(broke[0], "shield absorbed a hit before death")
 	await _wait(0.3)
 	await _shot("10_game_over_anim")
@@ -185,6 +186,8 @@ func _teaching() -> void:
 		t += 0.05
 	_check(c.spared == 1 and w.hero.alive and w.state == GameWorld.State.RUNNING, "untapped enemy walks past harmlessly")
 	_check(c.miss_time < 0.3, "the miss is drawn")
+	_check(c.miss_word == "Tap sooner", "the miss says why (%s)" % c.miss_word)
+	_check(c.lesson_text() == "Tap to jump", "Tap to jump stays up between enemies")
 	await _wait(0.15)
 	await _shot("03b_missed")
 	w.invincible = true
@@ -204,6 +207,19 @@ func _teaching() -> void:
 		await _wait(0.03)
 		t += 0.03
 	_check(c.double_cue(w), "double-jump ring at the top of a jump")
+	_check(c.slow(w), "the double-jump demo runs slowed")
+	_check(c.lesson_text() != "Tap again in the air" and not c.double_demoed, "the first cue only demonstrates (ghost flies the arc)")
+	await _wait(0.12)
+	await _shot("03d0_double_demo")
+	t = 0.0
+	while not (c.double_cue(w) and c.double_demoed) and t < 15.0:
+		if not w.hero.jumped and c.arc_time > 1.0:
+			main._touch_down(Vector2(-1, -1))
+			main._touch_up(Vector2(-1, -1))
+		await _wait(0.03)
+		t += 0.03
+	await _wait(0.1)
+	_check(c.double_cue(w) and c.lesson_text() == "Tap again in the air", "the next jump asks, in the air")
 	await _shot("03d_double_cue")
 	main._touch_down(Vector2(-1, -1))
 	main._touch_up(Vector2(-1, -1))

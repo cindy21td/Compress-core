@@ -58,6 +58,7 @@ var safe_b := 0.0  # bottom inset (home indicator)
 var boss_named := false
 var stamp_buzzed := false
 var killer_rect := Rect2()  # what ended the run, marked on the game-over screen
+var killer_name := ""  # and named under the mark ("Hit by a knight")
 var orb_mark := 0.0   # seconds the first power-up orb has been marked
 var boss_mark := 0.0  # seconds the first Devourer has been marked
 var flinch_time := 99.0  # since the first miss: the hero shudders back
@@ -189,7 +190,7 @@ func _update_game(delta: float) -> void:
 			_show_banner("STAGE %d" % (backdrop.stage + 1), Ui.PAPER)
 	var rush := world.scroller.state == ScrollHandler.RunningState.RUSH
 	if rush and not was_rush and running:
-		_show_banner("RUSH!", Ui.RED)
+		_show_banner("RUSH", Ui.RED)
 	was_rush = rush
 
 	if world.score != shown_score:
@@ -259,7 +260,7 @@ func _on_stomp(enemy: Enemy, points: int, combo: int) -> void:
 
 
 func _on_boss_summoned() -> void:
-	_show_banner("THE DEVOURER!", Ui.RED)
+	_show_banner("THE DEVOURER", Ui.RED)
 	fx.shake(2.5, 0.6)
 
 
@@ -276,7 +277,7 @@ func _on_boss_defeated() -> void:
 	for i in 4:
 		fx.burst(b.position + Vector2(randf_range(30, 140), randf_range(40, 110)), Color(1, 0.6, 0.2), 16)
 	fx.shake(4.0, 0.6)
-	_show_banner("DEVOURER DOWN! +%d" % GameWorld.BOSS_DEFEAT_BONUS, Ui.GOLD)
+	_show_banner("DEVOURER DOWN +%d" % GameWorld.BOSS_DEFEAT_BONUS, Ui.GOLD)
 	Assets.play_sound("boss_ground", 0.5, 1.4)
 
 
@@ -306,13 +307,18 @@ func _on_shield_broken() -> void:
 func _on_death() -> void:
 	banner_time = 99.0  # no banners over the score screen
 	killer_rect = Rect2()
+	killer_name = ""
 	var k: Object = world.killer
 	if k is Boss:
 		var j := (k as Boss).jaw()
 		killer_rect = Rect2(j.end.x - 30, j.position.y - 22, 30, 30)
+		killer_name = "Caught by the Devourer"
 	elif k is Scrollable:
 		var sc := k as Scrollable
 		killer_rect = Rect2(sc.position, Vector2(sc.width, sc.height))
+		if k is Enemy:
+			killer_name = {Enemy.Type.WIZARD: "Hit by a wizard", Enemy.Type.KNIGHT: "Hit by a knight",
+				Enemy.Type.SUMMONER: "Hit by a ghost", Enemy.Type.PIG: "Hit by a pig"}.get((k as Enemy).type, "")
 	fx.death(world.hero.body_center)
 	game_over_time = 0.0
 	stamp_buzzed = false
@@ -380,6 +386,7 @@ func _reset_presentation() -> void:
 	last_stage = 0
 	was_rush = false
 	killer_rect = Rect2()
+	killer_name = ""
 	orb_mark = 0.0
 	boss_mark = 0.0
 	shown_score = 0
@@ -622,6 +629,14 @@ func _killer_mark(ci: CanvasItem, t: float) -> void:
 	ci.draw_circle(b, 4.4, Color(Ui.RED, k))
 	ci.draw_line(b + Vector2(-2, -2), b + Vector2(2, 2), Color(1, 1, 1, k), 1.3)
 	ci.draw_line(b + Vector2(-2, 2), b + Vector2(2, -2), Color(1, 1, 1, k), 1.3)
+	if killer_name != "":
+		# The killer's name on a red pill on the ground strip, under the mark.
+		var label := String(TranslationServer.translate(killer_name))
+		var w := Ui.text_width(label, 7) + 12
+		var x := clampf(c.x - w / 2, 12, Geo.view_width - 12 - w)
+		var pill := Rect2(x, 121, w, 13)
+		Ui.panel(ci, pill, Color(Ui.RED, k), 6.5, 0, 0)
+		Ui.text(ci, label, Vector2(pill.get_center().x, pill.position.y + 2.4), 7, Color(1, 1, 1, k), HORIZONTAL_ALIGNMENT_CENTER, Color(0, 0, 0, 0))
 
 
 ## First sight of a power-up orb and of the Devourer: a ring and a "!"

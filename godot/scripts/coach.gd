@@ -3,8 +3,9 @@
 ## the hero; enemies walk past harmlessly until the first stomp (three at
 ## most). The first stomp freezes for a beat and draws the arc the hero just
 ## flew; a miss draws the arc it should have flown. The double jump gets a
-## ring at the top of a jump, and the first Summoner an arrow toward the exit
-## it must not reach. Each lesson is saved once learned and can be replayed
+## ring at the top of a jump, and the first Summoner (the grey ghost) an arrow toward the exit
+## it must not reach. A miss says why at the enemy; a lesson tick says what
+## the player just did. Each lesson is saved once learned and can be replayed
 ## from the title (the "?" button). Reduce Motion stops the pulsing.
 class_name Coach
 extends RefCounted
@@ -28,9 +29,15 @@ var arc_time := 99.0
 var miss_from := Vector2.ZERO
 var miss_to := Vector2.ZERO
 var miss_time := 99.0
-var misses := 0  # this run; the first one gets the "Missed" word
+var misses := 0  # this run
+var miss_word := ""  # why the lesson enemy got past, drawn at the enemy
+var target_jumped := false  # the hero jumped while the lesson enemy closed in
 var tick_pos := Vector2.ZERO
 var tick_time := 99.0
+var tick_word := ""  # why the tick: what the player just did
+var double_cue_time := 0.0  # how long the double-jump cue has been showing
+var double_demoed := false  # the first cue only demonstrates; the next one asks
+const DEMO_TIME := 0.35  # one flight of the ghost along the second arc
 var _summoner_was := false
 # One short line per first lesson (Crane 2026-11-25: glyphs + 2-3 words).
 # Source strings are the msgids of i18n/strings.csv.
@@ -63,7 +70,12 @@ func start_run() -> void:
 	arc_time = 99.0
 	miss_time = 99.0
 	misses = 0
+	miss_word = ""
+	target_jumped = false
 	tick_time = 99.0
+	tick_word = ""
+	double_cue_time = 0.0
+	double_demoed = false
 	_summoner_was = false
 	line = ""
 	line_alpha = 0.0
@@ -86,6 +98,12 @@ func update(delta: float, world: GameWorld) -> bool:
 		arc.clear()
 	world.harmless = not jump_taught and spared < MAX_SPARED
 	world.learning = not jump_taught
+	if double_cue(world):
+		double_cue_time += delta
+	else:
+		if double_cue_time > 0.15:
+			double_demoed = true  # the ghost has flown it once: next jump asks
+		double_cue_time = 0.0
 	_update_line(delta, world)
 
 	var s := world.scroller
@@ -99,6 +117,8 @@ func update(delta: float, world: GameWorld) -> bool:
 		return false
 	if target and (not target.is_visible or not target.alive):
 		target = null
+	if target and h.jumped:
+		target_jumped = true
 	var missed := false
 	if target and target.position.x + target.width < h.position.x:
 		spared += 1
@@ -107,8 +127,11 @@ func update(delta: float, world: GameWorld) -> bool:
 		miss_from = h.position + Vector2(16, 24)
 		miss_to = target.circle_center - Vector2(0, target.circle_radius)
 		miss_time = 0.0
+		# The why, in the player's terms: no tap at all, or a jump that came down off it.
+		miss_word = "Land on top" if target_jumped else "Tap sooner"
 		target = null
 	if target == null:
+		target_jumped = false
 		var best := INF
 		for e in s.enemies:
 			if e.is_visible and e.alive and e.type != Enemy.Type.SUMMONER and e.position.x > h.position.x + h.width:
@@ -125,7 +148,9 @@ func _ahead(world: GameWorld) -> float:
 ## The world runs at half speed while the lesson's enemy closes in.
 func slow(world: GameWorld) -> bool:
 	var a := _ahead(world)
-	return not jump_taught and not world.hero.jumped and a > 0 and a < SLOW_WINDOW
+	if not jump_taught and not world.hero.jumped and a > 0 and a < SLOW_WINDOW:
+		return true
+	return double_cue(world)  # the double-jump demo plays in slow motion too
 
 
 func jump_cue(world: GameWorld) -> bool:
@@ -143,14 +168,14 @@ func double_cue(world: GameWorld) -> bool:
 func on_stomp(enemy: Enemy) -> bool:
 	if enemy.type == Enemy.Type.SUMMONER and not summoner_taught:
 		_learn(2)
-		_tick(enemy.circle_center + Vector2(0, -12))
+		_tick(enemy.circle_center + Vector2(0, -12), "Stopped it")
 		return true
 	if jump_taught:
 		return false
 	_learn(0)
 	shown_arc = arc.duplicate()
 	arc_time = 0.0
-	_tick(enemy.circle_center + Vector2(0, -12))
+	_tick(enemy.circle_center + Vector2(0, -12), "Landed on it")
 	return true
 
 
@@ -158,7 +183,7 @@ func on_double(hero: Hero) -> bool:
 	if not jump_taught or double_taught:
 		return false
 	_learn(1)
-	_tick(hero.position + Vector2(16, -6))
+	_tick(hero.position + Vector2(16, -6), "Double jump")
 	return true
 
 
@@ -167,14 +192,13 @@ func _wanted_line(world: GameWorld) -> String:
 	if not h.alive or world.state != GameWorld.State.RUNNING:
 		return ""
 	var s := world.scroller
-	if jump_cue(world):
-		return "Tap to jump"
-	if not jump_taught and h.jumped and target != null:
-		return "Land on it"
-	if double_cue(world):
+	# "Tap to jump" stays up from the first step until the first stomp.
+	if not jump_taught:
+		return "Land on it" if h.jumped and target != null else "Tap to jump"
+	if double_cue(world) and double_demoed:
 		return "Tap again in the air"
-	if jump_taught and not summoner_taught and s.summoner.is_visible and s.summoner.alive and s.summoner.position.x < Geo.view_width:
-		return "Hit the Summoner"
+	if not summoner_taught and s.summoner.is_visible and s.summoner.alive and s.summoner.position.x < Geo.view_width:
+		return "Stop the ghost"
 	return ""
 
 
@@ -202,9 +226,10 @@ func _learn(i: int) -> void:
 	Assets.set_pref(FLAGS[i], 1)
 
 
-func _tick(pos: Vector2) -> void:
+func _tick(pos: Vector2, word: String) -> void:
 	tick_pos = pos
 	tick_time = 0.0
+	tick_word = word
 
 
 func _pulse(speed := 6.0) -> float:
@@ -222,9 +247,17 @@ func draw(ci: CanvasItem, world: GameWorld) -> void:
 	elif double_cue(world):
 		_ring(ci, h.body_center, 13.0)
 		_tap_glyph(ci, h.position + Vector2(16, -9), 2)
-		# Ghost of the second arc, from where the hero is now.
+		# Ghost of the second arc, from where the hero is now, with a ghost
+		# hero flying it (the demo) before the line asks for the tap.
 		var f := h.position + Vector2(16, 21)
-		_dotted(ci, _parabola(f, f + Vector2(46, 4), 26.0), Color(1, 1, 1, 0.75))
+		var ghost_arc := _parabola(f, f + Vector2(46, 4), 26.0)
+		_dotted(ci, ghost_arc, Color(1, 1, 1, 0.75))
+		var k := fmod(double_cue_time, DEMO_TIME + 0.15) / DEMO_TIME
+		if k <= 1.0:
+			var gi := int(round(k * (ghost_arc.size() - 1)))
+			var g := ghost_arc[gi] + Vector2(0, -9)
+			ci.draw_circle(g, 7.5, Color(Ui.INK, 0.45 * (1.0 - 0.5 * k)))
+			ci.draw_circle(g, 6.5, Color(1, 1, 1, 0.55 * (1.0 - 0.5 * k)))
 	# One lesson at a time: while the jump is being taught, mark where to land.
 	if not jump_taught and target and target.is_visible and target.alive and (jump_cue(world) or h.jumped):
 		var top := target.circle_center - Vector2(0, target.circle_radius + 7 + 2 * _pulse(5))
@@ -247,15 +280,19 @@ func draw(ci: CanvasItem, world: GameWorld) -> void:
 		var x := miss_to + Vector2(0, -4)
 		ci.draw_line(x + Vector2(-3.5, -3.5), x + Vector2(3.5, 3.5), Color(Ui.RED, a), 1.8)
 		ci.draw_line(x + Vector2(-3.5, 3.5), x + Vector2(3.5, -3.5), Color(Ui.RED, a), 1.8)
-		if misses == 1:  # the first miss says so, once, over the hero
-			var mp := miss_from + Vector2(0, -38 - 4 * minf(miss_time / 0.3, 1))
-			Ui.text(ci, String(TranslationServer.translate("Missed")), mp, 8, Color(Ui.RED.lightened(0.15), a), HORIZONTAL_ALIGNMENT_CENTER, Color(Ui.INK, a), 0.22)
+		if miss_word != "":  # the why, at the enemy that got past
+			var mp := miss_to + Vector2(0, -22 - 4 * minf(miss_time / 0.3, 1))
+			mp.x = clampf(mp.x, 30, Geo.view_width - 30)
+			Ui.text(ci, String(TranslationServer.translate(miss_word)), mp, 8, Color(Ui.RED.lightened(0.15), a), HORIZONTAL_ALIGNMENT_CENTER, Color(Ui.INK, a), 0.22)
 	if tick_time < 0.9:
 		var a := 1.0 - maxf(0, tick_time - 0.5) / 0.4
 		var p := tick_pos + Vector2(0, -6 * minf(tick_time / 0.3, 1))
 		ci.draw_circle(p, 5.5, Color(Ui.INK, a))
 		ci.draw_circle(p, 4.7, Color(Ui.GOLD, a))
 		ci.draw_polyline(PackedVector2Array([p + Vector2(-2.4, 0), p + Vector2(-0.6, 1.9), p + Vector2(2.6, -1.9)]), Color(Ui.INK, a), 1.2)
+		if tick_word != "":
+			var tp := Vector2(clampf(p.x, 30, Geo.view_width - 30), p.y - 17)
+			Ui.text(ci, String(TranslationServer.translate(tick_word)), tp, 8, Color(Ui.GOLD.lightened(0.2), a), HORIZONTAL_ALIGNMENT_CENTER, Color(Ui.INK, a), 0.22)
 
 
 func _ring(ci: CanvasItem, c: Vector2, r: float, color := Color.WHITE) -> void:
