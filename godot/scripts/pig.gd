@@ -13,7 +13,7 @@ var vy := 0.0
 
 func _init() -> void:
 	super(20, 20, ScrollHandler.SCROLL_SPEED - 40, Type.PIG)
-	position = Vector2(randi_range(204, 240), GROUND_Y)
+	position = Vector2(randi_range(int(Geo.view_width), int(Geo.view_width) + 36), GROUND_Y)
 
 
 func update(delta: float) -> void:
@@ -38,7 +38,7 @@ func is_hopping() -> bool:
 
 
 func reset_enemy(_new_vel_x: float, start_over: bool) -> void:
-	position = Vector2(randi_range(204, 240), GROUND_Y)
+	position = Vector2(randi_range(int(Geo.view_width), int(Geo.view_width) + 36), GROUND_Y)
 	velocity.x = -59 - randi_range(35, 55)
 	vy = 0
 	hop_timer = randf_range(0.4, 1.2)

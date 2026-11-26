@@ -26,7 +26,7 @@ var clouds: Array[Dictionary] = []
 
 func _init() -> void:
 	for i in 5:
-		clouds.append(_new_cloud(randf_range(0, WIDTH + 40)))
+		clouds.append(_new_cloud(randf_range(0, Geo.view_width + 40)))
 
 
 func _new_cloud(x: float) -> Dictionary:
@@ -45,7 +45,7 @@ func update(delta: float, ground_speed: float, distance: int) -> void:
 		c.x -= (WIND + ground_speed * CLOUD_SPEED) * c.speed * delta
 		var w: float = c.tex.get_width() / PX_PER_UNIT * c.scale
 		if c.x + w < 0:
-			var fresh := _new_cloud(WIDTH + randf_range(5, 40))
+			var fresh := _new_cloud(Geo.view_width + randf_range(5, 40))
 			c.merge(fresh, true)
 
 	var target := floori(distance / float(STAGE_LENGTH)) % 5
@@ -81,7 +81,7 @@ func _draw_stage(ci: CanvasItem, index: int, alpha: float) -> void:
 	else:
 		_tile(ci, Assets.stages[index], -fmod(travelled * STAGE_SPEED, 816.0), 0, alpha)
 		# A light veil pushes the busy pattern back behind the characters.
-		ci.draw_rect(Rect2(0, 0, WIDTH, GROUND_TOP), Color(1, 1, 1, 0.22 * alpha))
+		ci.draw_rect(Rect2(0, 0, Geo.view_width, GROUND_TOP), Color(1, 1, 1, 0.22 * alpha))
 
 
 ## Draws tex repeatedly across the screen starting at x (<= 0).
@@ -89,6 +89,6 @@ func _tile(ci: CanvasItem, tex: Texture2D, x: float, y: float, alpha: float) -> 
 	var size := tex.get_size() / PX_PER_UNIT
 	if x > 0:
 		x -= size.x
-	while x < WIDTH:
+	while x < Geo.view_width:
 		ci.draw_texture_rect(tex, Rect2(Vector2(x, y), size), false, Color(1, 1, 1, alpha))
 		x += size.x - 0.02  # tiny overlap hides seams from filtering

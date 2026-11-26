@@ -73,9 +73,9 @@ func _run() -> void:
 	await _shot("02_menu")
 
 	var muted: bool = Assets.muted
-	await _click(main.sound_button.rect.get_center())
+	await _click(main.sound_button.rect.get_center() + main.ui_view.position)
 	_check(Assets.muted != muted, "sound button toggles mute")
-	await _click(main.sound_button.rect.get_center())
+	await _click(main.sound_button.rect.get_center() + main.ui_view.position)
 	_check(Assets.muted == muted, "sound button toggles back")
 
 	await _click(Vector2(100, 60))
@@ -93,17 +93,17 @@ func _run() -> void:
 	await _wait(1.5)
 	_check(not w.hero.jumped and is_equal_approx(w.hero.position.y, 104.0), "hero lands on ground")
 
-	await _click(main.pause_button.rect.get_center())
+	await _click(main.pause_button.rect.get_center() + main.ui_view.position)
 	_check(main.paused, "pause button pauses")
 	var d := w.distance
 	await _wait(0.3)
 	_check(w.distance == d, "world frozen while paused")
 	await _shot("05_paused")
-	await _click(main.resume_button.rect.get_center())
+	await _click(main.resume_button.rect.get_center() + main.ui_view.position)
 	_check(not main.paused, "resume button resumes")
 	main.propagate_notification(Node.NOTIFICATION_APPLICATION_PAUSED)
 	_check(main.paused, "leaving the app pauses the run")
-	await _click(main.resume_button.rect.get_center())
+	await _click(main.resume_button.rect.get_center() + main.ui_view.position)
 	_check(not main.paused, "resume after returning")
 
 	# Long demo run: still invincible, so it reaches later stages.
@@ -149,7 +149,7 @@ func _run() -> void:
 	_check(w.total_score == floori(w.distance / 200.0) + w.score, "total score formula")
 	_check(Assets.get_pref("highScore") >= w.total_score, "high score saved")
 
-	await _click(main.replay_button.rect.get_center())
+	await _click(main.replay_button.rect.get_center() + main.ui_view.position)
 	_check(w.state == GameWorld.State.READY, "replay button -> ready")
 	_check(w.score == 0 and w.distance == 0 and w.hero.alive, "state reset on replay")
 	_check(main.backdrop.stage == 0, "back to first stage")
@@ -160,8 +160,8 @@ func _run() -> void:
 	_check(visible == 3, "three enemies active after restart")
 
 	await _click(Vector2(100, 60))
-	await _click(main.pause_button.rect.get_center())
-	await _click(main.pause_menu_button.rect.get_center())
+	await _click(main.pause_button.rect.get_center() + main.ui_view.position)
+	await _click(main.pause_menu_button.rect.get_center() + main.ui_view.position)
 	_check(main.screen == main.Screen.MENU and w.state == GameWorld.State.MENU, "pause -> menu returns to title")
 	await _wait(0.3)
 	await _shot("12_menu_with_best")

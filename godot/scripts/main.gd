@@ -11,6 +11,7 @@ const HEIGHT := 136.0
 const GROUND_Y := 127.5  # where feet meet the ground strip
 const SPLASH_TIME := 2.0
 const GAME_OVER_INPUT_DELAY := 0.6
+const KEY_TAP := Vector2(-10000, -10000)  # a keyboard tap: no button under it
 
 var screen := Screen.SPLASH
 var screen_time := 0.0  # animation clock, reset per screen like the original
@@ -45,6 +46,13 @@ var hit_stop := 0.0
 var was_rush := false
 var last_stage := 0
 var first_run := true
+
+# Layout (full bleed): the world fills the screen; the UI is laid out in a
+# 204-wide frame centred in the safe area, and edge controls move out by pad.
+var view_w := WIDTH
+var pad := 0.0     # frame edge to safe edge, each side
+var safe_b := 0.0  # bottom inset (home indicator)
+var boss_named := false
 
 # Full-screen fade (white flash on death, fade from black on entering the game)
 var transition_color := Color.BLACK
@@ -93,7 +101,35 @@ func _add_view(painter: Callable) -> Node2D:
 
 # ---------------------------------------------------------------- update
 
+func _update_layout() -> void:
+	view_w = get_viewport_rect().size.x
+	Geo.view_width = view_w
+	var safe_l := 0.0
+	var safe_r := 0.0
+	safe_b = 0.0
+	if OS.has_feature("mobile"):
+		var win := Vector2(DisplayServer.window_get_size())
+		var sa := Rect2(DisplayServer.get_display_safe_area())
+		if win.y > 0 and sa.size.x > 0:
+			var k := HEIGHT / win.y
+			safe_l = sa.position.x * k
+			safe_r = maxf(0, (win.x - sa.end.x) * k)
+			safe_b = maxf(0, (win.y - sa.end.y) * k)
+	# Centre the frame between the insets, but never let it cross one.
+	pad = maxf(0, (view_w - safe_l - safe_r - WIDTH) / 2)
+	ui_view.position.x = safe_l + pad
+	pause_button.rect.position.x = 186 + pad
+	sound_button.rect.position = Vector2(184 + pad, 116 - safe_b)
+
+
+## The whole screen in the given layer's coordinates (with a margin for shake).
+func _full(ci: CanvasItem) -> Rect2:
+	var o: Vector2 = (ci as Node2D).position
+	return Rect2(-o - Vector2(4, 4), Vector2(view_w + 8, HEIGHT + 8))
+
+
 func _physics_process(delta: float) -> void:
+	_update_layout()
 	screen_time += delta
 	match screen:
 		Screen.SPLASH:
@@ -217,6 +253,7 @@ func _on_boss_hit(pos: Vector2) -> void:
 
 
 func _on_boss_defeated() -> void:
+	boss_named = true  # the bar's name label only shows at the first fight
 	var b := world.scroller.boss
 	for i in 4:
 		fx.burst(b.position + Vector2(randf_range(30, 140), randf_range(40, 110)), Color(1, 0.6, 0.2), 16)
@@ -342,6 +379,7 @@ func _set_paused(value: bool) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		var p: Vector2 = make_input_local(event).position
+		p -= ui_view.position  # buttons live in the UI frame
 		if event.pressed:
 			_touch_down(p)
 		else:
@@ -352,7 +390,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action("ui_accept") and not event.is_echo():
 		# Keyboard: Space/Enter acts as a tap (and as Replay on the score board).
 		# The off-screen point keeps it from pressing buttons directly.
-		var p := Vector2(-100, -100)
+		var p := KEY_TAP
 		if event.is_pressed():
 			_touch_down(p)
 		else:
@@ -387,7 +425,7 @@ func _touch_up(p: Vector2) -> void:
 			return
 
 	if paused:
-		if resume_button.touch_up(p) or p.x < 0:
+		if resume_button.touch_up(p) or p == KEY_TAP:
 			_set_paused(false)
 		elif restart_button.touch_up(p):
 			_set_paused(false)
@@ -405,7 +443,7 @@ func _touch_up(p: Vector2) -> void:
 	if world.state == GameWorld.State.RUNNING:
 		_hero_click()
 	if world.is_game_over() and game_over_time > GAME_OVER_INPUT_DELAY:
-		if replay_button.touch_up(p) or p.x < 0:
+		if replay_button.touch_up(p) or p == KEY_TAP:
 			_restart()
 		elif menu_button.touch_up(p):
 			_to_menu()
@@ -445,7 +483,7 @@ func _hires(ci: CanvasItem, region: Rect2, rect: Rect2, modulate := Color.WHITE)
 
 
 func _draw_splash(ci: CanvasItem) -> void:
-	ci.draw_rect(Rect2(0, 0, WIDTH, HEIGHT), Color.WHITE)
+	ci.draw_rect(_full(ci), Color.WHITE)
 	# Fade in 0.8s, hold 0.4s, fade out 0.8s.
 	var t := screen_time
 	var a := 1.0
@@ -455,12 +493,14 @@ func _draw_splash(ci: CanvasItem) -> void:
 		a = 1.0 - Ui.ease_in_out_quad(minf((t - 1.2) / 0.8, 1.0))
 	var h := HEIGHT * 0.8 * (0.95 + 0.05 * a)
 	var w := h * Assets.title_texture.get_width() / Assets.title_texture.get_height()
-	ci.draw_texture_rect(Assets.title_texture, Rect2((WIDTH - w) / 2, (HEIGHT - h) / 2, w, h), false, Color(1, 1, 1, a))
+	ci.draw_texture_rect(Assets.title_texture, Rect2((view_w - w) / 2, (HEIGHT - h) / 2, w, h), false, Color(1, 1, 1, a))
 
 
 func _draw_menu(ci: CanvasItem) -> void:
 	var t := screen_time
-	_hires(ci, Assets.background_menu_anim.key_frame(t), Rect2(0, 0, WIDTH, HEIGHT))
+	var bg_h := view_w * HEIGHT / WIDTH  # cover: the 3:2 art fills the width
+	_hires(ci, Assets.background_menu_anim.key_frame(t), Rect2(0, (HEIGHT - bg_h) / 2, view_w, bg_h))
+	ci.draw_set_transform(Vector2(ui_view.position.x, 0))
 	var bob := sin(t * 2.2) * 1.5
 	var tw := 350 / 3.0
 	var th := tw * Assets.title_texture.get_height() / Assets.title_texture.get_width()
@@ -470,6 +510,7 @@ func _draw_menu(ci: CanvasItem) -> void:
 	var r := Rect2(100 / 3.0, 100, 374 / 3.0, 60 / 3.0)
 	r = Rect2(r.get_center() - r.size * pulse / 2, r.size * pulse)
 	_hires(ci, Assets.start_instruction_anim.frames[0], r)
+	ci.draw_set_transform(Vector2.ZERO)
 
 
 func _draw_game_world(ci: CanvasItem) -> void:
@@ -485,7 +526,7 @@ func _draw_game_world(ci: CanvasItem) -> void:
 	fx.draw(ci)
 	fx.draw_popups(ci)
 	if world.slowmo_time > 0 and world.state == GameWorld.State.RUNNING:
-		ci.draw_rect(Rect2(0, 0, WIDTH, HEIGHT), Color(0.35, 0.3, 1.0, 0.12))
+		ci.draw_rect(_full(ci), Color(0.35, 0.3, 1.0, 0.12))
 
 
 func _shadow(ci: CanvasItem, x: float, ground: float, height_above: float, width: float) -> void:
@@ -607,7 +648,7 @@ func _glow(ci: CanvasItem, pos: Vector2, r: float, color: Color) -> void:
 func _draw_ui(ci: CanvasItem) -> void:
 	if screen == Screen.SPLASH:
 		return
-	ci.draw_texture_rect(vignette, Rect2(0, 0, WIDTH, HEIGHT), false)
+	ci.draw_texture_rect(vignette, _full(ci), false)
 	if screen == Screen.MENU:
 		_draw_menu_ui(ci)
 		return
@@ -625,7 +666,7 @@ func _draw_ui(ci: CanvasItem) -> void:
 	if paused:
 		_draw_pause(ci)
 	if transition_alpha > 0:
-		ci.draw_rect(Rect2(0, 0, WIDTH, HEIGHT), Color(transition_color, transition_alpha))
+		ci.draw_rect(_full(ci), Color(transition_color, transition_alpha))
 
 
 func _draw_menu_ui(ci: CanvasItem) -> void:
@@ -633,8 +674,8 @@ func _draw_menu_ui(ci: CanvasItem) -> void:
 	if best > 0:
 		var label := "BEST  %d" % best
 		var w := Ui.text_width(label, 5.5) + 10
-		Ui.panel(ci, Rect2(4, 4, w, 12), Ui.PAPER, 6)
-		Ui.text(ci, label, Vector2(9, 6.6), 5.5)
+		Ui.panel(ci, Rect2(4 - pad, 4, w, 12), Ui.PAPER, 6)
+		Ui.text(ci, label, Vector2(9 - pad, 6.6), 5.5)
 	sound_button.icon = Ui.Icon.SOUND_OFF if Assets.muted else Ui.Icon.SOUND_ON
 	sound_button.draw(ci)
 
@@ -654,23 +695,26 @@ func _draw_tutorial(ci: CanvasItem) -> void:
 	Ui.text(ci, "Tap anywhere to start", Vector2(118, 95), 6.5, Color(1, 1, 1, a), HORIZONTAL_ALIGNMENT_CENTER, Color(Ui.INK, a), 0.2)
 
 
+## Calm HUD: score (large, top centre, outlined, no card) and metres under it.
+## Pause sits top trailing; power-up rings top leading and the boss bar only
+## while active; the combo pill rides on the hero.
 func _draw_hud(ci: CanvasItem) -> void:
-	Ui.panel(ci, Rect2(3, 3, 46, 26), Color(1, 0.98, 0.93, 0.85), 5, 1, 1)
-	_hires(ci, Assets.kill_icon, Rect2(4, 4, 12, 12))
-	_hires(ci, Assets.distance_icon, Rect2(4, 15.5, 12, 12))
-	var size := 6.5 * (1.0 + 0.5 * maxf(0, 1 - score_pop / 0.25))
-	Ui.text(ci, str(world.score), Vector2(17, 6.7 - (size - 6.5) * 0.5), size, Ui.RED if score_pop < 0.25 else Ui.INK)
-	Ui.text(ci, "%d m" % world.get_distance(), Vector2(17, 18.4), 6.5)
+	var cx := WIDTH / 2
+	var size := 11.0 * (1.0 + 0.35 * maxf(0, 1 - score_pop / 0.25))
+	Ui.text(ci, str(world.score), Vector2(cx, 2.5 - (size - 11.0) * 0.5), size,
+		Ui.GOLD if score_pop < 0.25 else Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, Ui.INK, 0.2)
+	Ui.text(ci, "%d m" % world.get_distance(), Vector2(cx, 15.5), 5, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, Ui.INK, 0.22)
 
-	# Combo pill
+	# Combo pill on the hero
 	if world.combo >= 2:
-		var label := "COMBO x%d" % mini(world.combo, GameWorld.MAX_COMBO_MULTIPLIER)
-		var w := Ui.text_width(label, 5) + 8
-		Ui.panel(ci, Rect2(3, 31, w, 10), Ui.GOLD, 5, 1, 1)
-		Ui.text(ci, label, Vector2(7, 32.6), 5)
+		var label := "x%d" % mini(world.combo, GameWorld.MAX_COMBO_MULTIPLIER)
+		var w := Ui.text_width(label, 5.5) + 6
+		var hp := world.hero.position + Vector2(13, -6) - ui_view.position
+		Ui.panel(ci, Rect2(hp.x - w / 2, hp.y, w, 9), Ui.GOLD, 4, 1, 1)
+		Ui.text(ci, label, Vector2(hp.x, hp.y + 1.2), 5.5, Ui.INK, HORIZONTAL_ALIGNMENT_CENTER)
 
 	# Active power-ups: icon with a draining ring
-	var x := 54.0
+	var x := 10.0 - pad
 	var effects := [[PowerUp.Kind.SHIELD, 1.0 if world.shield else 0.0],
 		[PowerUp.Kind.SLOWMO, world.slowmo_time / GameWorld.SLOWMO_TIME],
 		[PowerUp.Kind.DOUBLE, world.double_time / GameWorld.DOUBLE_TIME],
@@ -688,12 +732,13 @@ func _draw_hud(ci: CanvasItem) -> void:
 	# Boss health bar
 	var b := world.scroller.boss
 	if b.phase in [Boss.Phase.CHASE, Boss.Phase.DROP]:
-		var bar := Rect2(64, 5, 90, 7)
+		var bar := Rect2(cx - 40, 24, 80, 5)
 		var danger := clampf((b.position.x + b.width - 40) / (Boss.DROP_AT - 40), 0, 1)
 		var flash := danger > 0.75 and fmod(screen_time, 0.3) < 0.15
 		Ui.panel(ci, bar.grow(1), Ui.RED if flash else Ui.INK, 3, 0, 1)
 		ci.draw_rect(Rect2(bar.position, Vector2(bar.size.x * b.health / Boss.MAX_HEALTH, bar.size.y)), Color(0.75, 0.2, 0.25))
-		Ui.text(ci, "DEVOURER", Vector2(bar.get_center().x, bar.end.y + 1.5), 4.2, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, Ui.INK, 0.22)
+		if not boss_named:
+			Ui.text(ci, "DEVOURER", Vector2(bar.get_center().x, bar.end.y + 1.5), 4.2, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, Ui.INK, 0.22)
 
 
 func _draw_banner(ci: CanvasItem) -> void:
@@ -720,7 +765,7 @@ func _draw_game_over(ci: CanvasItem) -> void:
 	var drop := lerpf(-80, 0, Ui.ease_out_back(clampf(t / 0.5, 0, 1)))
 
 	# Score board slides down; TOTAL counts up; high score on the right.
-	ci.draw_rect(Rect2(0, 0, WIDTH, HEIGHT), Color(0, 0, 0, 0.25 * clampf(t / 0.4, 0, 1)))
+	ci.draw_rect(_full(ci), Color(0, 0, 0, 0.25 * clampf(t / 0.4, 0, 1)))
 	_region(ci, Assets.scoreboard, Rect2(33, drop, 426 / 3.0, 200 / 3.0))
 	var counted := roundi(total * Ui.ease_out_quad(clampf((t - 0.4) / 0.7, 0, 1)))
 	Ui.text(ci, str(counted), Vector2(77, 46 + drop), 7.5, Ui.INK, HORIZONTAL_ALIGNMENT_CENTER)
@@ -767,7 +812,7 @@ func _draw_game_over(ci: CanvasItem) -> void:
 
 
 func _draw_pause(ci: CanvasItem) -> void:
-	ci.draw_rect(Rect2(0, 0, WIDTH, HEIGHT), Color(0, 0, 0, 0.55))
+	ci.draw_rect(_full(ci), Color(0, 0, 0, 0.55))
 	Ui.panel(ci, Rect2(52, 14, 100, 94), Ui.PAPER, 6)
 	Ui.text(ci, "PAUSED", Vector2(102, 20), 9, Ui.RED, HORIZONTAL_ALIGNMENT_CENTER)
 	for b in [resume_button, restart_button, pause_menu_button]:
