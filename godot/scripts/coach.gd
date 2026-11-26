@@ -197,7 +197,7 @@ func _wanted_line(world: GameWorld) -> String:
 		return "Land on it" if h.jumped and target != null else "Tap to jump"
 	if double_cue(world) and double_demoed:
 		return "Tap again in the air"
-	if not summoner_taught and s.summoner.is_visible and s.summoner.alive and s.summoner.position.x < Geo.view_width:
+	if not summoner_taught and not double_cue(world) and s.summoner.is_visible and s.summoner.alive and s.summoner.position.x < Geo.view_width:
 		return "Stop the ghost"
 	return ""
 
@@ -264,7 +264,7 @@ func draw(ci: CanvasItem, world: GameWorld) -> void:
 		var chev := PackedVector2Array([top + Vector2(-5, -4), top, top + Vector2(5, -4)])
 		ci.draw_polyline(chev, Ui.INK, 3.4)
 		ci.draw_polyline(chev, Color.WHITE, 1.8)
-	elif not summoner_taught and s.summoner.is_visible and s.summoner.alive and s.summoner.position.x < Geo.view_width:
+	elif jump_taught and not summoner_taught and s.summoner.is_visible and s.summoner.alive and s.summoner.position.x < Geo.view_width:
 		var c := s.summoner.circle_center
 		_ring(ci, c, 11.0, Ui.RED)
 		var tip := c + Vector2(-19 - 3 * _pulse(5), 0)
@@ -281,9 +281,11 @@ func draw(ci: CanvasItem, world: GameWorld) -> void:
 		ci.draw_line(x + Vector2(-3.5, -3.5), x + Vector2(3.5, 3.5), Color(Ui.RED, a), 1.8)
 		ci.draw_line(x + Vector2(-3.5, 3.5), x + Vector2(3.5, -3.5), Color(Ui.RED, a), 1.8)
 		if miss_word != "":  # the why, at the enemy that got past
+			var mw := String(TranslationServer.translate(miss_word))
+			var half := Ui.text_width(mw, 8) / 2 + 6
 			var mp := miss_to + Vector2(0, -22 - 4 * minf(miss_time / 0.3, 1))
-			mp.x = clampf(mp.x, 30, Geo.view_width - 30)
-			Ui.text(ci, String(TranslationServer.translate(miss_word)), mp, 8, Color(Ui.RED.lightened(0.15), a), HORIZONTAL_ALIGNMENT_CENTER, Color(Ui.INK, a), 0.22)
+			mp.x = clampf(mp.x, half + 16, Geo.view_width - half - 16)  # clear of the notch side
+			Ui.text(ci, mw, mp, 8, Color(Ui.RED.lightened(0.15), a), HORIZONTAL_ALIGNMENT_CENTER, Color(Ui.INK, a), 0.22)
 	if tick_time < 0.9:
 		var a := 1.0 - maxf(0, tick_time - 0.5) / 0.4
 		var p := tick_pos + Vector2(0, -6 * minf(tick_time / 0.3, 1))
@@ -291,8 +293,10 @@ func draw(ci: CanvasItem, world: GameWorld) -> void:
 		ci.draw_circle(p, 4.7, Color(Ui.GOLD, a))
 		ci.draw_polyline(PackedVector2Array([p + Vector2(-2.4, 0), p + Vector2(-0.6, 1.9), p + Vector2(2.6, -1.9)]), Color(Ui.INK, a), 1.2)
 		if tick_word != "":
-			var tp := Vector2(clampf(p.x, 30, Geo.view_width - 30), p.y - 17)
-			Ui.text(ci, String(TranslationServer.translate(tick_word)), tp, 8, Color(Ui.GOLD.lightened(0.2), a), HORIZONTAL_ALIGNMENT_CENTER, Color(Ui.INK, a), 0.22)
+			var tw := String(TranslationServer.translate(tick_word))
+			var th := Ui.text_width(tw, 8) / 2 + 6
+			var tp := Vector2(clampf(p.x, th + 16, Geo.view_width - th - 16), p.y - 17)
+			Ui.text(ci, tw, tp, 8, Color(Ui.GOLD.lightened(0.2), a), HORIZONTAL_ALIGNMENT_CENTER, Color(Ui.INK, a), 0.22)
 
 
 func _ring(ci: CanvasItem, c: Vector2, r: float, color := Color.WHITE) -> void:

@@ -629,14 +629,6 @@ func _killer_mark(ci: CanvasItem, t: float) -> void:
 	ci.draw_circle(b, 4.4, Color(Ui.RED, k))
 	ci.draw_line(b + Vector2(-2, -2), b + Vector2(2, 2), Color(1, 1, 1, k), 1.3)
 	ci.draw_line(b + Vector2(-2, 2), b + Vector2(2, -2), Color(1, 1, 1, k), 1.3)
-	if killer_name != "":
-		# The killer's name on a red pill on the ground strip, under the mark.
-		var label := String(TranslationServer.translate(killer_name))
-		var w := Ui.text_width(label, 7) + 12
-		var x := clampf(c.x - w / 2, 12, Geo.view_width - 12 - w)
-		var pill := Rect2(x, 121, w, 13)
-		Ui.panel(ci, pill, Color(Ui.RED, k), 6.5, 0, 0)
-		Ui.text(ci, label, Vector2(pill.get_center().x, pill.position.y + 2.4), 7, Color(1, 1, 1, k), HORIZONTAL_ALIGNMENT_CENTER, Color(0, 0, 0, 0))
 
 
 ## First sight of a power-up orb and of the Devourer: a ring and a "!"
@@ -956,6 +948,17 @@ func _draw_game_over(ci: CanvasItem) -> void:
 		if k >= 1.0 and not stamp_buzzed:
 			stamp_buzzed = true
 			_buzz(25)
+
+	# The killer's name on a red pill on the ground strip, under its ring
+	# (drawn here, above the dim, so it keeps full contrast).
+	if killer_name != "" and killer_rect.has_area():
+		var ka := clampf(t / 0.3, 0, 1)
+		var label := String(TranslationServer.translate(killer_name))
+		var lw := Ui.text_width(label, 7.5) + 14
+		var kx := clampf(killer_rect.get_center().x - ui_view.position.x - lw / 2, 4, WIDTH - 4 - lw)
+		var pill := Rect2(kx, 118, lw, 14)
+		Ui.panel(ci, pill, Color(Ui.RED, ka), 7, 1, 1)
+		Ui.text(ci, label, Vector2(pill.get_center().x, pill.position.y + 2.6), 7.5, Color(1, 1, 1, ka), HORIZONTAL_ALIGNMENT_CENTER, Color(Ui.INK, ka), 0.18)
 
 	# Buttons fade in once input is accepted.
 	if t > GAME_OVER_INPUT_DELAY:
