@@ -36,4 +36,4 @@ No accounts, ads, in-app purchases or network use; no data is collected. It is t
 demoAccountRequired = false
 
 ## Screenshots (6.9" landscape, 2868x1320)
-Five plain captures from the windowed playtest (build 6 code) in `shots-69/`, in upload order. Upload set: APP_IPHONE_67 on the 1.2 en-US localization (the orchestrator runs the replace command).
+Five plain captures from the windowed playtest (build 6 code) in `shots-69/`, in upload order: 01_title, 02_rush, 03_stage2, 04_boss, 05_stomp. Sonnet shot-check: no cut-off or placeholder problems; 05 is the weakest (a lesson frame); a later pass could swap in a pig or combo moment. Upload set: APP_IPHONE_67 on the 1.2 en-US localization (the orchestrator runs the replace command).
