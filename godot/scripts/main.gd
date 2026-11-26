@@ -616,7 +616,7 @@ func _tick_first_sight(delta: float) -> void:
 			Assets.set_pref("seenBoss", 1)
 
 
-## What ended the run: a red ring with a cross badge over it.
+## What ended the run: a red ring (its name sits on a pill in the UI layer).
 func _killer_mark(ci: CanvasItem, t: float) -> void:
 	var c := killer_rect.get_center()
 	var r := maxf(killer_rect.size.x, killer_rect.size.y) * 0.62 + 2
@@ -624,11 +624,6 @@ func _killer_mark(ci: CanvasItem, t: float) -> void:
 	r *= lerpf(1.6, 1.0, Ui.ease_out_quad(k))
 	ci.draw_arc(c, r, 0, TAU, 40, Color(Ui.INK, 0.9 * k), 3.2)
 	ci.draw_arc(c, r, 0, TAU, 40, Color(Ui.RED, k), 1.8)
-	var b := c + Vector2(r * 0.7, -r * 0.7)
-	ci.draw_circle(b, 5.2, Color(Ui.INK, k))
-	ci.draw_circle(b, 4.4, Color(Ui.RED, k))
-	ci.draw_line(b + Vector2(-2, -2), b + Vector2(2, 2), Color(1, 1, 1, k), 1.3)
-	ci.draw_line(b + Vector2(-2, 2), b + Vector2(2, -2), Color(1, 1, 1, k), 1.3)
 
 
 ## First sight of a power-up orb and of the Devourer: a ring and a "!"
@@ -836,7 +831,7 @@ func _draw_hud(ci: CanvasItem) -> void:
 	var size := 11.0 * (1.0 + 0.35 * maxf(0, 1 - score_pop / 0.25))
 	Ui.text(ci, str(world.score), Vector2(cx, 2.5 - (size - 11.0) * 0.5), size,
 		Ui.GOLD if score_pop < 0.25 else Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, Ui.INK, 0.2)
-	Ui.text(ci, "%d m" % world.get_distance(), Vector2(cx, 15.5), 5, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, Ui.INK, 0.22)
+	Ui.text(ci, "%d m" % world.get_distance(), Vector2(cx, 15.0), 7, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, Ui.INK, 0.3)
 
 	# The lesson line: one short instruction on a dark pill, first lessons only.
 	var lesson := coach.lesson_text()

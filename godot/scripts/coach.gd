@@ -214,8 +214,15 @@ func _update_line(delta: float, world: GameWorld) -> void:
 
 
 ## The lesson line, translated, for the UI layer (empty when none shows).
+## One message at a time: the line steps aside while a miss or tick speaks.
 func lesson_text() -> String:
+	if reacting():
+		return ""
 	return String(TranslationServer.translate(line)) if line_alpha > 0.0 and line != "" else ""
+
+
+func reacting() -> bool:
+	return (miss_time < 1.1 and miss_word != "") or (tick_time < 0.8 and tick_word != "")
 
 
 func _learn(i: int) -> void:
@@ -227,6 +234,7 @@ func _learn(i: int) -> void:
 
 
 func _tick(pos: Vector2, word: String) -> void:
+	miss_time = 99.0  # a success clears the last miss's why, so the words never stack
 	tick_pos = pos
 	tick_time = 0.0
 	tick_word = word
