@@ -82,8 +82,9 @@ func sparkle(pos: Vector2) -> void:
 
 
 func speedline() -> void:
-	emit(Kind.SPEEDLINE, Vector2(210, randf_range(8, 118)), Vector2(-randf_range(260, 380), 0),
-		0.8, randf_range(8, 20), Color(1, 1, 1, randf_range(0.35, 0.6)))
+	# Kept in the sky band and faint so enemies on the ground still read.
+	emit(Kind.SPEEDLINE, Vector2(Geo.view_width + 6, randf_range(8, 58)), Vector2(-randf_range(260, 380), 0),
+		0.8, randf_range(8, 16), Color(1, 1, 1, randf_range(0.2, 0.32)))
 
 
 func update(delta: float) -> void:

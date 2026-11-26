@@ -30,8 +30,9 @@ var pause_button := UiButton.new(Rect2(186, 3, 15, 15), "", Ui.Icon.PAUSE)
 var resume_button := UiButton.new(Rect2(64, 40, 76, 17), "Resume", Ui.Icon.PLAY, Ui.GOLD)
 var restart_button := UiButton.new(Rect2(64, 61, 76, 17), "Restart", Ui.Icon.REPLAY)
 var pause_menu_button := UiButton.new(Rect2(64, 82, 76, 17), "Menu", Ui.Icon.HOME)
-var replay_button := UiButton.new(Rect2(58, 74, 42, 27))
-var menu_button := UiButton.new(Rect2(108, 78, 38, 18), "Menu", Ui.Icon.HOME)
+# Game over: two matching icon buttons, Run again (gold) and Menu.
+var replay_button := UiButton.new(Rect2(54, 78, 46, 22), "", Ui.Icon.REPLAY, Ui.GOLD)
+var menu_button := UiButton.new(Rect2(104, 78, 46, 22), "", Ui.Icon.HOME)
 var cues_button := UiButton.new(Rect2(164, 116, 16, 16), "?")  # replays the in-run lessons
 var coach := Coach.new()
 var cues_flash := 99.0
@@ -56,6 +57,9 @@ var pad := 0.0     # frame edge to safe edge, each side
 var safe_b := 0.0  # bottom inset (home indicator)
 var boss_named := false
 var stamp_buzzed := false
+var killer_rect := Rect2()  # what ended the run, marked on the game-over screen
+var orb_mark := 0.0   # seconds the first power-up orb has been marked
+var boss_mark := 0.0  # seconds the first Devourer has been marked
 
 # Full-screen fade (white flash on death, fade from black on entering the game)
 var transition_color := Color.BLACK
@@ -76,7 +80,6 @@ func _ready() -> void:
 	world.boss_slammed.connect(_on_boss_slammed)
 	world.powerup_collected.connect(_on_powerup)
 	world.shield_broken.connect(_on_shield_broken)
-	replay_button.sprite = Assets.play_button_up
 
 	world_view = _add_view(_draw_world)
 	ui_view = _add_view(_draw_ui)
@@ -168,6 +171,7 @@ func _update_game(delta: float) -> void:
 			fx.dust(_feet(), 5, 14)
 
 	running = world.state == GameWorld.State.RUNNING
+	_tick_first_sight(delta)
 	_apply_slowmo(running)
 	var ground_speed := -world.scroller.bg_front.velocity.x if running and hit_stop <= 0 else 0.0
 	backdrop.update(delta, ground_speed, world.get_distance())
@@ -209,7 +213,7 @@ func _ambient_effects(delta: float) -> void:
 				fx.ember(p.position + Vector2(5, 5))
 		if not e.alive and e.soul.is_visible and randf() < 0.35:
 			fx.sparkle(e.soul.position + Vector2(7, 7))
-	if world.scroller.state == ScrollHandler.RunningState.RUSH and randf() < 0.5:
+	if world.scroller.state == ScrollHandler.RunningState.RUSH and randf() < 0.22:
 		fx.speedline()
 
 
@@ -296,6 +300,14 @@ func _on_shield_broken() -> void:
 
 func _on_death() -> void:
 	banner_time = 99.0  # no banners over the score screen
+	killer_rect = Rect2()
+	var k: Object = world.killer
+	if k is Boss:
+		var j := (k as Boss).jaw()
+		killer_rect = Rect2(j.end.x - 30, j.position.y - 22, 30, 30)
+	elif k is Scrollable:
+		var sc := k as Scrollable
+		killer_rect = Rect2(sc.position, Vector2(sc.width, sc.height))
 	fx.death(world.hero.body_center)
 	game_over_time = 0.0
 	stamp_buzzed = false
@@ -362,6 +374,9 @@ func _reset_presentation() -> void:
 	fx.clear()
 	last_stage = 0
 	was_rush = false
+	killer_rect = Rect2()
+	orb_mark = 0.0
+	boss_mark = 0.0
 	shown_score = 0
 	banner_time = 99.0
 	game_over_time = 0.0
@@ -539,9 +554,13 @@ func _draw_menu(ci: CanvasItem) -> void:
 
 
 func _draw_title(ci: CanvasItem, alpha: float, bob: float) -> void:
-	var tw := 112.0
+	# Larger, with a dark offset copy behind it so it holds on the bright sky.
+	var tw := 128.0
 	var th := tw * Assets.title_texture.get_height() / Assets.title_texture.get_width()
-	ci.draw_texture_rect(Assets.title_texture, Rect2(WIDTH / 2 - tw / 2 + 8, 4 + bob, tw, th), false, Color(1, 1, 1, alpha))
+	var r := Rect2(WIDTH / 2 - tw / 2 + 8, 2 + bob, tw, th)
+	for o in [Vector2(1.4, 1.6), Vector2(-0.8, 1.2), Vector2(0.8, -0.6)]:
+		ci.draw_texture_rect(Assets.title_texture, Rect2(r.position + o, r.size), false, Color(Ui.INK, 0.55 * alpha))
+	ci.draw_texture_rect(Assets.title_texture, r, false, Color(1, 1, 1, alpha))
 
 
 func _draw_game_world(ci: CanvasItem) -> void:
@@ -556,10 +575,67 @@ func _draw_game_world(ci: CanvasItem) -> void:
 	_draw_hero(ci, t)
 	if world.state == GameWorld.State.RUNNING:
 		coach.draw(ci, world)
+		_first_sight(ci, t)
+	elif world.is_game_over() and killer_rect.has_area():
+		_killer_mark(ci, t)
 	fx.draw(ci)
 	fx.draw_popups(ci)
 	if world.slowmo_time > 0 and world.state == GameWorld.State.RUNNING:
 		ci.draw_rect(_full(ci), Color(0.35, 0.3, 1.0, 0.12))
+
+
+func _tick_first_sight(delta: float) -> void:
+	if world.state != GameWorld.State.RUNNING:
+		return
+	var p := world.scroller.powerup
+	if Assets.get_pref("seenOrb") == 0:
+		if p.is_visible:
+			orb_mark += delta
+		elif orb_mark > 0:  # collected or scrolled off: seen
+			Assets.set_pref("seenOrb", 1)
+			orb_mark = 0.0
+	if world.scroller.boss.phase == Boss.Phase.CHASE and Assets.get_pref("seenBoss") == 0:
+		boss_mark += delta
+		if boss_mark >= 4.0:
+			Assets.set_pref("seenBoss", 1)
+
+
+## What ended the run: a red ring with a cross badge over it.
+func _killer_mark(ci: CanvasItem, t: float) -> void:
+	var c := killer_rect.get_center()
+	var r := maxf(killer_rect.size.x, killer_rect.size.y) * 0.62 + 2
+	var k := clampf(game_over_time / 0.3, 0, 1)
+	r *= lerpf(1.6, 1.0, Ui.ease_out_quad(k))
+	ci.draw_arc(c, r, 0, TAU, 40, Color(Ui.INK, 0.9 * k), 3.2)
+	ci.draw_arc(c, r, 0, TAU, 40, Color(Ui.RED, k), 1.8)
+	var b := c + Vector2(r * 0.7, -r * 0.7)
+	ci.draw_circle(b, 5.2, Color(Ui.INK, k))
+	ci.draw_circle(b, 4.4, Color(Ui.RED, k))
+	ci.draw_line(b + Vector2(-2, -2), b + Vector2(2, 2), Color(1, 1, 1, k), 1.3)
+	ci.draw_line(b + Vector2(-2, 2), b + Vector2(2, -2), Color(1, 1, 1, k), 1.3)
+
+
+## First sight of a power-up orb and of the Devourer: a ring and a "!"
+## badge, once per install (prefs seenOrb, seenBoss).
+func _first_sight(ci: CanvasItem, t: float) -> void:
+	var p := world.scroller.powerup
+	if p.is_visible and Assets.get_pref("seenOrb") == 0:
+		_sight_mark(ci, p.center(), PowerUp.RADIUS + 5, orb_mark, Ui.powerup_color(p.kind))
+	var b := world.scroller.boss
+	if b.phase == Boss.Phase.CHASE and boss_mark < 4.0 and Assets.get_pref("seenBoss") == 0:
+		_sight_mark(ci, b.jaw_target() + Vector2(0, -10), 14, boss_mark, Ui.RED)
+
+
+func _sight_mark(ci: CanvasItem, c: Vector2, r: float, age: float, color: Color) -> void:
+	var pulse := 0.0 if coach.reduce_motion else 0.5 + 0.5 * sin(age * 6)
+	var rr := r + 2 * pulse
+	ci.draw_arc(c, rr, 0, TAU, 36, Color(Ui.INK, 0.9), 3.0)
+	ci.draw_arc(c, rr, 0, TAU, 36, color.lightened(0.3), 1.6)
+	var bpos := c + Vector2(0, -rr - 6)
+	ci.draw_circle(bpos, 5.0, Ui.INK)
+	ci.draw_circle(bpos, 4.2, Ui.GOLD)
+	ci.draw_line(bpos + Vector2(0, -2.4), bpos + Vector2(0, 0.8), Ui.INK, 1.3)
+	ci.draw_circle(bpos + Vector2(0, 2.2), 0.7, Ui.INK)
 
 
 func _shadow(ci: CanvasItem, x: float, ground: float, height_above: float, width: float) -> void:
@@ -655,7 +731,16 @@ func _draw_boss(ci: CanvasItem, t: float) -> void:
 		# Beaten: flickers and shudders on the way out.
 		tint = Color(1, 0.6, 0.5, 0.8) if int(t * 12) % 2 == 0 else Color(1, 1, 1, 0.8)
 		pos += Vector2(sin(t * 70) * 1.5, 0)
+	# A dark rim lifts the Devourer off any backdrop.
+	for o in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1)]:
+		ci.draw_texture_rect_region(Assets.boss_texture, Rect2(pos + o, Vector2(b.width, b.height)), region, Color(Ui.INK, 0.85 * tint.a))
 	ci.draw_texture_rect_region(Assets.boss_texture, Rect2(pos, Vector2(b.width, b.height)), region, tint)
+	if b.phase == Boss.Phase.CHASE:
+		# Its weak point: the jaw that stomped souls fly into.
+		var j := b.jaw_target()
+		var pr := 0.0 if coach.reduce_motion else sin(t * 6) * 1.2
+		ci.draw_arc(j, 6 + pr, 0, TAU, 28, Color(Ui.INK, 0.8), 2.6)
+		ci.draw_arc(j, 6 + pr, 0, TAU, 28, Ui.GOLD, 1.3)
 
 
 func _draw_powerup(ci: CanvasItem, t: float) -> void:
@@ -730,6 +815,16 @@ func _draw_hud(ci: CanvasItem) -> void:
 		Ui.GOLD if score_pop < 0.25 else Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, Ui.INK, 0.2)
 	Ui.text(ci, "%d m" % world.get_distance(), Vector2(cx, 15.5), 5, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, Ui.INK, 0.22)
 
+	# The lesson line: one short instruction on a dark pill, first lessons only.
+	var lesson := coach.lesson_text()
+	if lesson != "":
+		var la := coach.line_alpha
+		var lw := Ui.text_width(lesson, 7.5) + 14
+		var boss_bar := world.scroller.boss.phase in [Boss.Phase.CHASE, Boss.Phase.DROP]
+		var lr := Rect2(cx - lw / 2, 40 if boss_bar else 31, lw, 14)
+		Ui.panel(ci, lr, Color(Ui.INK, 0.86 * la), 7, 0, 0)
+		Ui.text(ci, lesson, Vector2(cx, lr.position.y + 2.6), 7.5, Color(1, 1, 1, la), HORIZONTAL_ALIGNMENT_CENTER, Color(0, 0, 0, 0))
+
 	# Combo pill on the hero
 	if world.combo >= 2:
 		var label := "x%d" % mini(world.combo, GameWorld.MAX_COMBO_MULTIPLIER)
@@ -796,10 +891,30 @@ func _draw_game_over(ci: CanvasItem) -> void:
 	var cx := WIDTH / 2
 	Ui.text(ci, str(counted), Vector2(cx, 22 + drop * 0.3), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, Ui.INK, 0.16)
 	if t > 0.5:
-		var stats := "%d m  ·  best combo x%d" % [world.get_distance(), mini(world.best_combo, GameWorld.MAX_COMBO_MULTIPLIER)]
+		# Numbers as chips, no sentence: metres, best combo, bosses beaten.
+		var chips: Array = [["%d m" % world.get_distance(), Ui.PAPER]]
+		if world.best_combo >= 2:
+			chips.append(["x%d" % mini(world.best_combo, GameWorld.MAX_COMBO_MULTIPLIER), Ui.GOLD])
 		if world.bosses_defeated > 0:
-			stats += "  ·  %d Devourer%s" % [world.bosses_defeated, "s" if world.bosses_defeated > 1 else ""]
-		Ui.text(ci, stats, Vector2(cx, 56), 5, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, Ui.INK, 0.22)
+			chips.append(["%d" % world.bosses_defeated, Ui.RED])
+		var widths: Array[float] = []
+		var total_w := 0.0
+		for c in chips:
+			var w := Ui.text_width(c[0], 6) + (20.0 if c[1] == Ui.RED else 10.0)
+			widths.append(w)
+			total_w += w + 4
+		var x := cx - (total_w - 4) / 2
+		for i in chips.size():
+			var r := Rect2(x, 56, widths[i], 12)
+			Ui.panel(ci, r, chips[i][1], 6, 1, 1)
+			var fg := Color.WHITE if chips[i][1] == Ui.RED else Ui.INK
+			if chips[i][1] == Ui.RED:  # a small crown for each Devourer beaten
+				var k := Vector2(r.position.x + 7, r.get_center().y)
+				ci.draw_colored_polygon(PackedVector2Array([k + Vector2(-3.5, 2.5), k + Vector2(-3.5, -2), k + Vector2(-1.5, 0), k + Vector2(0, -3), k + Vector2(1.5, 0), k + Vector2(3.5, -2), k + Vector2(3.5, 2.5)]), Ui.GOLD)
+				Ui.text(ci, chips[i][0], Vector2(r.position.x + 12.5, r.position.y + 2.6), 6, fg)
+			else:
+				Ui.text(ci, chips[i][0], Vector2(r.get_center().x, r.position.y + 2.6), 6, fg, HORIZONTAL_ALIGNMENT_CENTER, Color(0, 0, 0, 0))
+			x += widths[i] + 4
 
 	# "High score!" stamp slams onto the number.
 	if world.state == GameWorld.State.HIGHSCORE and t > 1.1:
@@ -816,10 +931,8 @@ func _draw_game_over(ci: CanvasItem) -> void:
 	# Buttons fade in once input is accepted.
 	if t > GAME_OVER_INPUT_DELAY:
 		var a := clampf((t - GAME_OVER_INPUT_DELAY) / 0.25, 0, 1)
-		var bob := 1.0 + sin(t * 4) * 0.03
-		replay_button.sprite = Assets.play_button_down if replay_button.pressed else Assets.play_button_up
-		replay_button.draw(ci, bob, a)
-		menu_button.draw(ci)
+		replay_button.draw(ci, 1.0, a)
+		menu_button.draw(ci, 1.0, a)
 
 
 func _draw_pause(ci: CanvasItem) -> void:

@@ -31,6 +31,11 @@ var miss_time := 99.0
 var tick_pos := Vector2.ZERO
 var tick_time := 99.0
 var _summoner_was := false
+# One short line per first lesson (Crane 2026-11-25: glyphs + 2-3 words).
+# Source strings are the msgids of i18n/strings.csv.
+var line := ""
+var line_alpha := 0.0
+const LINE_FADE := 0.6  # seconds to fade out once the lesson is done
 
 
 func load_flags() -> void:
@@ -43,7 +48,7 @@ func load_flags() -> void:
 
 ## From the title's "?" button: every lesson runs again on the next run.
 func replay() -> void:
-	for f in FLAGS:
+	for f in FLAGS + ["seenOrb", "seenBoss"]:
 		Assets.set_pref(f, 0)
 	load_flags()
 
@@ -58,6 +63,8 @@ func start_run() -> void:
 	miss_time = 99.0
 	tick_time = 99.0
 	_summoner_was = false
+	line = ""
+	line_alpha = 0.0
 
 
 func teaching() -> bool:
@@ -76,6 +83,7 @@ func update(delta: float, world: GameWorld) -> bool:
 	elif not arc.is_empty():
 		arc.clear()
 	world.harmless = not jump_taught and spared < MAX_SPARED
+	_update_line(delta, world)
 
 	var s := world.scroller
 	# The first Summoner's mark goes once it leaves, stomped or escaped.
@@ -150,6 +158,38 @@ func on_double(hero: Hero) -> bool:
 	return true
 
 
+func _wanted_line(world: GameWorld) -> String:
+	var h := world.hero
+	if not h.alive or world.state != GameWorld.State.RUNNING:
+		return ""
+	var s := world.scroller
+	if jump_cue(world):
+		return "Tap to jump"
+	if not jump_taught and h.jumped and target != null:
+		return "Land on it"
+	if double_cue(world):
+		return "Tap again in the air"
+	if not summoner_taught and s.summoner.is_visible and s.summoner.alive and s.summoner.position.x < Geo.view_width:
+		return "Hit the Summoner"
+	return ""
+
+
+func _update_line(delta: float, world: GameWorld) -> void:
+	var w := _wanted_line(world)
+	if w != "":
+		if w != line:
+			line_alpha = 0.0 if line_alpha < 0.05 else line_alpha
+		line = w
+		line_alpha = minf(line_alpha + delta / 0.15, 1.0)
+	else:
+		line_alpha = maxf(line_alpha - delta / LINE_FADE, 0.0)
+
+
+## The lesson line, translated, for the UI layer (empty when none shows).
+func lesson_text() -> String:
+	return String(TranslationServer.translate(line)) if line_alpha > 0.0 and line != "" else ""
+
+
 func _learn(i: int) -> void:
 	match i:
 		0: jump_taught = true
@@ -207,8 +247,11 @@ func draw(ci: CanvasItem, world: GameWorld) -> void:
 
 func _ring(ci: CanvasItem, c: Vector2, r: float, color := Color.WHITE) -> void:
 	var p := _pulse()
-	ci.draw_arc(c, r + 2.5 * p, 0, TAU, 32, Color(color, 0.95 - 0.45 * p), 1.2)
-	ci.draw_arc(c, r - 3, 0, TAU, 28, Color(color, 0.35), 0.8)
+	var rr := r + 2.0 * p
+	ci.draw_arc(c, rr, 0, TAU, 40, Color(Ui.INK, 0.9), 3.2)
+	ci.draw_arc(c, rr, 0, TAU, 40, Color(color, 1.0 - 0.25 * p), 1.8)
+	ci.draw_arc(c, r - 3.5, 0, TAU, 32, Color(Ui.INK, 0.55), 1.4)
+	ci.draw_arc(c, r - 3.5, 0, TAU, 32, Color(color, 0.6), 0.7)
 
 
 ## A fingertip dot with one ripple per tap it asks for.

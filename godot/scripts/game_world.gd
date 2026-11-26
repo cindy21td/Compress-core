@@ -16,6 +16,8 @@ signal boss_slammed
 signal powerup_collected(kind: PowerUp.Kind)
 signal shield_broken
 
+var killer: Object = null  # what ended the run (marked on the score screen)
+
 const MAX_COMBO_MULTIPLIER := 4
 const BOSS_HIT_POINTS := 2
 const BOSS_DEFEAT_BONUS := 20
@@ -104,6 +106,7 @@ func _update_running(delta: float) -> void:
 		_break_shield(hit)
 		hit = null
 	if hit:
+		killer = hit
 		Assets.stop_theme()
 		scroller.stop()
 		hero.alive = false

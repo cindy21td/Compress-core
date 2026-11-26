@@ -40,3 +40,7 @@ textures/vram_compression/import_etc2_astc=true
 
 textures/canvas_textures/default_texture_filter=3
 environment/defaults/default_clear_color=Color(1, 1, 1, 1)
+
+[internationalization]
+
+locale/translations=PackedStringArray("res://i18n/strings.en.translation")
