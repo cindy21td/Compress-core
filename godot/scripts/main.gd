@@ -623,7 +623,11 @@ func _first_sight(ci: CanvasItem, t: float) -> void:
 		_sight_mark(ci, p.center(), PowerUp.RADIUS + 5, orb_mark, Ui.powerup_color(p.kind))
 	var b := world.scroller.boss
 	if b.phase == Boss.Phase.CHASE and boss_mark < 4.0 and Assets.get_pref("seenBoss") == 0:
-		_sight_mark(ci, b.jaw_target() + Vector2(0, -10), 14, boss_mark, Ui.RED)
+		var bpos := b.jaw_target() + Vector2(0, -16)
+		ci.draw_circle(bpos, 5.0, Ui.INK)
+		ci.draw_circle(bpos, 4.2, Ui.GOLD)
+		ci.draw_line(bpos + Vector2(0, -2.4), bpos + Vector2(0, 0.8), Ui.INK, 1.3)
+		ci.draw_circle(bpos + Vector2(0, 2.2), 0.7, Ui.INK)
 
 
 func _sight_mark(ci: CanvasItem, c: Vector2, r: float, age: float, color: Color) -> void:
@@ -821,7 +825,10 @@ func _draw_hud(ci: CanvasItem) -> void:
 		var la := coach.line_alpha
 		var lw := Ui.text_width(lesson, 7.5) + 14
 		var boss_bar := world.scroller.boss.phase in [Boss.Phase.CHASE, Boss.Phase.DROP]
-		var lr := Rect2(cx - lw / 2, 40 if boss_bar else 31, lw, 14)
+		var ly := 40.0 if boss_bar else 31.0
+		if banner_time < 1.6:  # a banner is up: the line drops below it
+			ly = 60.0
+		var lr := Rect2(cx - lw / 2, ly, lw, 14)
 		Ui.panel(ci, lr, Color(Ui.INK, 0.86 * la), 7, 0, 0)
 		Ui.text(ci, lesson, Vector2(cx, lr.position.y + 2.6), 7.5, Color(1, 1, 1, la), HORIZONTAL_ALIGNMENT_CENTER, Color(0, 0, 0, 0))
 

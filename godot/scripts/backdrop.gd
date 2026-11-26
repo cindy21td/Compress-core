@@ -82,7 +82,7 @@ func _draw_stage(ci: CanvasItem, index: int, alpha: float) -> void:
 		_tile(ci, Assets.stages[index], -fmod(travelled * STAGE_SPEED, 816.0), 0, alpha)
 		# A light veil pushes the busy pattern back behind the characters.
 		# Stages 2 and 3 are the busiest patterns and get a heavier veil.
-		var veil: float = [0.0, 0.26, 0.5, 0.62, 0.34][index]
+		var veil: float = [0.0, 0.3, 0.56, 0.62, 0.5][index]
 		ci.draw_rect(Rect2(0, 0, Geo.view_width, GROUND_TOP), Color(1, 1, 1, veil * alpha))
 
 

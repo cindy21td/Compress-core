@@ -169,7 +169,7 @@ func _wanted_line(world: GameWorld) -> String:
 		return "Land on it"
 	if double_cue(world):
 		return "Tap again in the air"
-	if not summoner_taught and s.summoner.is_visible and s.summoner.alive and s.summoner.position.x < Geo.view_width:
+	if jump_taught and not summoner_taught and s.summoner.is_visible and s.summoner.alive and s.summoner.position.x < Geo.view_width:
 		return "Hit the Summoner"
 	return ""
 
@@ -221,7 +221,13 @@ func draw(ci: CanvasItem, world: GameWorld) -> void:
 		# Ghost of the second arc, from where the hero is now.
 		var f := h.position + Vector2(16, 21)
 		_dotted(ci, _parabola(f, f + Vector2(46, 4), 26.0), Color(1, 1, 1, 0.75))
-	if not summoner_taught and s.summoner.is_visible and s.summoner.alive and s.summoner.position.x < Geo.view_width:
+	# One lesson at a time: while the jump is being taught, mark where to land.
+	if not jump_taught and target and target.is_visible and target.alive and (jump_cue(world) or h.jumped):
+		var top := target.circle_center - Vector2(0, target.circle_radius + 7 + 2 * _pulse(5))
+		var chev := PackedVector2Array([top + Vector2(-5, -4), top, top + Vector2(5, -4)])
+		ci.draw_polyline(chev, Ui.INK, 3.4)
+		ci.draw_polyline(chev, Color.WHITE, 1.8)
+	elif not summoner_taught and s.summoner.is_visible and s.summoner.alive and s.summoner.position.x < Geo.view_width:
 		var c := s.summoner.circle_center
 		_ring(ci, c, 11.0, Ui.RED)
 		var tip := c + Vector2(-19 - 3 * _pulse(5), 0)
