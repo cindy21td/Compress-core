@@ -42,6 +42,7 @@ const RUSH_DURATION := 60
 
 var state := State.MENU
 var harmless := false  # set by the Coach: enemies walk past until the first stomp
+var learning := false  # set by the Coach until the jump is learned: no rush, no Devourer
 var hero := Hero.new(30, 104, 25, 25)
 var scroller: ScrollHandler
 var renderer  # main.gd: prepare_transition(), show_rate_prompt()
@@ -75,6 +76,7 @@ func _update_running(delta: float) -> void:
 	_tick_powerups(delta)
 	scroller.pig_unlocked = get_distance() >= PIG_UNLOCK_DISTANCE
 	scroller.magnet = magnet_time > 0
+	scroller.calm = learning
 
 	var was_jumping := hero.jumped
 	hero.update(delta)
@@ -198,7 +200,7 @@ func _check_rush() -> void:
 		scroller.change_stage(ScrollHandler.RunningState.NORMAL)
 		rand_rush_number = _roll_rush()
 		rush_distance = 0
-	elif rush_distance == 0 and d != 0 and d % rand_rush_number == 0:
+	elif rush_distance == 0 and not learning and d != 0 and d % rand_rush_number == 0:
 		scroller.change_stage(ScrollHandler.RunningState.RUSH)
 		rush_distance = d
 

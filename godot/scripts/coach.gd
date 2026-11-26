@@ -85,6 +85,7 @@ func update(delta: float, world: GameWorld) -> bool:
 	elif not arc.is_empty():
 		arc.clear()
 	world.harmless = not jump_taught and spared < MAX_SPARED
+	world.learning = not jump_taught
 	_update_line(delta, world)
 
 	var s := world.scroller

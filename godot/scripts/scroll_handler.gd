@@ -24,6 +24,7 @@ var bg_back: Background
 
 var boss := Boss.new()
 var boss_cooldown := 0.0  # seconds before another boss can be summoned
+var calm := false  # first lesson still running: an escaped Summoner calls nothing
 var powerup := PowerUp.new()
 var powerup_timer := 12.0
 var pig_unlocked := false
@@ -116,7 +117,7 @@ func _update_enemy(delta: float, e: Enemy) -> void:
 				e.reset_enemy(0, false)
 			Enemy.Type.SUMMONER:
 				# An escaped Summoner calls in the Devourer.
-				if e.alive and not boss.active() and boss_cooldown <= 0:
+				if e.alive and not calm and not boss.active() and boss_cooldown <= 0:
 					boss.summon()
 					boss_summoned = true
 				e.reset_enemy(-10, false)
