@@ -31,8 +31,8 @@ var resume_button := UiButton.new(Rect2(64, 40, 76, 17), "Resume", Ui.Icon.PLAY,
 var restart_button := UiButton.new(Rect2(64, 61, 76, 17), "Restart", Ui.Icon.REPLAY)
 var pause_menu_button := UiButton.new(Rect2(64, 82, 76, 17), "Menu", Ui.Icon.HOME)
 # Game over: two matching icon buttons, Run again (gold) and Menu.
-var replay_button := UiButton.new(Rect2(54, 78, 46, 22), "", Ui.Icon.REPLAY, Ui.GOLD)
-var menu_button := UiButton.new(Rect2(104, 78, 46, 22), "", Ui.Icon.HOME)
+var replay_button := UiButton.new(Rect2(42, 80, 58, 22), "Again", Ui.Icon.REPLAY, Ui.GOLD)
+var menu_button := UiButton.new(Rect2(104, 80, 58, 22), "Title", Ui.Icon.HOME)
 var cues_button := UiButton.new(Rect2(164, 116, 16, 16), "?")  # replays the in-run lessons
 var coach := Coach.new()
 var cues_flash := 99.0
@@ -60,6 +60,7 @@ var stamp_buzzed := false
 var killer_rect := Rect2()  # what ended the run, marked on the game-over screen
 var orb_mark := 0.0   # seconds the first power-up orb has been marked
 var boss_mark := 0.0  # seconds the first Devourer has been marked
+var flinch_time := 99.0  # since the first miss: the hero shudders back
 
 # Full-screen fade (white flash on death, fade from black on entering the game)
 var transition_color := Color.BLACK
@@ -166,6 +167,9 @@ func _update_game(delta: float) -> void:
 		_update_knight_swords()
 		if world.state == GameWorld.State.RUNNING and coach.update(delta, world):
 			_buzz(25)  # a spared enemy walked past: the missed arc is drawn
+			if coach.misses == 1:  # first miss: the hero flinches
+				hero_scale = Vector2(0.78, 1.2)
+				flinch_time = 0.0
 		if running and was_jumping and not h.jumped and h.alive:
 			hero_scale = Vector2(1.25, 0.78)
 			fx.dust(_feet(), 5, 14)
@@ -192,6 +196,7 @@ func _update_game(delta: float) -> void:
 		shown_score = world.score
 		score_pop = 0.0
 	score_pop += delta
+	flinch_time += delta
 	banner_time += delta
 	if world.is_game_over():
 		game_over_time += delta
@@ -547,9 +552,13 @@ func _draw_menu(ci: CanvasItem) -> void:
 	ci.draw_set_transform(Vector2(ui_view.position.x, 0))
 	_draw_title(ci, 1.0, 0.0 if coach.reduce_motion else sin(t * 2.2) * 1.5)
 	var pulse := 1.0 if coach.reduce_motion else 1.0 + sin(t * 5) * 0.04
-	var r := Rect2(WIDTH / 2 - 52, 72, 104, 104 * 60 / 374.0)
-	r = Rect2(r.get_center() - r.size * pulse / 2, r.size * pulse)
-	_hires(ci, Assets.start_instruction_anim.frames[0], r)
+	var label := String(TranslationServer.translate("TAP TO START"))
+	var sz := 9.0 * pulse
+	var w := Ui.text_width(label, sz) + 18 * pulse
+	var r := Rect2(WIDTH / 2 + 8 - w / 2, 98 - 9 * pulse, w, 18 * pulse)
+	Ui.panel(ci, r, Ui.GOLD, r.size.y / 2, 1.2, 2)
+	# Ui.text sets its own transform, so it takes the UI offset in its position.
+	Ui.text(ci, label, Vector2(r.get_center().x + ui_view.position.x, r.position.y + 3.4 * pulse), sz, Ui.INK, HORIZONTAL_ALIGNMENT_CENTER, Color.WHITE, 0.1)
 	ci.draw_set_transform(Vector2.ZERO)
 
 
@@ -680,7 +689,9 @@ func _draw_hero(ci: CanvasItem, t: float) -> void:
 		region = Assets.hero_run_anim.key_frame(t)
 	# Squash and stretch around the feet.
 	var foot := h.position + Vector2(h.width / 2.0, h.height)
-	ci.draw_set_transform(foot, 0, hero_scale)
+	if flinch_time < 0.4 and not coach.reduce_motion:
+		foot.x += sin(flinch_time * 60) * 2.0 * (1 - flinch_time / 0.4)
+	ci.draw_set_transform(foot, -0.18 if flinch_time < 0.3 else 0.0, hero_scale)
 	_region(ci, region, Rect2(-h.width / 2.0, -h.height, h.width, h.height))
 	ci.draw_set_transform(Vector2.ZERO)
 	if h.alive and (world.shield or world.grace > 0):
@@ -736,7 +747,8 @@ func _draw_boss(ci: CanvasItem, t: float) -> void:
 		tint = Color(1, 0.6, 0.5, 0.8) if int(t * 12) % 2 == 0 else Color(1, 1, 1, 0.8)
 		pos += Vector2(sin(t * 70) * 1.5, 0)
 	# A dark rim lifts the Devourer off any backdrop.
-	for o in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1)]:
+	for i in 8:
+		var o := Vector2.from_angle(TAU * i / 8.0) * 2.0
 		ci.draw_texture_rect_region(Assets.boss_texture, Rect2(pos + o, Vector2(b.width, b.height)), region, Color(Ui.INK, 0.85 * tint.a))
 	ci.draw_texture_rect_region(Assets.boss_texture, Rect2(pos, Vector2(b.width, b.height)), region, tint)
 	if b.phase == Boss.Phase.CHASE:
@@ -823,14 +835,16 @@ func _draw_hud(ci: CanvasItem) -> void:
 	var lesson := coach.lesson_text()
 	if lesson != "":
 		var la := coach.line_alpha
-		var lw := Ui.text_width(lesson, 7.5) + 14
+		var k := Ui.ease_out_quad(la)  # size; contrast stays full until the very end
+		var pa := clampf(la * 4.0, 0, 1)
+		var lw := (Ui.text_width(lesson, 7.5) + 14) * k
 		var boss_bar := world.scroller.boss.phase in [Boss.Phase.CHASE, Boss.Phase.DROP]
-		var ly := 40.0 if boss_bar else 31.0
+		var ly := 42.0 if boss_bar else 31.0
 		if banner_time < 1.6:  # a banner is up: the line drops below it
 			ly = 60.0
-		var lr := Rect2(cx - lw / 2, ly, lw, 14)
-		Ui.panel(ci, lr, Color(Ui.INK, 0.86 * la), 7, 0, 0)
-		Ui.text(ci, lesson, Vector2(cx, lr.position.y + 2.6), 7.5, Color(1, 1, 1, la), HORIZONTAL_ALIGNMENT_CENTER, Color(0, 0, 0, 0))
+		var lr := Rect2(cx - lw / 2, ly + 7 * (1 - k), lw, 14 * k)
+		Ui.panel(ci, lr, Color(Ui.INK, pa), 7 * k, 0, 0)
+		Ui.text(ci, lesson, Vector2(cx, lr.position.y + 2.6 * k), 7.5 * k, Color(1, 1, 1, pa), HORIZONTAL_ALIGNMENT_CENTER, Color(0, 0, 0, 0))
 
 	# Combo pill on the hero
 	if world.combo >= 2:
@@ -859,13 +873,14 @@ func _draw_hud(ci: CanvasItem) -> void:
 	# Boss health bar
 	var b := world.scroller.boss
 	if b.phase in [Boss.Phase.CHASE, Boss.Phase.DROP]:
-		var bar := Rect2(cx - 40, 24, 80, 5)
+		var bar := Rect2(cx - 48, 24, 96, 9)
 		var danger := clampf((b.position.x + b.width - 40) / (Boss.DROP_AT - 40), 0, 1)
 		var flash := danger > 0.75 and fmod(screen_time, 0.3) < 0.15
-		Ui.panel(ci, bar.grow(1), Ui.RED if flash else Ui.INK, 3, 0, 1)
-		ci.draw_rect(Rect2(bar.position, Vector2(bar.size.x * b.health / Boss.MAX_HEALTH, bar.size.y)), Color(0.75, 0.2, 0.25))
-		if not boss_named:
-			Ui.text(ci, "DEVOURER", Vector2(bar.get_center().x, bar.end.y + 1.5), 4.2, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, Ui.INK, 0.22)
+		Ui.panel(ci, bar.grow(1.5), Ui.RED if flash else Ui.INK, 4, 0, 1.5)
+		ci.draw_rect(bar, Color(0.3, 0.08, 0.1))
+		var fill := Color.WHITE if b.hurt_time > 0 else Color(0.9, 0.22, 0.25)
+		ci.draw_rect(Rect2(bar.position, Vector2(bar.size.x * b.health / Boss.MAX_HEALTH, bar.size.y)), fill)
+		ci.draw_rect(Rect2(bar.position, Vector2(bar.size.x * b.health / Boss.MAX_HEALTH, 2)), Color(1, 1, 1, 0.35))
 
 
 func _draw_banner(ci: CanvasItem) -> void:
@@ -901,26 +916,18 @@ func _draw_game_over(ci: CanvasItem) -> void:
 		# Numbers as chips, no sentence: metres, best combo, bosses beaten.
 		var chips: Array = [["%d m" % world.get_distance(), Ui.PAPER]]
 		if world.best_combo >= 2:
-			chips.append(["x%d" % mini(world.best_combo, GameWorld.MAX_COMBO_MULTIPLIER), Ui.GOLD])
-		if world.bosses_defeated > 0:
-			chips.append(["%d" % world.bosses_defeated, Ui.RED])
+			chips.append([String(TranslationServer.translate("Combo")) + " x%d" % mini(world.best_combo, GameWorld.MAX_COMBO_MULTIPLIER), Ui.GOLD])
 		var widths: Array[float] = []
 		var total_w := 0.0
 		for c in chips:
-			var w := Ui.text_width(c[0], 6) + (20.0 if c[1] == Ui.RED else 10.0)
+			var w := Ui.text_width(c[0], 7.5) + 14.0
 			widths.append(w)
 			total_w += w + 4
 		var x := cx - (total_w - 4) / 2
 		for i in chips.size():
-			var r := Rect2(x, 56, widths[i], 12)
-			Ui.panel(ci, r, chips[i][1], 6, 1, 1)
-			var fg := Color.WHITE if chips[i][1] == Ui.RED else Ui.INK
-			if chips[i][1] == Ui.RED:  # a small crown for each Devourer beaten
-				var k := Vector2(r.position.x + 7, r.get_center().y)
-				ci.draw_colored_polygon(PackedVector2Array([k + Vector2(-3.5, 2.5), k + Vector2(-3.5, -2), k + Vector2(-1.5, 0), k + Vector2(0, -3), k + Vector2(1.5, 0), k + Vector2(3.5, -2), k + Vector2(3.5, 2.5)]), Ui.GOLD)
-				Ui.text(ci, chips[i][0], Vector2(r.position.x + 12.5, r.position.y + 2.6), 6, fg)
-			else:
-				Ui.text(ci, chips[i][0], Vector2(r.get_center().x, r.position.y + 2.6), 6, fg, HORIZONTAL_ALIGNMENT_CENTER, Color(0, 0, 0, 0))
+			var r := Rect2(x, 54, widths[i], 15)
+			Ui.panel(ci, r, chips[i][1], 7, 1, 1)
+			Ui.text(ci, chips[i][0], Vector2(r.get_center().x, r.position.y + 3.0), 7.5, Ui.INK, HORIZONTAL_ALIGNMENT_CENTER, Color(0, 0, 0, 0))
 			x += widths[i] + 4
 
 	# "High score!" stamp slams onto the number.

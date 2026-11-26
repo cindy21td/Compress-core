@@ -45,7 +45,7 @@ static func panel(ci: CanvasItem, r: Rect2, fill := PAPER, radius := 4.0, border
 
 
 static func _round_rect(ci: CanvasItem, r: Rect2, radius: float, color: Color) -> void:
-	radius = minf(radius, minf(r.size.x, r.size.y) / 2)
+	radius = maxf(minf(radius, minf(r.size.x, r.size.y) / 2 - 0.05), 0.0)  # equal corners collapse the polygon
 	var pts := PackedVector2Array()
 	var corners := [
 		[r.position + Vector2(r.size.x - radius, radius), -PI / 2],

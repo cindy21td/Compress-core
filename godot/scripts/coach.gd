@@ -28,6 +28,7 @@ var arc_time := 99.0
 var miss_from := Vector2.ZERO
 var miss_to := Vector2.ZERO
 var miss_time := 99.0
+var misses := 0  # this run; the first one gets the "Missed" word
 var tick_pos := Vector2.ZERO
 var tick_time := 99.0
 var _summoner_was := false
@@ -61,6 +62,7 @@ func start_run() -> void:
 	shown_arc.clear()
 	arc_time = 99.0
 	miss_time = 99.0
+	misses = 0
 	tick_time = 99.0
 	_summoner_was = false
 	line = ""
@@ -99,6 +101,7 @@ func update(delta: float, world: GameWorld) -> bool:
 	var missed := false
 	if target and target.position.x + target.width < h.position.x:
 		spared += 1
+		misses += 1
 		missed = true
 		miss_from = h.position + Vector2(16, 24)
 		miss_to = target.circle_center - Vector2(0, target.circle_radius)
@@ -243,6 +246,9 @@ func draw(ci: CanvasItem, world: GameWorld) -> void:
 		var x := miss_to + Vector2(0, -4)
 		ci.draw_line(x + Vector2(-3.5, -3.5), x + Vector2(3.5, 3.5), Color(Ui.RED, a), 1.8)
 		ci.draw_line(x + Vector2(-3.5, 3.5), x + Vector2(3.5, -3.5), Color(Ui.RED, a), 1.8)
+		if misses == 1:  # the first miss says so, once, over the hero
+			var mp := miss_from + Vector2(0, -38 - 4 * minf(miss_time / 0.3, 1))
+			Ui.text(ci, String(TranslationServer.translate("Missed")), mp, 8, Color(Ui.RED.lightened(0.15), a), HORIZONTAL_ALIGNMENT_CENTER, Color(Ui.INK, a), 0.22)
 	if tick_time < 0.9:
 		var a := 1.0 - maxf(0, tick_time - 0.5) / 0.4
 		var p := tick_pos + Vector2(0, -6 * minf(tick_time / 0.3, 1))
