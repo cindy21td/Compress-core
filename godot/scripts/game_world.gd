@@ -39,6 +39,7 @@ var invincible := false  # demo/testing only: collisions don't end the run
 const RUSH_DURATION := 60
 
 var state := State.MENU
+var harmless := false  # set by the Coach: enemies walk past until the first stomp
 var hero := Hero.new(30, 104, 25, 25)
 var scroller: ScrollHandler
 var renderer  # main.gd: prepare_transition(), show_rate_prompt()
@@ -97,6 +98,8 @@ func _update_running(delta: float) -> void:
 		scroller.powerup.is_visible = false
 
 	var hit: Object = null if invincible or grace > 0 else scroller.colliding(hero)
+	if hit and harmless:
+		hit = null
 	if hit and shield:
 		_break_shield(hit)
 		hit = null

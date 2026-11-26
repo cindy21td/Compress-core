@@ -32,6 +32,9 @@ var restart_button := UiButton.new(Rect2(64, 61, 76, 17), "Restart", Ui.Icon.REP
 var pause_menu_button := UiButton.new(Rect2(64, 82, 76, 17), "Menu", Ui.Icon.HOME)
 var replay_button := UiButton.new(Rect2(58, 74, 42, 27))
 var menu_button := UiButton.new(Rect2(108, 78, 38, 18), "Menu", Ui.Icon.HOME)
+var cues_button := UiButton.new(Rect2(164, 116, 16, 16), "?")  # replays the in-run lessons
+var coach := Coach.new()
+var cues_flash := 99.0
 
 # Presentation state
 var game_over_time := 0.0
@@ -45,7 +48,6 @@ var dust_timer := 0.0
 var hit_stop := 0.0
 var was_rush := false
 var last_stage := 0
-var first_run := true
 
 # Layout (full bleed): the world fills the screen; the UI is laid out in a
 # 204-wide frame centred in the safe area, and edge controls move out by pad.
@@ -87,9 +89,7 @@ func _ready() -> void:
 	vignette.gradient.set_color(0, Color(0, 0, 0, 0))
 	vignette.gradient.set_color(1, Color(0, 0, 0, 0.45))
 	vignette.gradient.add_point(0.6, Color(0, 0, 0, 0))
-
-	# Prepared now, but only runs once the game screen is showing.
-	prepare_transition(Color.BLACK, 1.5)
+	coach.load_flags()
 
 
 func _add_view(painter: Callable) -> Node2D:
@@ -121,6 +121,7 @@ func _update_layout() -> void:
 	ui_view.position.x = safe_l + pad
 	pause_button.rect.position.x = 186 + pad
 	sound_button.rect.position = Vector2(184 + pad, 116 - safe_b)
+	cues_button.rect.position = Vector2(164 + pad, 116 - safe_b)
 
 
 ## The whole screen in the given layer's coordinates (with a margin for shake).
@@ -138,10 +139,11 @@ func _physics_process(delta: float) -> void:
 				_set_screen(Screen.MENU)
 		Screen.MENU:
 			backdrop.update(delta, 0, 0)
+			cues_flash += delta
 		Screen.GAME:
 			if not paused:
 				_update_game(delta)
-	world_view.position = fx.shake_offset()
+	world_view.position = Vector2.ZERO if coach.reduce_motion else fx.shake_offset()
 	world_view.queue_redraw()
 	ui_view.queue_redraw()
 
@@ -159,6 +161,8 @@ func _update_game(delta: float) -> void:
 		if boss_phase == Boss.Phase.CHASE and world.scroller.boss.phase == Boss.Phase.DROP:
 			Assets.play_sound("boss_fall", 0.5)
 		_update_knight_swords()
+		if world.state == GameWorld.State.RUNNING and coach.update(delta, world):
+			_buzz(25)  # a spared enemy walked past: the missed arc is drawn
 		if running and was_jumping and not h.jumped and h.alive:
 			hero_scale = Vector2(1.25, 0.78)
 			fx.dust(_feet(), 5, 14)
@@ -211,7 +215,7 @@ func _ambient_effects(delta: float) -> void:
 
 ## Bullet time while the slow-mo power-up lasts (the rules see less game time).
 func _apply_slowmo(running: bool) -> void:
-	var slow := running and not paused and world.slowmo_time > 0
+	var slow := running and not paused and (world.slowmo_time > 0 or coach.slow(world))
 	var target := 0.55 if slow else 1.0
 	if not is_equal_approx(Engine.time_scale, target):
 		Engine.time_scale = target
@@ -234,6 +238,10 @@ func _on_stomp(enemy: Enemy, points: int, combo: int) -> void:
 	hit_stop = 0.05
 	hero_scale = Vector2(1.2, 0.85)
 	_buzz(15)
+	if coach.on_stomp(enemy):
+		hit_stop = 0.12  # the first stomp holds for a beat while its arc is drawn
+		_buzz(25)
+		Assets.play_sound("combo", 0.35, 1.3)
 	if combo >= 2:
 		Assets.play_sound("combo", 0.35, 1.0 + 0.12 * mini(combo, 6))
 		fx.popup("COMBO x%d" % mini(combo, GameWorld.MAX_COMBO_MULTIPLIER), enemy.circle_center + Vector2(0, -14), Ui.GOLD, 1.2)
@@ -316,12 +324,19 @@ func show_rate_prompt(_value: bool) -> void:
 	pass  # the store listing is gone, so the "rate me" bubble is retired
 
 
+## The title sits on the live stage, so the tap that dismisses it is the
+## first step of the run: no ready card, no fade to black.
 func _start_run() -> void:
 	world.enter_ready()
 	_reset_presentation()
-	prepare_transition(Color.BLACK, 1.5 if first_run else 0.8)
-	first_run = false
 	_set_screen(Screen.GAME)
+	_go()
+
+
+func _go() -> void:
+	coach.start_run()
+	world.start()
+	world.hero.on_click()
 
 
 func _restart() -> void:
@@ -329,6 +344,7 @@ func _restart() -> void:
 	Assets.set_music_pitch(1.0)
 	world.restart()
 	_reset_presentation()
+	_go()
 
 
 func _to_menu() -> void:
@@ -403,6 +419,7 @@ func _touch_down(p: Vector2) -> void:
 	match screen:
 		Screen.MENU:
 			sound_button.touch_down(p)
+			cues_button.touch_down(p)
 		Screen.GAME:
 			if paused:
 				for b in [resume_button, restart_button, pause_menu_button]:
@@ -422,6 +439,10 @@ func _touch_up(p: Vector2) -> void:
 		Screen.MENU:
 			if sound_button.touch_up(p):
 				Assets.set_muted(not Assets.muted)
+			elif cues_button.touch_up(p):
+				coach.replay()
+				cues_flash = 0.0
+				_buzz(15)
 			else:
 				_start_run()
 			return
@@ -462,6 +483,9 @@ func _hero_click() -> void:
 	elif h.double_jumped and not doubled:
 		hero_scale = Vector2(0.85, 1.2)
 		fx.air_jump(_feet())
+		if coach.on_double(h):
+			_buzz(25)
+			Assets.play_sound("combo", 0.35, 1.45)
 
 
 # ---------------------------------------------------------------- world layer
@@ -498,21 +522,26 @@ func _draw_splash(ci: CanvasItem) -> void:
 	ci.draw_texture_rect(Assets.title_texture, Rect2((view_w - w) / 2, (HEIGHT - h) / 2, w, h), false, Color(1, 1, 1, a))
 
 
+## The title over the live stage 1: the hero idles where the run starts,
+## the clouds drift, and the whole screen is the start button.
 func _draw_menu(ci: CanvasItem) -> void:
 	var t := screen_time
-	var bg_h := view_w * HEIGHT / WIDTH  # cover: the 3:2 art fills the width
-	_hires(ci, Assets.background_menu_anim.key_frame(t), Rect2(0, (HEIGHT - bg_h) / 2, view_w, bg_h))
+	backdrop.draw(ci, world.scroller.bg_front.position.x)
+	_draw_shadows(ci)
+	_draw_hero(ci, t)
 	ci.draw_set_transform(Vector2(ui_view.position.x, 0))
-	var bob := sin(t * 2.2) * 1.5
-	var tw := 350 / 3.0
-	var th := tw * Assets.title_texture.get_height() / Assets.title_texture.get_width()
-	ci.draw_texture_rect(Assets.title_texture, Rect2(250 / 3.0, bob - 4, tw, th), false)
-	_hires(ci, Assets.still_anim.key_frame(t), Rect2(-110 / 3.0, -10 / 3.0, 280 / 1.8, 300 / 1.8))
-	var pulse := 1.0 + sin(t * 5) * 0.04
-	var r := Rect2(100 / 3.0, 100, 374 / 3.0, 60 / 3.0)
+	_draw_title(ci, 1.0, 0.0 if coach.reduce_motion else sin(t * 2.2) * 1.5)
+	var pulse := 1.0 if coach.reduce_motion else 1.0 + sin(t * 5) * 0.04
+	var r := Rect2(WIDTH / 2 - 52, 72, 104, 104 * 60 / 374.0)
 	r = Rect2(r.get_center() - r.size * pulse / 2, r.size * pulse)
 	_hires(ci, Assets.start_instruction_anim.frames[0], r)
 	ci.draw_set_transform(Vector2.ZERO)
+
+
+func _draw_title(ci: CanvasItem, alpha: float, bob: float) -> void:
+	var tw := 112.0
+	var th := tw * Assets.title_texture.get_height() / Assets.title_texture.get_width()
+	ci.draw_texture_rect(Assets.title_texture, Rect2(WIDTH / 2 - tw / 2 + 8, 4 + bob, tw, th), false, Color(1, 1, 1, alpha))
 
 
 func _draw_game_world(ci: CanvasItem) -> void:
@@ -525,6 +554,8 @@ func _draw_game_world(ci: CanvasItem) -> void:
 		_draw_enemy(ci, t, e)
 	_draw_powerup(ci, t)
 	_draw_hero(ci, t)
+	if world.state == GameWorld.State.RUNNING:
+		coach.draw(ci, world)
 	fx.draw(ci)
 	fx.draw_popups(ci)
 	if world.slowmo_time > 0 and world.state == GameWorld.State.RUNNING:
@@ -656,9 +687,9 @@ func _draw_ui(ci: CanvasItem) -> void:
 		return
 
 	match world.state:
-		GameWorld.State.READY:
-			_draw_tutorial(ci)
 		GameWorld.State.RUNNING:
+			if screen_time < 0.45:  # the title lifts off as the run begins
+				_draw_title(ci, 1.0 - screen_time / 0.45, -screen_time * 30)
 			_draw_hud(ci)
 			pause_button.draw(ci)
 		_:
@@ -680,21 +711,13 @@ func _draw_menu_ui(ci: CanvasItem) -> void:
 		Ui.text(ci, label, Vector2(9 - pad, 6.6), 5.5)
 	sound_button.icon = Ui.Icon.SOUND_OFF if Assets.muted else Ui.Icon.SOUND_ON
 	sound_button.draw(ci)
-
-
-func _draw_tutorial(ci: CanvasItem) -> void:
-	var card := Rect2(44, 8, 148, 82)
-	Ui.panel(ci, card, Color(1, 0.98, 0.93, 0.94), 6)
-	Ui.text(ci, "HOW TO PLAY", Vector2(card.get_center().x, 12), 7.5, Ui.RED, HORIZONTAL_ALIGNMENT_CENTER)
-	var rows := ["Tap to jump, tap again to double jump", "Stomp enemies; chain stomps for combos", "Grab orbs for power-ups", "Don't let a Summoner escape..."]
-	for i in rows.size():
-		var y := 29.0 + i * 14.5
-		ci.draw_circle(Vector2(card.position.x + 11, y + 3.4), 4.6, Ui.INK)
-		ci.draw_circle(Vector2(card.position.x + 11, y + 3.4), 3.8, Ui.RED)
-		Ui.text(ci, str(i + 1), Vector2(card.position.x + 11, y + 0.9), 4.2, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, Color(0, 0, 0, 0))
-		Ui.text(ci, rows[i], Vector2(card.position.x + 19, y), 5.2)
-	var a := 0.55 + 0.45 * sin(screen_time * 5)
-	Ui.text(ci, "Tap anywhere to start", Vector2(118, 95), 6.5, Color(1, 1, 1, a), HORIZONTAL_ALIGNMENT_CENTER, Color(Ui.INK, a), 0.2)
+	cues_button.draw(ci)
+	if cues_flash < 1.0:  # lessons reset: a tick on the button
+		var p := cues_button.rect.get_center() + Vector2(0, -12)
+		var a := 1.0 - maxf(0, cues_flash - 0.6) / 0.4
+		ci.draw_circle(p, 5.5, Color(Ui.INK, a))
+		ci.draw_circle(p, 4.7, Color(Ui.GOLD, a))
+		ci.draw_polyline(PackedVector2Array([p + Vector2(-2.4, 0), p + Vector2(-0.6, 1.9), p + Vector2(2.6, -1.9)]), Color(Ui.INK, a), 1.2)
 
 
 ## Calm HUD: score (large, top centre, outlined, no card) and metres under it.

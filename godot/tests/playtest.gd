@@ -78,14 +78,14 @@ func _run() -> void:
 	await _click(main.sound_button.rect.get_center() + main.ui_view.position)
 	_check(Assets.muted == muted, "sound button toggles back")
 
+	# Lessons replay from the title's "?" button.
+	await _click(main.cues_button.rect.get_center() + main.ui_view.position)
+	_check(not main.coach.jump_taught and not main.coach.double_taught and Assets.get_pref("taughtJump") == 0, "? button replays the lessons")
 	await _click(Vector2(100, 60))
-	_check(main.screen == main.Screen.GAME and w.state == GameWorld.State.READY, "tap on menu -> ready")
-	await _wait(1.6)
-	await _shot("03_tutorial")
+	_check(main.screen == main.Screen.GAME and w.state == GameWorld.State.RUNNING, "tap on title -> running (no ready card)")
+	await _teaching()
 
 	w.invincible = true  # random enemies must not end the scripted steps early
-	await _click(Vector2(100, 60))
-	_check(w.state == GameWorld.State.RUNNING, "tap -> running")
 	await _click(Vector2(100, 60))
 	_check(w.hero.jumped, "tap -> jump")
 	await _wait(0.12)
@@ -150,8 +150,8 @@ func _run() -> void:
 	_check(Assets.get_pref("highScore") >= w.total_score, "high score saved")
 
 	await _click(main.replay_button.rect.get_center() + main.ui_view.position)
-	_check(w.state == GameWorld.State.READY, "replay button -> ready")
-	_check(w.score == 0 and w.distance == 0 and w.hero.alive, "state reset on replay")
+	_check(w.state == GameWorld.State.RUNNING, "replay button -> running")
+	_check(w.score == 0 and w.distance < 30 and w.hero.alive, "state reset on replay (run restarts at once)")
 	_check(main.backdrop.stage == 0, "back to first stage")
 	var visible := 0
 	for e in w.scroller.enemies:
@@ -159,12 +159,58 @@ func _run() -> void:
 			visible += 1
 	_check(visible == 3, "three enemies active after restart")
 
-	await _click(Vector2(100, 60))
 	await _click(main.pause_button.rect.get_center() + main.ui_view.position)
 	await _click(main.pause_menu_button.rect.get_center() + main.ui_view.position)
 	_check(main.screen == main.Screen.MENU and w.state == GameWorld.State.MENU, "pause -> menu returns to title")
 	await _wait(0.3)
 	await _shot("12_menu_with_best")
+
+
+## W5: the run teaches itself. The first enemy slows the world and walks past
+## harmlessly with a miss drawn; the first stomp is the jump lesson; a tap at
+## the top of a jump is the double-jump lesson. Nothing waits for the player.
+func _teaching() -> void:
+	var w: GameWorld = main.world
+	var c: Coach = main.coach
+	var t := 0.0
+	while not c.slow(w) and t < 8.0:
+		await _wait(0.05)
+		t += 0.05
+	_check(c.slow(w) and Engine.time_scale < 0.6, "first enemy slows the world (%.2f)" % Engine.time_scale)
+	_check(c.jump_cue(w), "ring cue on the hero before the first enemy")
+	await _shot("03_jump_cue")
+	t = 0.0
+	while c.spared == 0 and t < 10.0:
+		await _wait(0.05)
+		t += 0.05
+	_check(c.spared == 1 and w.hero.alive and w.state == GameWorld.State.RUNNING, "untapped enemy walks past harmlessly")
+	_check(c.miss_time < 0.3, "the miss is drawn")
+	await _wait(0.15)
+	await _shot("03b_missed")
+	w.invincible = true
+	t = 0.0
+	while not c.jump_taught and t < 20.0:
+		_autoplay()
+		await _wait(0.03)
+		t += 0.03
+	_check(c.jump_taught and Assets.get_pref("taughtJump") == 1, "first stomp teaches the jump (saved)")
+	_check(c.arc_time < 0.2 and c.shown_arc.size() > 2, "first stomp draws its arc")
+	await _shot("03c_first_stomp")
+	t = 0.0
+	while not c.double_cue(w) and t < 15.0:
+		if not w.hero.jumped and c.arc_time > 1.0:
+			main._touch_down(Vector2(-1, -1))
+			main._touch_up(Vector2(-1, -1))
+		await _wait(0.03)
+		t += 0.03
+	_check(c.double_cue(w), "double-jump ring at the top of a jump")
+	await _shot("03d_double_cue")
+	main._touch_down(Vector2(-1, -1))
+	main._touch_up(Vector2(-1, -1))
+	_check(c.double_taught and Assets.get_pref("taughtDouble") == 1, "first double jump taught (saved)")
+	_check(not c.slow(w) and not c.jump_cue(w), "no jump cue once learned")
+	await _wait(1.5)
+	w.invincible = false
 
 
 func _play_for(seconds: float, until := func(): return false) -> float:
