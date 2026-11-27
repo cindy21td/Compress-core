@@ -6,7 +6,7 @@ Status: version 1.2 (iOS) created in App Store Connect on 2026-11-26 via the API
 - **Name:** Run Hero Run! (unchanged)
 - **Subtitle (30):** Stomp Knights, Outrun a Dragon
 - **Promotional text:** Ten years later, the hero runs again: rebuilt for today's iPhones, with the dragon boss that was cut in 2015.
-- **Keywords (no Astro check yet):** runner,endless,jump,stomp,knight,wizard,dragon,boss,ninja,arcade,retro,one tap,offline,platformer
+- **Keywords (Astro 2026-11-27, pushed to 1.2):** runner,endless,jump,quest,medieval,wizard,8bit,boss,ninja,arcade,retro,one tap,offline,platformer (97/100). stomp, knight, dragon moved to the subtitle; freed space: quest (pop 58 / diff 47), medieval (43/54), 8bit (30/39). Passed on castle (59/70), pixel (60/81), dungeon (47/51).
 - **Description:**
   ```
   One tap to jump, two to leap higher. Land on a knight or a wizard and they're gone; touch one any other way and the run is over.
