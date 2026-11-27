@@ -44,6 +44,8 @@ const RUSH_DURATION := 60
 var state := State.MENU
 var harmless := false  # set by the Coach: enemies walk past until the first stomp
 var learning := false  # set by the Coach until the jump is learned: no rush, no Devourer
+var knights_only := false  # set by the Coach: knights only until both jumps are learned
+var one_wizard := false  # set by the Coach: one wizard at a time until the fire is learned
 var fire_harmless := false  # set by the Coach: the first wizard can't kill yet
 var wizard_spared := false  # its fireball (or body) went through the hero while harmless
 var hero := Hero.new(30, 104, 25, 25)
@@ -80,6 +82,8 @@ func _update_running(delta: float) -> void:
 	scroller.pig_unlocked = get_distance() >= PIG_UNLOCK_DISTANCE
 	scroller.magnet = magnet_time > 0
 	scroller.calm = learning
+	scroller.knights_only = knights_only
+	scroller.one_wizard = one_wizard
 
 	var was_jumping := hero.jumped
 	hero.update(delta)

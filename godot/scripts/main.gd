@@ -579,7 +579,7 @@ func _draw_menu(ci: CanvasItem) -> void:
 	_draw_shadows(ci)
 	_draw_hero(ci, t)
 	ci.draw_set_transform(Vector2(ui_view.position.x, 0))
-	_draw_title(ci, 1.0, 0.0 if coach.reduce_motion else sin(t * 2.2) * 1.5)
+	_draw_title(ci, 1.0, 0.0 if coach.reduce_motion else sin(t * 2.2) * 1.5, Vector2(ui_view.position.x, 0))
 	var pulse := 1.0 if coach.reduce_motion else 1.0 + sin(t * 5) * 0.04
 	var label := String(TranslationServer.translate("TAP TO START"))
 	var sz := 9.0 * pulse
@@ -591,7 +591,8 @@ func _draw_menu(ci: CanvasItem) -> void:
 	ci.draw_set_transform(Vector2.ZERO)
 
 
-func _draw_title(ci: CanvasItem, alpha: float, bob: float) -> void:
+## `off` is the transform the caller drew with (Ui.text replaces it, so it is restored).
+func _draw_title(ci: CanvasItem, alpha: float, bob: float, off := Vector2.ZERO) -> void:
 	# Larger, with a dark offset copy behind it so it holds on the bright sky.
 	var tw := 128.0
 	var th := tw * Assets.title_texture.get_height() / Assets.title_texture.get_width()
@@ -607,9 +608,9 @@ func _draw_title(ci: CanvasItem, alpha: float, bob: float) -> void:
 	# stencil of each sits on its scrawl so the name reads at a glance.
 	var k := tw / Assets.title_texture.get_width()
 	for word in [[Vector2(100, 92), 13.0], [Vector2(474, 270), 14.0]]:
-		Ui.text(ci, "RUN", r.position + word[0] * k, word[1], Color(1, 1, 1, alpha),
+		Ui.text(ci, "RUN", off + r.position + word[0] * k, word[1], Color(1, 1, 1, alpha),
 			HORIZONTAL_ALIGNMENT_CENTER, Color(Ui.INK, alpha), 0.32)
-	ci.draw_set_transform(Vector2.ZERO)
+	ci.draw_set_transform(off)
 
 
 func _draw_game_world(ci: CanvasItem) -> void:
@@ -875,6 +876,8 @@ func _draw_hud(ci: CanvasItem) -> void:
 		var lw := (Ui.text_width(lesson, 7.5) + 14) * k
 		var boss_bar := world.scroller.boss.phase in [Boss.Phase.CHASE, Boss.Phase.DROP]
 		var ly := 42.0 if boss_bar else 31.0
+		if coach.high_powerup and not boss_bar:
+			ly = 23.0  # stays clear of the double-jump pickup floating below it
 		var lr := Rect2(cx - lw / 2, ly + 7 * (1 - k), lw, 14 * k)
 		Ui.panel(ci, lr, Color(Ui.INK, pa), 7 * k, 0, 0)
 		Ui.text(ci, lesson, Vector2(cx, lr.position.y + 2.6 * k), 7.5 * k, Color(1, 1, 1, pa), HORIZONTAL_ALIGNMENT_CENTER, Color(0, 0, 0, 0))

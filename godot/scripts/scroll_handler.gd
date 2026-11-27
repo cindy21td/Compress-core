@@ -24,8 +24,10 @@ var bg_back: Background
 
 var boss := Boss.new()
 var boss_cooldown := 0.0  # seconds before another boss can be summoned
-var calm := false  # first lesson still running: knights only, no Devourer
-var owed := 0  # spawns skipped while calm (no knight free), paid back after
+var calm := false  # first lesson still running: no Devourer
+var knights_only := false  # set by the Coach until the jump and double jump are learned
+var one_wizard := false  # set by the Coach until the fire is learned: wizards come one at a time
+var owed := 0  # spawns skipped (nothing allowed was free), paid back after
 var powerup := PowerUp.new()
 var powerup_timer := 12.0
 var pig_unlocked := false
@@ -63,8 +65,10 @@ func show_random_enemy() -> void:
 	var pool := hidden
 	if not pig_unlocked:
 		pool = hidden.filter(func(e): return e != pig)
-	if calm:  # the first lesson meets one kind of enemy: the knight
+	if knights_only:  # the first lessons meet one kind of enemy: the knight
 		pool = pool.filter(func(e): return e.type == Enemy.Type.KNIGHT)
+	elif one_wizard and wizards.any(func(w): return w.is_visible):
+		pool = pool.filter(func(e): return e.type != Enemy.Type.WIZARD)
 	if pool.is_empty():
 		owed += 1
 		return
@@ -85,8 +89,8 @@ func update(delta: float) -> void:
 	boss_hits.clear()
 	boss_landed = false
 
-	if calm:
-		# Wizards and the ghost wait until the jump is learned (no fire yet).
+	if knights_only:
+		# Wizards and the ghost wait until both jumps are learned (no fire yet).
 		for e in enemies:
 			if e.is_visible and e.type != Enemy.Type.KNIGHT:
 				e.reset_enemy(0 if e.type == Enemy.Type.WIZARD else (-10 if e.type == Enemy.Type.SUMMONER else ran_vel_x()), true)

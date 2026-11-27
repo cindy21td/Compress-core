@@ -117,6 +117,8 @@ func update(delta: float, world: GameWorld) -> bool:
 		arc.clear()
 	world.harmless = not jump_taught and spared < MAX_SPARED
 	world.learning = not jump_taught
+	world.knights_only = not jump_taught or not double_taught
+	world.one_wizard = not fire_taught
 	world.fire_harmless = fire_wizard(world) != null
 	_update_fire(world)
 	if double_cue(world):
@@ -236,7 +238,7 @@ func slow(world: GameWorld) -> bool:
 
 ## While the double jump is being taught, a pickup floats up where one jump
 ## can't reach: the second tap has something to go for.
-const HIGH_PICKUP_Y := 34.0
+const HIGH_PICKUP_Y := 41.0  # centre ~47: one jump tops out ~59, two reach ~16
 func _update_high_powerup(world: GameWorld) -> void:
 	var p := world.scroller.powerup
 	if not jump_taught or double_taught or world.state != GameWorld.State.RUNNING:

@@ -226,13 +226,15 @@ func _teaching() -> void:
 	await _shot("03c_first_stomp")
 	t = 0.0
 	while not c.double_cue(w) and t < 15.0:
+		_check_knights_only(w)
 		if not w.hero.jumped and c.arc_time > 1.0:
 			main._touch_down(Vector2(-1, -1))
 			main._touch_up(Vector2(-1, -1))
 		await _wait(0.03)
 		t += 0.03
 	_check(c.double_cue(w), "double-jump ring at the top of a jump")
-	_check(c.high_powerup and w.scroller.powerup.is_visible and w.scroller.powerup.position.y < 40,
+	_check(knights_only, "still knights only while the double jump is taught")
+	_check(c.high_powerup and w.scroller.powerup.is_visible and w.scroller.powerup.position.y < 45,
 		"a pickup floats out of one jump's reach while the double jump is taught (y %.0f)" % w.scroller.powerup.position.y)
 	_check(c.slow(w), "the double-jump demo runs slowed")
 	_check(c.line == "Watch: double jump" and not c.double_demoed, "the first cue only demonstrates, labelled (%s)" % c.line)
