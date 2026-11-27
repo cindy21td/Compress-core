@@ -26,6 +26,7 @@ const SLOWMO_TIME := 4.5
 const DOUBLE_TIME := 8.0
 const MAGNET_TIME := 8.0
 const SHIELD_GRACE := 1.2
+const MIN_HIGH_SCORE := 10  # below this a run is too short to call a best
 
 var combo := 0  # stomps since last touching the ground
 var best_combo := 0
@@ -131,7 +132,8 @@ func _update_running(delta: float) -> void:
 			Assets.set_pref("rateValue", rate_val + 1)
 
 		total_score = floori(distance / 200.0) + score
-		if total_score > Assets.get_pref("highScore"):
+		# No stamp for a run that never really started (no stomp, or a few points).
+		if total_score >= MIN_HIGH_SCORE and score > 0 and total_score > Assets.get_pref("highScore"):
 			Assets.set_pref("highScore", total_score)
 			state = State.HIGHSCORE
 

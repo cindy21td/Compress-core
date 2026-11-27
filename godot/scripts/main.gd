@@ -44,6 +44,7 @@ var shown_score := 0
 var banner_text := ""
 var banner_time := 99.0
 var banner_color := Ui.PAPER
+var pending_banner: Array = []  # [text, color, age]: waits while a lesson line is up
 var hero_scale := Vector2.ONE
 var dust_timer := 0.0
 var hit_stop := 0.0
@@ -163,7 +164,8 @@ func _update_game(delta: float) -> void:
 	else:
 		var was_jumping := h.jumped
 		var boss_phase := world.scroller.boss.phase
-		world.update(delta)
+		if not (running and coach.waiting(world)):  # the first cue holds for the first tap
+			world.update(delta)
 		if boss_phase == Boss.Phase.CHASE and world.scroller.boss.phase == Boss.Phase.DROP:
 			Assets.play_sound("boss_fall", 0.5)
 		_update_knight_swords()
@@ -179,7 +181,7 @@ func _update_game(delta: float) -> void:
 	running = world.state == GameWorld.State.RUNNING
 	_tick_first_sight(delta)
 	_apply_slowmo(running)
-	var ground_speed := -world.scroller.bg_front.velocity.x if running and hit_stop <= 0 else 0.0
+	var ground_speed := -world.scroller.bg_front.velocity.x if running and hit_stop <= 0 and not coach.waiting(world) else 0.0
 	backdrop.update(delta, ground_speed, world.get_distance())
 	hero_scale = hero_scale.lerp(Vector2.ONE, minf(delta * 12, 1))
 
@@ -200,6 +202,12 @@ func _update_game(delta: float) -> void:
 	score_pop += delta
 	flinch_time += delta
 	banner_time += delta
+	if not pending_banner.is_empty():
+		pending_banner[2] += delta
+		if pending_banner[2] > 3.0 or not running:
+			pending_banner = []  # stale: dropped
+		elif coach.lesson_text() == "" and coach.line_alpha <= 0.0:
+			_show_banner(pending_banner[0], pending_banner[1])
 	if world.is_game_over():
 		game_over_time += delta
 	if transition_alpha > 0:
@@ -307,6 +315,7 @@ func _on_shield_broken() -> void:
 
 func _on_death() -> void:
 	banner_time = 99.0  # no banners over the score screen
+	pending_banner = []
 	killer_rect = Rect2()
 	killer_name = ""
 	killer_hint = ""
@@ -334,6 +343,11 @@ func _on_death() -> void:
 
 
 func _show_banner(text: String, color: Color) -> void:
+	# One message at a time: a banner never shares the screen with a lesson line.
+	if coach.lesson_text() != "":
+		pending_banner = [text, color, 0.0]
+		return
+	pending_banner = []
 	banner_text = text
 	banner_color = color
 	banner_time = 0.0
@@ -589,6 +603,13 @@ func _draw_title(ci: CanvasItem, alpha: float, bob: float) -> void:
 		var o := Vector2.from_angle(TAU * i / 12.0) * 1.1
 		ci.draw_texture_rect(Assets.title_texture, Rect2(r.position + o, r.size), false, Color(Ui.INK, 0.9 * alpha))
 	ci.draw_texture_rect(Assets.title_texture, r, false, Color(1, 1, 1, alpha))
+	# The two RUN words are scrawled art that blurs at phone size: a clean
+	# stencil of each sits on its scrawl so the name reads at a glance.
+	var k := tw / Assets.title_texture.get_width()
+	for word in [[Vector2(100, 92), 13.0], [Vector2(474, 270), 14.0]]:
+		Ui.text(ci, "RUN", r.position + word[0] * k, word[1], Color(1, 1, 1, alpha),
+			HORIZONTAL_ALIGNMENT_CENTER, Color(Ui.INK, alpha), 0.32)
+	ci.draw_set_transform(Vector2.ZERO)
 
 
 func _draw_game_world(ci: CanvasItem) -> void:
@@ -847,15 +868,13 @@ func _draw_hud(ci: CanvasItem) -> void:
 
 	# The lesson line: one short instruction on a dark pill, first lessons only.
 	var lesson := coach.lesson_text()
-	if lesson != "":
+	if lesson != "" and banner_time >= 1.6:  # a banner is up: the line waits
 		var la := coach.line_alpha
 		var k := Ui.ease_out_quad(la)  # size; contrast stays full until the very end
 		var pa := clampf(la * 4.0, 0, 1)
 		var lw := (Ui.text_width(lesson, 7.5) + 14) * k
 		var boss_bar := world.scroller.boss.phase in [Boss.Phase.CHASE, Boss.Phase.DROP]
 		var ly := 42.0 if boss_bar else 31.0
-		if banner_time < 1.6:  # a banner is up: the line drops below it
-			ly = 60.0
 		var lr := Rect2(cx - lw / 2, ly + 7 * (1 - k), lw, 14 * k)
 		Ui.panel(ci, lr, Color(Ui.INK, pa), 7 * k, 0, 0)
 		Ui.text(ci, lesson, Vector2(cx, lr.position.y + 2.6 * k), 7.5 * k, Color(1, 1, 1, pa), HORIZONTAL_ALIGNMENT_CENTER, Color(0, 0, 0, 0))

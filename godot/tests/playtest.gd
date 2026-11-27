@@ -172,7 +172,19 @@ func _run() -> void:
 
 ## W5: the run teaches itself. The first enemy slows the world and walks past
 ## harmlessly with a miss drawn; the first stomp is the jump lesson; a tap at
-## the top of a jump is the double-jump lesson. Nothing waits for the player.
+## the top of a jump is the double-jump lesson. The first cue waits for the first tap.
+var knights_only := true
+
+
+func _check_knights_only(w: GameWorld) -> void:
+	for e in w.scroller.enemies:
+		if e.is_visible and e.type != Enemy.Type.KNIGHT:
+			knights_only = false
+		for p in e.get_projectiles():
+			if p.is_visible:
+				knights_only = false
+
+
 func _teaching() -> void:
 	var w: GameWorld = main.world
 	var c: Coach = main.coach
@@ -183,21 +195,26 @@ func _teaching() -> void:
 	_check(c.slow(w) and Engine.time_scale < 0.6, "first enemy slows the world (%.2f)" % Engine.time_scale)
 	_check(c.jump_cue(w), "ring cue on the hero before the first enemy")
 	await _shot("03_jump_cue")
+	# The first cue waits: the world holds with the knight just ahead until the first tap.
 	t = 0.0
-	while c.spared == 0 and t < 10.0:
+	while not c.waiting(w) and t < 10.0:
+		_check_knights_only(w)
 		await _wait(0.05)
 		t += 0.05
-	_check(c.spared == 1 and w.hero.alive and w.state == GameWorld.State.RUNNING, "untapped enemy walks past harmlessly")
-	_check(c.miss_time < 0.3, "the miss is drawn")
-	_check(c.miss_word == "Tap sooner", "the miss says why (%s)" % c.miss_word)
-	_check(c.line.begins_with("Tap to jump") and c.lesson_text() == "", "Tap to jump stays the lesson; it steps aside while the miss speaks")
-	await _wait(0.15)
-	await _shot("03b_missed")
-	var back := 0.0
-	while c.lesson_text() == "" and back < 3.0:
-		await _wait(0.05)
-		back += 0.05
-	_check(c.lesson_text() != "" and c.line.begins_with("Tap to jump") and c.miss_time < 1.2, "the lesson line is back within a second (%s, %.2f s)" % [c.lesson_text(), c.miss_time])
+	_check(c.waiting(w), "the first knight waits for the first tap")
+	var d0 := w.distance
+	await _wait(1.0)
+	_check(c.waiting(w) and w.distance == d0 and w.hero.alive, "the world holds until the tap (%d -> %d)" % [d0, w.distance])
+	_check(c.lesson_text() == tr("Tap to jump on it"), "the hold says what to do (%s)" % c.lesson_text())
+	_check(knights_only, "only knights on screen during the first lesson")
+	await _shot("03b_waiting")
+	main._touch_down(Vector2(-1, -1))
+	main._touch_up(Vector2(-1, -1))
+	t = 0.0
+	while not c.jump_taught and t < 3.0:
+		await _wait(0.03)
+		t += 0.03
+	_check(c.jump_taught, "a tap at the hold lands on the knight")
 	w.invincible = true
 	t = 0.0
 	while not c.jump_taught and t < 20.0:
@@ -215,6 +232,8 @@ func _teaching() -> void:
 		await _wait(0.03)
 		t += 0.03
 	_check(c.double_cue(w), "double-jump ring at the top of a jump")
+	_check(c.high_powerup and w.scroller.powerup.is_visible and w.scroller.powerup.position.y < 40,
+		"a pickup floats out of one jump's reach while the double jump is taught (y %.0f)" % w.scroller.powerup.position.y)
 	_check(c.slow(w), "the double-jump demo runs slowed")
 	_check(c.line == "Watch: double jump" and not c.double_demoed, "the first cue only demonstrates, labelled (%s)" % c.line)
 	await _wait(0.12)

@@ -13,6 +13,10 @@ extends RefCounted
 const MAX_SPARED := 3
 const SLOW_WINDOW := 72.0  # px ahead of the hero where the world slows
 const CUE_WINDOW := 110.0  # px ahead where the ring starts
+# The first knight waits where a tap lands on it: the hero comes down onto an
+# enemy about STOMP_LEAD s after the tap, so the hold is speed-dependent.
+const STOMP_LEAD := 0.8
+const HOLD_OFFSET := 4.0
 const FLAGS := ["taughtJump", "taughtDouble", "taughtSummoner", "taughtFire"]
 
 var jump_taught := false
@@ -23,6 +27,8 @@ var fire_spared := 0
 var fire_passed: Projectile  # the last lesson fireball already judged
 var spared := 0
 var target: Enemy
+var tapped := false  # the player has jumped once this run (the first cue waits for it)
+var high_powerup := false  # the double-jump lesson's pickup, up where one jump can't reach
 var reduce_motion := false
 
 var t := 0.0
@@ -71,6 +77,8 @@ func start_run() -> void:
 	load_flags()
 	spared = 0
 	target = null
+	tapped = false
+	high_powerup = false
 	arc.clear()
 	shown_arc.clear()
 	arc_time = 99.0
@@ -102,6 +110,8 @@ func update(delta: float, world: GameWorld) -> bool:
 	tick_time += delta
 	var h := world.hero
 	if h.jumped:
+		tapped = true
+	if h.jumped:
 		arc.append(h.position + Vector2(16, 21))
 	elif not arc.is_empty():
 		arc.clear()
@@ -116,6 +126,7 @@ func update(delta: float, world: GameWorld) -> bool:
 			double_demoed = true  # the ghost has flown it once: next jump asks
 		double_cue_time = 0.0
 	_update_line(delta, world)
+	_update_high_powerup(world)
 
 	var s := world.scroller
 	# The first Summoner's mark goes once it leaves, stomped or escaped.
@@ -146,7 +157,7 @@ func update(delta: float, world: GameWorld) -> bool:
 		target_jumped = false
 		var best := INF
 		for e in s.enemies:
-			if e.is_visible and e.alive and e.type != Enemy.Type.SUMMONER and e.position.x > h.position.x + h.width:
+			if e.is_visible and e.alive and e.type in [Enemy.Type.KNIGHT, Enemy.Type.PIG] and e.position.x > h.position.x + h.width:
 				if e.position.x < best:
 					best = e.position.x
 					target = e
@@ -213,12 +224,37 @@ func _ahead(world: GameWorld) -> float:
 ## The world runs at half speed while the lesson's enemy closes in.
 func slow(world: GameWorld) -> bool:
 	var a := _ahead(world)
+	if waiting(world):
+		return true  # a fast knight can reach its hold point before the slow window
 	if not jump_taught and not world.hero.jumped and a > 0 and a < SLOW_WINDOW:
 		return true
 	var fb := fire_ball(world)
 	if fb and fb.is_moving and not world.hero.jumped and fb.position.x - world.hero.position.x < SLOW_WINDOW:
 		return true  # the first fireball closes in at half speed
 	return double_cue(world)  # the double-jump demo plays in slow motion too
+
+
+## While the double jump is being taught, a pickup floats up where one jump
+## can't reach: the second tap has something to go for.
+const HIGH_PICKUP_Y := 34.0
+func _update_high_powerup(world: GameWorld) -> void:
+	var p := world.scroller.powerup
+	if not jump_taught or double_taught or world.state != GameWorld.State.RUNNING:
+		high_powerup = false
+		return
+	if not p.is_visible:
+		p.spawn(PowerUp.Kind.DOUBLE)
+		p.position.y = HIGH_PICKUP_Y
+		high_powerup = true
+
+
+## The first cue of a run waits for the player: the world holds still with the
+## knight just ahead until the first tap.
+func waiting(world: GameWorld) -> bool:
+	if jump_taught or tapped or target == null or world.hero.jumped or not world.hero.alive:
+		return false
+	var a := _ahead(world)
+	return a > 0 and a <= HOLD_OFFSET - target.velocity.x * STOMP_LEAD
 
 
 func jump_cue(world: GameWorld) -> bool:

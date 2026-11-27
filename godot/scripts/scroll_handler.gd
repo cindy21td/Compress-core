@@ -24,7 +24,8 @@ var bg_back: Background
 
 var boss := Boss.new()
 var boss_cooldown := 0.0  # seconds before another boss can be summoned
-var calm := false  # first lesson still running: an escaped Summoner calls nothing
+var calm := false  # first lesson still running: knights only, no Devourer
+var owed := 0  # spawns skipped while calm (no knight free), paid back after
 var powerup := PowerUp.new()
 var powerup_timer := 12.0
 var pig_unlocked := false
@@ -62,6 +63,11 @@ func show_random_enemy() -> void:
 	var pool := hidden
 	if not pig_unlocked:
 		pool = hidden.filter(func(e): return e != pig)
+	if calm:  # the first lesson meets one kind of enemy: the knight
+		pool = pool.filter(func(e): return e.type == Enemy.Type.KNIGHT)
+	if pool.is_empty():
+		owed += 1
+		return
 	var e: Enemy = pool[randi_range(0, pool.size() - 1)]
 	hidden.erase(e)
 	e.set_is_visible(true)
@@ -78,6 +84,18 @@ func update(delta: float) -> void:
 	boss_summoned = false
 	boss_hits.clear()
 	boss_landed = false
+
+	if calm:
+		# Wizards and the ghost wait until the jump is learned (no fire yet).
+		for e in enemies:
+			if e.is_visible and e.type != Enemy.Type.KNIGHT:
+				e.reset_enemy(0 if e.type == Enemy.Type.WIZARD else (-10 if e.type == Enemy.Type.SUMMONER else ran_vel_x()), true)
+				hidden.append(e)
+				show_random_enemy()
+	else:
+		while owed > 0:
+			owed -= 1
+			show_random_enemy()
 
 	for e in enemies:
 		_update_enemy(delta, e)
@@ -149,6 +167,7 @@ func on_restart() -> void:
 	powerup.is_visible = false
 	powerup_timer = 12.0
 	magnet = false
+	owed = 0
 	hidden = enemies.duplicate()
 	for i in 3:
 		show_random_enemy()

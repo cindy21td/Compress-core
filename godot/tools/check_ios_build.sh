@@ -32,6 +32,12 @@ get "$PLIST" UISupportedInterfaceOrientations | grep -q LandscapeLeft || bad "La
 get "$PLIST" UISupportedInterfaceOrientations | grep -q LandscapeRight || bad "LandscapeRight missing"
 [ "$(get "$PLIST" CFBundleShortVersionString)" = "1.2" ] || bad "CFBundleShortVersionString is not 1.2"
 
+# Localisation folders must use Apple's language IDs (zh-Hans, pt-BR), not
+# Godot's locale codes, or the App Store doesn't list those languages.
+for d in "$APP"/*_*.lproj; do
+	[ -d "$d" ] && bad "$(basename "$d") is not an Apple language ID (run tools/fix_ios_lproj.sh)"
+done
+
 PRIV="$APP/PrivacyInfo.xcprivacy"
 if [ ! -f "$PRIV" ]; then
 	bad "no PrivacyInfo.xcprivacy in the app"
