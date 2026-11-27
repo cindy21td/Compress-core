@@ -6,7 +6,7 @@ Status: version 1.2 (iOS) created in App Store Connect on 2026-11-26 via the API
 - **Name:** Run Hero Run! (unchanged)
 - **Subtitle (30):** Stomp Knights, Outrun a Dragon
 - **Promotional text:** Ten years later, the hero runs again: rebuilt for today's iPhones, with the dragon boss that was cut in 2015.
-- **Keywords (Astro 2026-11-27, pushed to 1.2):** runner,endless,jump,quest,medieval,wizard,8bit,boss,ninja,arcade,retro,one tap,offline,platformer (97/100). stomp, knight, dragon moved to the subtitle; freed space: quest (pop 58 / diff 47), medieval (43/54), 8bit (30/39). Passed on castle (59/70), pixel (60/81), dungeon (47/51).
+- **Keywords (Astro 2026-11-27, pushed to 1.2):** runner,endless,jump,quest,medieval,wizard,8bit,boss,pixel,arcade,retro,one tap,offline,platformer (97/100). stomp, knight, dragon moved to the subtitle; freed space: quest (pop 58 / diff 47), medieval (43/54), 8bit (30/39). Passed on castle (59/70), pixel (60/81), dungeon (47/51). **2026-11-27 (growth plan):** `ninja` -> `pixel` in ASC (the game has no ninja), still 97/100.
 - **Description:**
   ```
   One tap to jump, two to leap higher. Land on a knight or a wizard and they're gone; touch one any other way and the run is over.
@@ -24,6 +24,29 @@ Status: version 1.2 (iOS) created in App Store Connect on 2026-11-26 via the API
 - **What's New (1.2):** Rebuilt for today's iPhones: full-screen play, a first run that teaches itself, the Devourer boss, combos, power-ups, a new enemy and four stages. No more ads.
 - **Category:** Games > Action (primary), Games > Arcade (secondary)
 - **Support / privacy:** https://curiouscrane.dev/runherorun/ and /privacy/ (pages not published yet; manual app-sites push of the new folder only)
+
+## Store fields (es-MX, added to 1.2 in ASC 2026-11-27, growth plan)
+For US indexing; no build needed. Screenshots fall back to en-US. Description, promo and What's New are a straight translation of en-US (no new claims).
+- **Name (27):** Run Hero Run: Corre y Salta
+- **Subtitle (29):** Salta, pisa y huye del dragón
+- **Keywords (92 bytes):** side,scroller,castle,sword,correr,juego,aventura,saltar,carrera,sin,internet,caballero,8 bit. Scores: side scroller 28/44, juego de correr 36/69, juegos de aventura 22/53, 8 bit 37/46.
+- **Promotional text:** Diez años después, el héroe vuelve a correr: reconstruido para los iPhone de hoy, con el jefe dragón que quedó fuera en 2015.
+- **Description:**
+  ```
+  Un toque para saltar, dos para saltar más alto. Cae sobre un caballero o un mago y desaparece; tócalo de cualquier otra forma y la carrera se acaba.
+
+  Tu primera carrera te enseña sola: un aro y unas pocas palabras te muestran cuándo saltar y dónde caer, cada fallo te dice por qué y un fantasma te muestra el doble salto antes de que lo intentes. Después, solo quedan tú y el camino.
+
+  Encadena pisotones sin tocar el suelo y gana hasta x4 puntos. Atrapa orbes para conseguir un escudo, cámara lenta, puntos dobles o un imán de almas. Si dejas escapar al fantasma gris, llama al Devorador: alimenta su mandíbula con las almas de los enemigos que pisas antes de que caiga sobre ti.
+
+  Recorre cuatro escenarios, del cielo abierto a las tierras del dragón, y supera tu mejor distancia.
+
+  • Reconstruido desde cero para los iPhone actuales, en pantalla completa y en horizontal
+  • El jefe Devorador, que quedó fuera del lanzamiento original, por fin está aquí
+  • Sin anuncios, sin cuentas, sin rastreo. Se juega sin conexión
+  ```
+- **What's New (1.2):** Reconstruido para los iPhone de hoy: juego en pantalla completa, una primera carrera que te enseña sola, el jefe Devorador, combos, potenciadores, un enemigo nuevo y cuatro escenarios. Ya sin anuncios.
+- **Support URL:** same as en-US (the 1.1 URL, until the new page is up).
 
 ## App Review notes
 ```
