@@ -1,0 +1,12 @@
+; The iOS App Store rating prompt (RatingAskIOS.request()). Called only from
+; res://scripts/rating_ask.gd. Source and build: res://native/rating_ask/.
+; ios.arm64 is the real StoreKit call; macos is a no-op stub so the editor and
+; the headless tests load the class cleanly (the only export preset is iOS).
+[configuration]
+entry_symbol = "rating_ask_init"
+compatibility_minimum = "4.7"
+reloadable = false
+
+[libraries]
+ios.arm64 = "res://addons/rating_ask/ios/RatingAsk.framework/RatingAsk"
+macos = "res://addons/rating_ask/macos/librating_ask_stub.dylib"
