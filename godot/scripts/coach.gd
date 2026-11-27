@@ -29,6 +29,10 @@ var spared := 0
 var target: Enemy
 var tapped := false  # the player has jumped once this run (the first cue waits for it)
 var high_powerup := false  # the double-jump lesson's pickup, up where one jump can't reach
+# A returning player (lessons saved) gets a short grace at the start of a run:
+# the first enemy walks through until the first tap, so no run ends at 0
+# points before the player has done anything.
+var opening_grace := false
 var reduce_motion := false
 
 var t := 0.0
@@ -75,6 +79,7 @@ func replay() -> void:
 
 func start_run() -> void:
 	load_flags()
+	opening_grace = jump_taught
 	spared = 0
 	target = null
 	tapped = false
@@ -111,11 +116,13 @@ func update(delta: float, world: GameWorld) -> bool:
 	var h := world.hero
 	if h.jumped:
 		tapped = true
+	if opening_grace and (h.jumped or _enemy_passed(world)):
+		opening_grace = false
 	if h.jumped:
 		arc.append(h.position + Vector2(16, 21))
 	elif not arc.is_empty():
 		arc.clear()
-	world.harmless = not jump_taught and spared < MAX_SPARED
+	world.harmless = (not jump_taught and spared < MAX_SPARED) or opening_grace
 	world.learning = not jump_taught
 	world.knights_only = not jump_taught or not double_taught
 	world.one_wizard = not fire_taught
@@ -164,6 +171,25 @@ func update(delta: float, world: GameWorld) -> bool:
 					best = e.position.x
 					target = e
 	return missed
+
+
+## True once an enemy has walked past the hero (ends the opening grace).
+func _enemy_passed(world: GameWorld) -> bool:
+	var hx := world.hero.position.x
+	for e in world.scroller.enemies:
+		if e.is_visible and e.alive and e.position.x + e.width < hx:
+			return true
+	return false
+
+
+## The nearest live enemy ahead of the hero, in px (INF when none).
+func _nearest_ahead(world: GameWorld) -> float:
+	var h := world.hero
+	var best := INF
+	for e in world.scroller.enemies:
+		if e.is_visible and e.alive and e.position.x > h.position.x + h.width:
+			best = minf(best, e.position.x - h.position.x)
+	return best
 
 
 ## The first wizard on screen after the jump is learned: its fireballs can't
@@ -238,7 +264,7 @@ func slow(world: GameWorld) -> bool:
 
 ## While the double jump is being taught, a pickup floats up where one jump
 ## can't reach: the second tap has something to go for.
-const HIGH_PICKUP_Y := 41.0  # centre ~47: one jump tops out ~59, two reach ~16
+const HIGH_PICKUP_Y := 48.0  # centre ~54, ring clear of the lesson pill (y 23-37); one jump's body tops out ~71 (reach 13), two reach ~16
 func _update_high_powerup(world: GameWorld) -> void:
 	var p := world.scroller.powerup
 	if not jump_taught or double_taught or world.state != GameWorld.State.RUNNING:
@@ -362,7 +388,7 @@ func _pulse(speed := 6.0) -> float:
 func draw(ci: CanvasItem, world: GameWorld) -> void:
 	var h := world.hero
 	var s := world.scroller
-	if jump_cue(world):
+	if jump_cue(world) or (opening_grace and h.alive and not h.jumped and _nearest_ahead(world) < CUE_WINDOW):
 		_ring(ci, h.body_center, 13.0)
 		_tap_glyph(ci, h.position + Vector2(16, -9), 1)
 	elif double_cue(world):
@@ -376,9 +402,9 @@ func draw(ci: CanvasItem, world: GameWorld) -> void:
 		var k := fmod(double_cue_time, DEMO_TIME + 0.15) / DEMO_TIME
 		if k <= 1.0:
 			var gi := int(round(k * (ghost_arc.size() - 1)))
-			var g := ghost_arc[gi] + Vector2(0, -9)
-			ci.draw_circle(g, 7.5, Color(Ui.INK, 0.45 * (1.0 - 0.5 * k)))
-			ci.draw_circle(g, 6.5, Color(1, 1, 1, 0.55 * (1.0 - 0.5 * k)))
+			# The hero's own echo flies it (a grey disc read as a ghost in the walk).
+			var g := ghost_arc[gi] + Vector2(-16, -21)
+			Assets.draw_sprite(ci, Assets.hero_jump, Rect2(g, Vector2(h.width, h.height)), Color(1, 1, 1, 0.6 * (1.0 - 0.4 * k)))
 	# One lesson at a time: while the jump is being taught, mark where to land.
 	if not jump_taught and target and target.is_visible and target.alive and (jump_cue(world) or h.jumped):
 		var top := target.circle_center - Vector2(0, target.circle_radius + 7 + 2 * _pulse(5))

@@ -150,6 +150,15 @@ func _run() -> void:
 	await _shot("10_game_over_anim")
 	await _wait(1.6)
 	await _shot("11_game_over")
+	if main.killer_rect.has_area():
+		var lw := 70.0
+		var px: float = main._killer_pill_x(lw) + main.ui_view.position.x
+		var kr := maxf(main.killer_rect.size.x, main.killer_rect.size.y) * 0.62 + 2
+		var kc: Vector2 = main.killer_rect.get_center()
+		var clear := px > kc.x + kr or px + lw < kc.x - kr
+		var hx := w.hero.position.x
+		clear = clear and (px > hx + w.hero.width or px + lw < hx)
+		_check(clear, "the killer's pill sits clear of the ring and the hero (pill x %.0f, ring %.0f, hero %.0f)" % [px, kc.x, hx])
 	_check(w.total_score == floori(w.distance / 200.0) + w.score, "total score formula")
 	_check(Assets.get_pref("highScore") >= w.total_score, "high score saved")
 
@@ -162,6 +171,7 @@ func _run() -> void:
 		if e.is_visible:
 			visible += 1
 	_check(visible == 3, "three enemies active after restart")
+	_check(main.coach.opening_grace and w.harmless, "a returning player's run opens with a grace until the first tap")
 
 	await _click(main.pause_button.rect.get_center() + main.ui_view.position)
 	await _click(main.pause_menu_button.rect.get_center() + main.ui_view.position)
@@ -207,13 +217,18 @@ func _teaching() -> void:
 	_check(c.waiting(w) and w.distance == d0 and w.hero.alive, "the world holds until the tap (%d -> %d)" % [d0, w.distance])
 	_check(c.lesson_text() == tr("Tap to jump on it"), "the hold says what to do (%s)" % c.lesson_text())
 	_check(knights_only, "only knights on screen during the first lesson")
+	var ring_edge := w.hero.body_center.x + 13.0 + 2.0 + 1.6
+	_check(c.target != null and c.target.position.x > ring_edge + 2, "the waiting knight stands clear of the hero's ring (%.0f > %.0f)" % [c.target.position.x if c.target else 0.0, ring_edge])
 	await _shot("03b_waiting")
 	main._touch_down(Vector2(-1, -1))
 	main._touch_up(Vector2(-1, -1))
-	t = 0.0
-	while not c.jump_taught and t < 3.0:
-		await _wait(0.03)
-		t += 0.03
+	# Poll every frame, so the arc check below sees the first frame after the
+	# stomp (a 2868-wide windowed run renders slowly; a timer step could skip
+	# past the arc's 0.9 s of game time).
+	var t_ms := Time.get_ticks_msec()
+	while not c.jump_taught and Time.get_ticks_msec() - t_ms < 3000 / Engine.time_scale:
+		await get_tree().process_frame
+	var arc_seen := c.arc_time
 	_check(c.jump_taught, "a tap at the hold lands on the knight")
 	w.invincible = true
 	t = 0.0
@@ -222,7 +237,7 @@ func _teaching() -> void:
 		await _wait(0.03)
 		t += 0.03
 	_check(c.jump_taught and Assets.get_pref("taughtJump") == 1, "first stomp teaches the jump (saved)")
-	_check(c.arc_time < 0.5 and c.shown_arc.size() > 2, "first stomp draws its arc")  # 0.5: frame timing on a loaded machine
+	_check(arc_seen < 0.9 and c.shown_arc.size() > 2, "first stomp draws its arc (%.2f s in)" % arc_seen)  # 0.9: how long the arc shows
 	await _shot("03c_first_stomp")
 	t = 0.0
 	while not c.double_cue(w) and t < 15.0:
@@ -234,8 +249,9 @@ func _teaching() -> void:
 		t += 0.03
 	_check(c.double_cue(w), "double-jump ring at the top of a jump")
 	_check(knights_only, "still knights only while the double jump is taught")
-	_check(c.high_powerup and w.scroller.powerup.is_visible and w.scroller.powerup.position.y < 45,
-		"a pickup floats out of one jump's reach while the double jump is taught (y %.0f)" % w.scroller.powerup.position.y)
+	_check(c.high_powerup and w.scroller.powerup.is_visible and w.scroller.powerup.position.y < 50 \
+		and w.scroller.powerup.center().y - (PowerUp.RADIUS + 5 + 2 + 1.5) > 37.0,
+		"a pickup floats out of one jump's reach, its ring clear of the lesson pill, while the double jump is taught (y %.0f)" % w.scroller.powerup.position.y)
 	_check(c.slow(w), "the double-jump demo runs slowed")
 	_check(c.line == "Watch: double jump" and not c.double_demoed, "the first cue only demonstrates, labelled (%s)" % c.line)
 	await _wait(0.12)

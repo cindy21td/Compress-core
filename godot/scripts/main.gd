@@ -8,6 +8,7 @@ enum Screen { SPLASH, MENU, GAME }
 
 const WIDTH := 204.0
 const HEIGHT := 136.0
+const TITLE_LIFT := 0.5  # s: the title is gone before the first lesson line shows
 const GROUND_Y := 127.5  # where feet meet the ground strip
 const SPLASH_TIME := 2.0
 const GAME_OVER_INPUT_DELAY := 0.6
@@ -650,6 +651,25 @@ func _tick_first_sight(delta: float) -> void:
 			Assets.set_pref("seenBoss", 1)
 
 
+## The killer's pill sits beside the ring and the hero, never over them:
+## trailing side first, else leading, else as far from them as the frame allows.
+func _killer_pill_x(lw: float) -> float:
+	var r := maxf(killer_rect.size.x, killer_rect.size.y) * 0.62 + 4
+	var c := killer_rect.get_center()
+	var clear := Rect2(c - Vector2(r, r), Vector2(2 * r, 2 * r))
+	var h := world.hero
+	clear = clear.merge(Rect2(h.position, Vector2(h.width, h.height)))
+	var x0 := clear.position.x - ui_view.position.x
+	var x1 := clear.end.x - ui_view.position.x
+	var lo := 4.0 - pad
+	var hi := WIDTH + pad - 4 - lw
+	if x1 + 4 <= hi:
+		return x1 + 4
+	if x0 - 4 - lw >= lo:
+		return x0 - 4 - lw
+	return lo if (x0 + x1) / 2 > WIDTH / 2 else hi
+
+
 ## What ended the run: a red ring (its name sits on a pill in the UI layer).
 func _killer_mark(ci: CanvasItem, t: float) -> void:
 	var c := killer_rect.get_center()
@@ -665,7 +685,8 @@ func _killer_mark(ci: CanvasItem, t: float) -> void:
 func _first_sight(ci: CanvasItem, t: float) -> void:
 	var p := world.scroller.powerup
 	if p.is_visible and Assets.get_pref("seenOrb") == 0:
-		_sight_mark(ci, p.center(), PowerUp.RADIUS + 5, orb_mark, Ui.powerup_color(p.kind))
+		# The double-jump lesson's pickup has the lesson line above it: ring only.
+		_sight_mark(ci, p.center(), PowerUp.RADIUS + 5, orb_mark, Ui.powerup_color(p.kind), not coach.high_powerup)
 	var b := world.scroller.boss
 	if b.phase == Boss.Phase.CHASE and boss_mark < 4.0 and Assets.get_pref("seenBoss") == 0:
 		var bpos := b.jaw_target() + Vector2(0, -16)
@@ -675,11 +696,13 @@ func _first_sight(ci: CanvasItem, t: float) -> void:
 		ci.draw_circle(bpos + Vector2(0, 2.2), 0.7, Ui.INK)
 
 
-func _sight_mark(ci: CanvasItem, c: Vector2, r: float, age: float, color: Color) -> void:
+func _sight_mark(ci: CanvasItem, c: Vector2, r: float, age: float, color: Color, badge := true) -> void:
 	var pulse := 0.0 if coach.reduce_motion else 0.5 + 0.5 * sin(age * 6)
 	var rr := r + 2 * pulse
 	ci.draw_arc(c, rr, 0, TAU, 36, Color(Ui.INK, 0.9), 3.0)
 	ci.draw_arc(c, rr, 0, TAU, 36, color.lightened(0.3), 1.6)
+	if not badge:
+		return
 	var bpos := c + Vector2(0, -rr - 6)
 	ci.draw_circle(bpos, 5.0, Ui.INK)
 	ci.draw_circle(bpos, 4.2, Ui.GOLD)
@@ -869,8 +892,9 @@ func _draw_hud(ci: CanvasItem) -> void:
 
 	# The lesson line: one short instruction on a dark pill, first lessons only.
 	var lesson := coach.lesson_text()
-	if lesson != "" and banner_time >= 1.6:  # a banner is up: the line waits
-		var la := coach.line_alpha
+	# The line waits for the title to lift off completely (it fades by 0.45 s).
+	if lesson != "" and banner_time >= 1.6 and screen_time >= TITLE_LIFT:  # a banner is up: the line waits
+		var la := coach.line_alpha * clampf((screen_time - TITLE_LIFT) / 0.15, 0, 1)
 		var k := Ui.ease_out_quad(la)  # size; contrast stays full until the very end
 		var pa := clampf(la * 4.0, 0, 1)
 		var lw := (Ui.text_width(lesson, 7.5) + 14) * k
@@ -993,8 +1017,8 @@ func _draw_game_over(ci: CanvasItem) -> void:
 		# Second line: how to beat it next time, in gold under the name.
 		var hint := String(TranslationServer.translate(killer_hint)) if killer_hint != "" else ""
 		var lw := maxf(Ui.text_width(label, 7.5), Ui.text_width(hint, 6.5)) + 14
-		var kx := clampf(killer_rect.get_center().x - ui_view.position.x - lw / 2, 4, WIDTH - 4 - lw)
-		var pill := Rect2(kx, 109 if hint != "" else 118, lw, 23 if hint != "" else 14)
+		var ph := 23.0 if hint != "" else 14.0
+		var pill := Rect2(_killer_pill_x(lw), 109 if hint != "" else 118, lw, ph)
 		Ui.panel(ci, pill, Color(Ui.RED, ka), 7, 1, 1)
 		Ui.text(ci, label, Vector2(pill.get_center().x, pill.position.y + 2.6), 7.5, Color(1, 1, 1, ka), HORIZONTAL_ALIGNMENT_CENTER, Color(Ui.INK, ka), 0.18)
 		if hint != "":
