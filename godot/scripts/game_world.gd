@@ -43,6 +43,8 @@ const RUSH_DURATION := 60
 var state := State.MENU
 var harmless := false  # set by the Coach: enemies walk past until the first stomp
 var learning := false  # set by the Coach until the jump is learned: no rush, no Devourer
+var fire_harmless := false  # set by the Coach: the first wizard can't kill yet
+var wizard_spared := false  # its fireball (or body) went through the hero while harmless
 var hero := Hero.new(30, 104, 25, 25)
 var scroller: ScrollHandler
 var renderer  # main.gd: prepare_transition(), show_rate_prompt()
@@ -103,6 +105,9 @@ func _update_running(delta: float) -> void:
 
 	var hit: Object = null if invincible or grace > 0 else scroller.colliding(hero)
 	if hit and harmless:
+		hit = null
+	if hit is Wizard and fire_harmless:
+		wizard_spared = true
 		hit = null
 	if hit and shield:
 		_break_shield(hit)

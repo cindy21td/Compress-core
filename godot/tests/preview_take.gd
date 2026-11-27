@@ -63,6 +63,7 @@ func _run() -> void:
 	main.coach.jump_taught = true
 	main.coach.double_taught = true
 	main.coach.summoner_taught = true
+	main.coach.fire_taught = true
 	w.invincible = true  # scripted taps miss now and then; keep the take going
 	s.boss_cooldown = 999
 	_mark("run_start")

@@ -31,8 +31,8 @@ var resume_button := UiButton.new(Rect2(64, 40, 76, 17), "Resume", Ui.Icon.PLAY,
 var restart_button := UiButton.new(Rect2(64, 61, 76, 17), "Restart", Ui.Icon.REPLAY)
 var pause_menu_button := UiButton.new(Rect2(64, 82, 76, 17), "Menu", Ui.Icon.HOME)
 # Game over: two matching icon buttons, Run again (gold) and Menu.
-var replay_button := UiButton.new(Rect2(42, 80, 58, 22), "Again", Ui.Icon.REPLAY, Ui.GOLD)
-var menu_button := UiButton.new(Rect2(104, 80, 58, 22), "Title", Ui.Icon.HOME)
+var replay_button := UiButton.new(Rect2(26, 80, 74, 22), "Again", Ui.Icon.REPLAY, Ui.GOLD)
+var menu_button := UiButton.new(Rect2(104, 80, 74, 22), "Title", Ui.Icon.HOME)
 var cues_button := UiButton.new(Rect2(164, 116, 16, 16), "?")  # replays the in-run lessons
 var coach := Coach.new()
 var cues_flash := 99.0
@@ -58,6 +58,7 @@ var safe_b := 0.0  # bottom inset (home indicator)
 var boss_named := false
 var stamp_buzzed := false
 var killer_rect := Rect2()  # what ended the run, marked on the game-over screen
+var killer_hint := ""  # how to beat it next time ("Jump on it")
 var killer_name := ""  # and named under the mark ("Hit by a knight")
 var orb_mark := 0.0   # seconds the first power-up orb has been marked
 var boss_mark := 0.0  # seconds the first Devourer has been marked
@@ -187,10 +188,10 @@ func _update_game(delta: float) -> void:
 	if backdrop.stage != last_stage:
 		last_stage = backdrop.stage
 		if running:
-			_show_banner("STAGE %d" % (backdrop.stage + 1), Ui.PAPER)
+			_show_banner(String(TranslationServer.translate("STAGE %d")) % (backdrop.stage + 1), Ui.PAPER)
 	var rush := world.scroller.state == ScrollHandler.RunningState.RUSH
 	if rush and not was_rush and running:
-		_show_banner("RUSH", Ui.RED)
+		_show_banner(String(TranslationServer.translate("RUSH")), Ui.RED)
 	was_rush = rush
 
 	if world.score != shown_score:
@@ -254,13 +255,13 @@ func _on_stomp(enemy: Enemy, points: int, combo: int) -> void:
 		Assets.play_sound("combo", 0.35, 1.3)
 	if combo >= 2:
 		Assets.play_sound("combo", 0.35, 1.0 + 0.12 * mini(combo, 6))
-		fx.popup("COMBO x%d" % mini(combo, GameWorld.MAX_COMBO_MULTIPLIER), enemy.circle_center + Vector2(0, -14), Ui.GOLD, 1.2)
+		fx.popup(String(TranslationServer.translate("COMBO x%d")) % mini(combo, GameWorld.MAX_COMBO_MULTIPLIER), enemy.circle_center + Vector2(0, -14), Ui.GOLD, 1.2)
 		if combo >= 3:
 			fx.shake(1.5 + combo * 0.3, 0.15)
 
 
 func _on_boss_summoned() -> void:
-	_show_banner("THE DEVOURER", Ui.RED)
+	_show_banner(String(TranslationServer.translate("THE DEVOURER")), Ui.RED)
 	fx.shake(2.5, 0.6)
 
 
@@ -277,7 +278,7 @@ func _on_boss_defeated() -> void:
 	for i in 4:
 		fx.burst(b.position + Vector2(randf_range(30, 140), randf_range(40, 110)), Color(1, 0.6, 0.2), 16)
 	fx.shake(4.0, 0.6)
-	_show_banner("DEVOURER DOWN +%d" % GameWorld.BOSS_DEFEAT_BONUS, Ui.GOLD)
+	_show_banner(String(TranslationServer.translate("DEVOURER DOWN +%d")) % GameWorld.BOSS_DEFEAT_BONUS, Ui.GOLD)
 	Assets.play_sound("boss_ground", 0.5, 1.4)
 
 
@@ -294,7 +295,7 @@ func _on_powerup(kind: PowerUp.Kind) -> void:
 	var names := {PowerUp.Kind.SHIELD: "SHIELD", PowerUp.Kind.SLOWMO: "SLOW-MO",
 		PowerUp.Kind.DOUBLE: "DOUBLE POINTS", PowerUp.Kind.MAGNET: "SOUL MAGNET"}
 	fx.burst(world.hero.body_center, Ui.powerup_color(kind), 14)
-	_show_banner(names[kind], Ui.powerup_color(kind).lightened(0.35))
+	_show_banner(String(TranslationServer.translate(names[kind])), Ui.powerup_color(kind).lightened(0.35))
 
 
 func _on_shield_broken() -> void:
@@ -308,17 +309,24 @@ func _on_death() -> void:
 	banner_time = 99.0  # no banners over the score screen
 	killer_rect = Rect2()
 	killer_name = ""
+	killer_hint = ""
 	var k: Object = world.killer
 	if k is Boss:
 		var j := (k as Boss).jaw()
 		killer_rect = Rect2(j.end.x - 30, j.position.y - 22, 30, 30)
 		killer_name = "Caught by the Devourer"
+		killer_hint = "Stomp to push it back"
 	elif k is Scrollable:
 		var sc := k as Scrollable
 		killer_rect = Rect2(sc.position, Vector2(sc.width, sc.height))
 		if k is Enemy:
 			killer_name = {Enemy.Type.WIZARD: "Hit by a wizard", Enemy.Type.KNIGHT: "Hit by a knight",
 				Enemy.Type.SUMMONER: "Hit by a ghost", Enemy.Type.PIG: "Hit by a pig"}.get((k as Enemy).type, "")
+			killer_hint = "Jump on it"
+			if k is Wizard:
+				for p in (k as Wizard).projectiles:
+					if p.collides(world.hero):
+						killer_hint = "Jump the fire"
 	fx.death(world.hero.body_center)
 	game_over_time = 0.0
 	stamp_buzzed = false
@@ -574,8 +582,12 @@ func _draw_title(ci: CanvasItem, alpha: float, bob: float) -> void:
 	var tw := 128.0
 	var th := tw * Assets.title_texture.get_height() / Assets.title_texture.get_width()
 	var r := Rect2(WIDTH / 2 - tw / 2 + 8, 2 + bob, tw, th)
-	for o in [Vector2(1.4, 1.6), Vector2(-0.8, 1.2), Vector2(0.8, -0.6)]:
-		ci.draw_texture_rect(Assets.title_texture, Rect2(r.position + o, r.size), false, Color(Ui.INK, 0.55 * alpha))
+	# Drop shadow, then a full ink outline all round so the letters hold on
+	# every backdrop (rubric carry: logo legibility).
+	ci.draw_texture_rect(Assets.title_texture, Rect2(r.position + Vector2(1.6, 2.2), r.size), false, Color(Ui.INK, 0.5 * alpha))
+	for i in 12:
+		var o := Vector2.from_angle(TAU * i / 12.0) * 1.1
+		ci.draw_texture_rect(Assets.title_texture, Rect2(r.position + o, r.size), false, Color(Ui.INK, 0.9 * alpha))
 	ci.draw_texture_rect(Assets.title_texture, r, false, Color(1, 1, 1, alpha))
 
 
@@ -808,7 +820,7 @@ func _draw_ui(ci: CanvasItem) -> void:
 func _draw_menu_ui(ci: CanvasItem) -> void:
 	var best := Assets.get_pref("highScore")
 	if best > 0:
-		var label := "BEST  %d" % best
+		var label := String(TranslationServer.translate("BEST  %d")) % best
 		var w := Ui.text_width(label, 5.5) + 10
 		Ui.panel(ci, Rect2(4 - pad, 4, w, 12), Ui.PAPER, 6)
 		Ui.text(ci, label, Vector2(9 - pad, 6.6), 5.5)
@@ -883,6 +895,13 @@ func _draw_hud(ci: CanvasItem) -> void:
 		var fill := Color.WHITE if b.hurt_time > 0 else Color(0.9, 0.22, 0.25)
 		ci.draw_rect(Rect2(bar.position, Vector2(bar.size.x * b.health / Boss.MAX_HEALTH, bar.size.y)), fill)
 		ci.draw_rect(Rect2(bar.position, Vector2(bar.size.x * b.health / Boss.MAX_HEALTH, 2)), Color(1, 1, 1, 0.35))
+		# Not colour alone: one notch per hit left, so the count reads in grey too,
+		# and the frame thickens as the Devourer nears the drop.
+		for i in range(1, Boss.MAX_HEALTH):
+			var nx := bar.position.x + bar.size.x * i / Boss.MAX_HEALTH
+			ci.draw_line(Vector2(nx, bar.position.y), Vector2(nx, bar.end.y), Ui.INK, 1.0)
+		if danger > 0.75:
+			ci.draw_rect(bar.grow(2.5), Ui.RED if flash else Color.WHITE, false, 1.0)
 
 
 func _draw_banner(ci: CanvasItem) -> void:
@@ -949,11 +968,15 @@ func _draw_game_over(ci: CanvasItem) -> void:
 	if killer_name != "" and killer_rect.has_area():
 		var ka := clampf(t / 0.3, 0, 1)
 		var label := String(TranslationServer.translate(killer_name))
-		var lw := Ui.text_width(label, 7.5) + 14
+		# Second line: how to beat it next time, in gold under the name.
+		var hint := String(TranslationServer.translate(killer_hint)) if killer_hint != "" else ""
+		var lw := maxf(Ui.text_width(label, 7.5), Ui.text_width(hint, 6.5)) + 14
 		var kx := clampf(killer_rect.get_center().x - ui_view.position.x - lw / 2, 4, WIDTH - 4 - lw)
-		var pill := Rect2(kx, 118, lw, 14)
+		var pill := Rect2(kx, 109 if hint != "" else 118, lw, 23 if hint != "" else 14)
 		Ui.panel(ci, pill, Color(Ui.RED, ka), 7, 1, 1)
 		Ui.text(ci, label, Vector2(pill.get_center().x, pill.position.y + 2.6), 7.5, Color(1, 1, 1, ka), HORIZONTAL_ALIGNMENT_CENTER, Color(Ui.INK, ka), 0.18)
+		if hint != "":
+			Ui.text(ci, hint, Vector2(pill.get_center().x, pill.position.y + 12.6), 6.5, Color(Ui.GOLD.lightened(0.25), ka), HORIZONTAL_ALIGNMENT_CENTER, Color(Ui.INK, ka), 0.18)
 
 	# Buttons fade in once input is accepted.
 	if t > GAME_OVER_INPUT_DELAY:
@@ -965,6 +988,6 @@ func _draw_game_over(ci: CanvasItem) -> void:
 func _draw_pause(ci: CanvasItem) -> void:
 	ci.draw_rect(_full(ci), Color(0, 0, 0, 0.55))
 	Ui.panel(ci, Rect2(52, 14, 100, 94), Ui.PAPER, 6)
-	Ui.text(ci, "PAUSED", Vector2(102, 20), 9, Ui.RED, HORIZONTAL_ALIGNMENT_CENTER)
+	Ui.text(ci, String(TranslationServer.translate("PAUSED")), Vector2(102, 20), 9, Ui.RED, HORIZONTAL_ALIGNMENT_CENTER)
 	for b in [resume_button, restart_button, pause_menu_button]:
 		b.draw(ci)

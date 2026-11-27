@@ -1,19 +1,39 @@
-keys,en
-Tap to jump,Tap to jump
-Land on it,Land on it
-Tap again in the air,Tap again in the air
-Again,Again
-Title,Title
-TAP TO START,TAP TO START
-Combo,Combo
-Stop the ghost,Stop the ghost
-Tap sooner,Tap sooner
-Land on top,Land on top
-Landed on it,Landed on it
-Stopped it,Stopped it
-Double jump,Double jump
-Hit by a wizard,Hit by a wizard
-Hit by a knight,Hit by a knight
-Hit by a ghost,Hit by a ghost
-Hit by a pig,Hit by a pig
-Caught by the Devourer,Caught by the Devourer
+keys,en,es,pt_BR,fr,de,ja,ko,zh_Hans
+Tap to jump,Tap to jump,Toca para saltar,Toque para pular,Touche pour sauter,Tippen zum Springen,タップでジャンプ,탭해서 점프,点击跳跃
+Tap to jump on it,Tap to jump on it,Toca y salta encima,Toque e pule em cima,"Touche, saute dessus","Tippen, drauf springen",タップで踏もう,탭해서 밟기,点击踩上去
+Land on it,Land on it,Cae encima,Caia em cima,Atterris dessus,Lande drauf,上に着地,위에 착지,踩在上面
+Watch: double jump,Watch: double jump,Mira: doble salto,Veja: pulo duplo,Regarde : double saut,Schau: Doppelsprung,見て：2段ジャンプ,보세요: 2단 점프,看：二段跳
+Tap again to go higher,Tap again to go higher,Toca otra vez: más alto,Toque de novo: mais alto,Retouche : plus haut,Nochmal tippen: höher,もう一度タップで高く,한 번 더 탭: 더 높이,再点一次，跳更高
+Jump the fire,Jump the fire,Salta el fuego,Pule o fogo,Saute le feu,Spring übers Feuer,炎を飛び越えろ,불을 뛰어넘기,跳过火球
+Cleared it,Cleared it,Esquivado,Desviou,Évité,Ausgewichen,よけた,피했다,躲开了
+Again,Again,Otra vez,De novo,Encore,Nochmal,もう一回,다시,再来
+Title,Title,Inicio,Início,Accueil,Start,タイトル,타이틀,首页
+TAP TO START,TAP TO START,TOCA PARA EMPEZAR,TOQUE PARA COMEÇAR,TOUCHE POUR JOUER,TIPPEN ZUM STARTEN,タップでスタート,탭해서 시작,点击开始
+Combo,Combo,Combo,Combo,Combo,Combo,コンボ,콤보,连击
+Stop the ghost,Stop the ghost,Detén al fantasma,Pare o fantasma,Arrête le fantôme,Stopp den Geist,おばけを止めろ,유령을 막아라,拦住幽灵
+Tap sooner,Tap sooner,Toca antes,Toque antes,Touche plus tôt,Früher tippen,もっと早くタップ,더 빨리 탭,早点点击
+Land on top,Land on top,Cae encima,Caia em cima,Retombe dessus,Oben landen,上に着地,위에 착지,落在上面
+Landed on it,Landed on it,Lo pisaste,Pisou nele,Écrasé,Draufgelandet,踏んだ,밟았다,踩中了
+Stopped it,Stopped it,Detenido,Parou,Arrêté,Gestoppt,止めた,막았다,拦住了
+Double jump,Double jump,Doble salto,Pulo duplo,Double saut,Doppelsprung,2段ジャンプ,2단 점프,二段跳
+Hit by a wizard,Hit by a wizard,Te dio un mago,Pego por um mago,Touché par un sorcier,Vom Zauberer erwischt,魔法使いにやられた,마법사에게 당함,被巫师击中
+Hit by a knight,Hit by a knight,Te dio un caballero,Pego por um cavaleiro,Touché par un chevalier,Vom Ritter erwischt,騎士にやられた,기사에게 당함,被骑士击中
+Hit by a ghost,Hit by a ghost,Te dio un fantasma,Pego por um fantasma,Touché par un fantôme,Vom Geist erwischt,おばけにやられた,유령에게 당함,被幽灵击中
+Hit by a pig,Hit by a pig,Te dio un cerdo,Pego por um porco,Touché par un cochon,Vom Schwein erwischt,ブタにやられた,돼지에게 당함,被猪撞到
+Caught by the Devourer,Caught by the Devourer,Te atrapó el Devorador,Pego pelo Devorador,Attrapé par le Dévoreur,Vom Verschlinger gefressen,デバウラーに捕まった,포식자에게 잡힘,被吞噬者抓住
+Jump on it,Jump on it,Salta encima,Pule em cima,Saute dessus,Spring drauf,踏みつけよう,밟아라,踩它
+Stomp to push it back,Stomp to push it back,Pisa para frenarlo,Pise para afastá-lo,Écrase pour le repousser,Stampfen drängt ihn weg,踏んで押し返せ,밟아서 밀어내기,踩敌人击退它
+Resume,Resume,Seguir,Continuar,Reprendre,Weiter,再開,계속,继续
+Restart,Restart,Reiniciar,Reiniciar,Rejouer,Neustart,やり直す,재시작,重新开始
+Menu,Menu,Menú,Menu,Menu,Menü,メニュー,메뉴,菜单
+STAGE %d,STAGE %d,NIVEL %d,FASE %d,NIVEAU %d,STUFE %d,ステージ %d,스테이지 %d,第 %d 关
+RUSH,RUSH,OLEADA,ONDA,RUÉE,ANSTURM,ラッシュ,러시,冲锋
+COMBO x%d,COMBO x%d,COMBO x%d,COMBO x%d,COMBO x%d,COMBO x%d,コンボ x%d,콤보 x%d,连击 x%d
+THE DEVOURER,THE DEVOURER,EL DEVORADOR,O DEVORADOR,LE DÉVOREUR,DER VERSCHLINGER,デバウラー,포식자,吞噬者
+DEVOURER DOWN +%d,DEVOURER DOWN +%d,VENCIDO +%d,VENCIDO +%d,DÉVOREUR VAINCU +%d,BESIEGT +%d,デバウラー撃破 +%d,포식자 격파 +%d,击退吞噬者 +%d
+SHIELD,SHIELD,ESCUDO,ESCUDO,BOUCLIER,SCHILD,シールド,방패,护盾
+SLOW-MO,SLOW-MO,CÁMARA LENTA,CÂMERA LENTA,RALENTI,ZEITLUPE,スロー,슬로모션,慢动作
+DOUBLE POINTS,DOUBLE POINTS,PUNTOS DOBLES,PONTOS EM DOBRO,POINTS DOUBLES,DOPPELTE PUNKTE,得点2倍,점수 2배,双倍得分
+SOUL MAGNET,SOUL MAGNET,IMÁN DE ALMAS,ÍMÃ DE ALMAS,AIMANT À ÂMES,SEELENMAGNET,魂マグネット,영혼 자석,灵魂磁铁
+BEST  %d,BEST  %d,RÉCORD  %d,RECORDE  %d,RECORD  %d,REKORD  %d,ベスト  %d,최고  %d,最高  %d
+PAUSED,PAUSED,PAUSA,PAUSADO,PAUSE,PAUSE,一時停止,일시정지,已暂停

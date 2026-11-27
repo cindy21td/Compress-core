@@ -8,11 +8,13 @@ extends Node
 var main: Node2D
 var failures := 0
 var shot_dir := ""
+var shot_locale := "en"
 
 
 func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
 	shot_dir = args[0] if args.size() > 0 else ""
+	shot_locale = args[1] if args.size() > 1 else "en"  # second arg: screens in another language
 	main = load("res://main.tscn").instantiate()
 	add_child(main)
 	await _run()
@@ -66,6 +68,7 @@ func _run() -> void:
 	var w: GameWorld = main.world
 	_check(Assets._sounds.size() == Assets.SOUND_FILES.size(), "all sounds loaded")
 	_check(main.screen == main.Screen.SPLASH, "starts on splash")
+	_fit_check()
 	await _wait(1.0)
 	await _shot("01_splash")
 	await _wait(1.3)
@@ -187,9 +190,14 @@ func _teaching() -> void:
 	_check(c.spared == 1 and w.hero.alive and w.state == GameWorld.State.RUNNING, "untapped enemy walks past harmlessly")
 	_check(c.miss_time < 0.3, "the miss is drawn")
 	_check(c.miss_word == "Tap sooner", "the miss says why (%s)" % c.miss_word)
-	_check(c.line == "Tap to jump" and c.lesson_text() == "", "Tap to jump stays the lesson; it steps aside while the miss speaks")
+	_check(c.line.begins_with("Tap to jump") and c.lesson_text() == "", "Tap to jump stays the lesson; it steps aside while the miss speaks")
 	await _wait(0.15)
 	await _shot("03b_missed")
+	var back := 0.0
+	while c.lesson_text() == "" and back < 3.0:
+		await _wait(0.05)
+		back += 0.05
+	_check(c.lesson_text() != "" and c.line.begins_with("Tap to jump") and c.miss_time < 1.2, "the lesson line is back within a second (%s, %.2f s)" % [c.lesson_text(), c.miss_time])
 	w.invincible = true
 	t = 0.0
 	while not c.jump_taught and t < 20.0:
@@ -208,7 +216,7 @@ func _teaching() -> void:
 		t += 0.03
 	_check(c.double_cue(w), "double-jump ring at the top of a jump")
 	_check(c.slow(w), "the double-jump demo runs slowed")
-	_check(c.lesson_text() != "Tap again in the air" and not c.double_demoed, "the first cue only demonstrates (ghost flies the arc)")
+	_check(c.line == "Watch: double jump" and not c.double_demoed, "the first cue only demonstrates, labelled (%s)" % c.line)
 	await _wait(0.12)
 	await _shot("03d0_double_demo")
 	t = 0.0
@@ -219,13 +227,43 @@ func _teaching() -> void:
 		await _wait(0.03)
 		t += 0.03
 	await _wait(0.1)
-	_check(c.double_cue(w) and c.lesson_text() == "Tap again in the air", "the next jump asks, in the air")
+	var wt := 0.0
+	while c.double_cue(w) and c.lesson_text() == "" and wt < 0.6:  # a tick from a random stomp may be speaking
+		await _wait(0.03)
+		wt += 0.03
+	_check(c.double_cue(w) and c.lesson_text() == tr("Tap again to go higher"), "the next jump asks, in the air (%s|%s|%.2f|%.2f)" % [c.lesson_text(), c.line, c.miss_time, c.tick_time])
 	await _shot("03d_double_cue")
 	main._touch_down(Vector2(-1, -1))
 	main._touch_up(Vector2(-1, -1))
 	_check(c.double_taught and Assets.get_pref("taughtDouble") == 1, "first double jump taught (saved)")
 	_check(not c.slow(w) and not c.jump_cue(w), "no jump cue once learned")
 	await _wait(1.5)
+	# The first wizard: its fireball is ringed and slowed before it can kill.
+	var s := w.scroller
+	var wz: Wizard = s.wizards[0]
+	c.fire_taught = false  # a random wizard may have taught it during the demo
+	Assets.set_pref("taughtFire", 0)
+	s.hidden.erase(wz)
+	wz.reset_enemy(0, false)
+	wz.set_is_visible(true)
+	wz.position.x = 150
+	t = 0.0
+	while c.fire_ball(w) == null and t < 4.0:
+		await _wait(0.05)
+		t += 0.05
+	_check(c.fire_ball(w) != null and w.fire_harmless, "first wizard's fireball is the fire lesson")
+	t = 0.0
+	while not c.slow(w) and t < 6.0:
+		await _wait(0.03)
+		t += 0.03
+	_check(c.slow(w) and c.lesson_text() == tr("Jump the fire"), "fireball slows the world and says Jump the fire (%s)" % c.lesson_text())
+	await _shot("03e_fire_lesson")
+	t = 0.0
+	while not c.fire_taught and t < 8.0:
+		await _wait(0.05)
+		t += 0.05
+	_check(c.fire_taught and Assets.get_pref("taughtFire") == 1, "fire lesson learned once the fireball passes (saved)")
+	await _wait(1.0)
 	w.invincible = false
 
 
@@ -313,3 +351,38 @@ func _gameplay_extras() -> void:
 	_check(not s.boss.active(), "boss leaves after landing")
 	await _play_for(0.5)
 	_check(Assets.current_music == "theme", "theme music returns")
+
+
+## Every translation fits its box at the longest language (checked per locale).
+func _fit_check() -> void:
+	var cols := ["en", "es", "pt_BR", "fr", "de", "ja", "ko", "zh_Hans"]
+	var lessons := ["Tap to jump", "Tap to jump on it", "Land on it", "Watch: double jump", "Tap again to go higher",
+		"Jump the fire", "Stop the ghost"]
+	var words := ["Tap sooner", "Land on top", "Landed on it", "Stopped it", "Double jump", "Cleared it", "Jump the fire"]
+	var killers := ["Hit by a wizard", "Hit by a knight", "Hit by a ghost", "Hit by a pig", "Caught by the Devourer"]
+	var banners := ["STAGE %d", "RUSH", "THE DEVOURER", "DEVOURER DOWN +%d", "SHIELD", "SLOW-MO", "DOUBLE POINTS", "SOUL MAGNET"]
+	var bad := []
+	var widest := {}
+	for loc in cols:
+		TranslationServer.set_locale(loc)
+		var tx := func(k: String) -> String: return String(TranslationServer.translate(k))
+		_check(loc == "en" or tx.call("Tap to jump") != "Tap to jump", "translation loaded for %s" % loc)
+		for k in lessons:
+			if Ui.text_width(tx.call(k), 7.5) + 14 > main.WIDTH - 24: bad.append([loc, k])
+		for k in words:
+			if Ui.text_width(tx.call(k), 8) + 12 > main.WIDTH - 40: bad.append([loc, k])
+		for k in killers:
+			var hint := "Stomp to push it back" if k == "Caught by the Devourer" else ("Jump the fire" if k == "Hit by a wizard" else "Jump on it")
+			var lw := maxf(Ui.text_width(tx.call(k), 7.5), Ui.text_width(tx.call(hint), 6.5)) + 14
+			widest[loc] = maxf(widest.get(loc, 0.0), lw)
+			if lw > main.WIDTH - 8: bad.append([loc, k])
+		for k in banners:
+			if Ui.text_width(tx.call(k) % 2 if "%d" in k else tx.call(k), 11) + 24 > main.WIDTH - 8: bad.append([loc, k])
+		for b in [main.replay_button, main.menu_button, main.resume_button, main.restart_button, main.pause_menu_button]:
+			var h: float = b.rect.size.y
+			if Ui.text_width(tx.call(b.label), h * 0.42) + h * 0.6 > b.rect.size.x - 4: bad.append([loc, b.label])
+		if Ui.text_width(tx.call("TAP TO START"), 9.0 * 1.04) + 19 > main.WIDTH - 16: bad.append([loc, "TAP TO START"])
+		if Ui.text_width(tx.call("PAUSED"), 9) > 96: bad.append([loc, "PAUSED"])
+	TranslationServer.set_locale(shot_locale)
+	print("     widest killer pill per locale: ", widest)
+	_check(bad.is_empty(), "every string fits at every locale %s" % str(bad))

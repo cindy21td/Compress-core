@@ -13,11 +13,14 @@ extends RefCounted
 const MAX_SPARED := 3
 const SLOW_WINDOW := 72.0  # px ahead of the hero where the world slows
 const CUE_WINDOW := 110.0  # px ahead where the ring starts
-const FLAGS := ["taughtJump", "taughtDouble", "taughtSummoner"]
+const FLAGS := ["taughtJump", "taughtDouble", "taughtSummoner", "taughtFire"]
 
 var jump_taught := false
 var double_taught := false
 var summoner_taught := false
+var fire_taught := false  # the first wizard's fireball is shown before it can kill
+var fire_spared := 0
+var fire_passed: Projectile  # the last lesson fireball already judged
 var spared := 0
 var target: Enemy
 var reduce_motion := false
@@ -31,6 +34,8 @@ var miss_to := Vector2.ZERO
 var miss_time := 99.0
 var misses := 0  # this run
 var miss_word := ""  # why the lesson enemy got past, drawn at the enemy
+var miss_arc := true  # false for a fireball miss: the word only, no arc
+const MISS_WORD_TIME := 0.8  # the why shows briefly, then the lesson line returns
 var target_jumped := false  # the hero jumped while the lesson enemy closed in
 var tick_pos := Vector2.ZERO
 var tick_time := 99.0
@@ -50,6 +55,7 @@ func load_flags() -> void:
 	jump_taught = Assets.get_pref(FLAGS[0]) > 0
 	double_taught = Assets.get_pref(FLAGS[1]) > 0
 	summoner_taught = Assets.get_pref(FLAGS[2]) > 0
+	fire_taught = Assets.get_pref(FLAGS[3]) > 0
 	if DisplayServer.has_method("accessibility_should_reduce_animation"):
 		reduce_motion = DisplayServer.accessibility_should_reduce_animation()
 
@@ -71,6 +77,9 @@ func start_run() -> void:
 	miss_time = 99.0
 	misses = 0
 	miss_word = ""
+	miss_arc = true
+	fire_spared = 0
+	fire_passed = null
 	target_jumped = false
 	tick_time = 99.0
 	tick_word = ""
@@ -82,7 +91,7 @@ func start_run() -> void:
 
 
 func teaching() -> bool:
-	return not jump_taught or not double_taught or not summoner_taught
+	return not jump_taught or not double_taught or not summoner_taught or not fire_taught
 
 
 ## Returns true on the frame a spared enemy walks past (main buzzes).
@@ -98,6 +107,8 @@ func update(delta: float, world: GameWorld) -> bool:
 		arc.clear()
 	world.harmless = not jump_taught and spared < MAX_SPARED
 	world.learning = not jump_taught
+	world.fire_harmless = fire_wizard(world) != null
+	_update_fire(world)
 	if double_cue(world):
 		double_cue_time += delta
 	else:
@@ -129,6 +140,7 @@ func update(delta: float, world: GameWorld) -> bool:
 		miss_time = 0.0
 		# The why, in the player's terms: no tap at all, or a jump that came down off it.
 		miss_word = "Land on top" if target_jumped else "Tap sooner"
+		miss_arc = true
 		target = null
 	if target == null:
 		target_jumped = false
@@ -141,6 +153,59 @@ func update(delta: float, world: GameWorld) -> bool:
 	return missed
 
 
+## The first wizard on screen after the jump is learned: its fireballs can't
+## kill until one has been jumped (or two have gone through the hero).
+func fire_wizard(world: GameWorld) -> Wizard:
+	if not jump_taught or fire_taught or not world.hero.alive:
+		return null
+	for e in world.scroller.wizards:
+		if e.is_visible and e.alive and e.position.x < Geo.view_width:
+			return e as Wizard
+	return null
+
+
+## The lesson fireball nearest the hero that hasn't passed it yet.
+func fire_ball(world: GameWorld) -> Projectile:
+	var wz := fire_wizard(world)
+	if wz == null:
+		return null
+	var hx := world.hero.position.x
+	var best: Projectile = null
+	for p in wz.projectiles:
+		if p.is_visible and p.position.x + p.width >= hx and p != fire_passed:
+			if best == null or p.position.x < best.position.x:
+				best = p
+	return best
+
+
+func _update_fire(world: GameWorld) -> void:
+	var wz := fire_wizard(world)
+	if wz == null:
+		world.wizard_spared = false
+		return
+	var h := world.hero
+	for p in wz.projectiles:
+		if p == fire_passed or not p.is_moving or p.position.x + p.width >= h.position.x:
+			continue
+		fire_passed = p
+		if world.wizard_spared:
+			# It went through the hero: say how to beat it, at the hero.
+			world.wizard_spared = false
+			fire_spared += 1
+			misses += 1
+			miss_to = h.position + Vector2(16, 0)
+			miss_from = miss_to
+			miss_time = 0.0
+			miss_word = "Jump the fire"
+			miss_arc = false
+			if fire_spared >= 2:
+				_learn(3)
+		else:
+			_learn(3)
+			_tick(h.position + Vector2(16, -6), "Cleared it")
+		return
+
+
 func _ahead(world: GameWorld) -> float:
 	return target.position.x - world.hero.position.x if target else INF
 
@@ -150,6 +215,9 @@ func slow(world: GameWorld) -> bool:
 	var a := _ahead(world)
 	if not jump_taught and not world.hero.jumped and a > 0 and a < SLOW_WINDOW:
 		return true
+	var fb := fire_ball(world)
+	if fb and fb.is_moving and not world.hero.jumped and fb.position.x - world.hero.position.x < SLOW_WINDOW:
+		return true  # the first fireball closes in at half speed
 	return double_cue(world)  # the double-jump demo plays in slow motion too
 
 
@@ -170,6 +238,8 @@ func on_stomp(enemy: Enemy) -> bool:
 		_learn(2)
 		_tick(enemy.circle_center + Vector2(0, -12), "Stopped it")
 		return true
+	if enemy.type == Enemy.Type.WIZARD and jump_taught and not fire_taught:
+		_learn(3)  # stomping the wizard also ends its fire
 	if jump_taught:
 		return false
 	_learn(0)
@@ -194,9 +264,13 @@ func _wanted_line(world: GameWorld) -> String:
 	var s := world.scroller
 	# "Tap to jump" stays up from the first step until the first stomp.
 	if not jump_taught:
-		return "Land on it" if h.jumped and target != null else "Tap to jump"
-	if double_cue(world) and double_demoed:
-		return "Tap again in the air"
+		if h.jumped and target != null:
+			return "Land on it"
+		return "Tap to jump on it" if target != null else "Tap to jump"
+	if double_cue(world):
+		return "Tap again to go higher" if double_demoed else "Watch: double jump"
+	if fire_ball(world) != null:
+		return "Jump the fire"
 	if not summoner_taught and not double_cue(world) and s.summoner.is_visible and s.summoner.alive and s.summoner.position.x < Geo.view_width:
 		return "Stop the ghost"
 	return ""
@@ -222,7 +296,7 @@ func lesson_text() -> String:
 
 
 func reacting() -> bool:
-	return (miss_time < 1.1 and miss_word != "") or (tick_time < 0.8 and tick_word != "")
+	return (miss_time < MISS_WORD_TIME and miss_word != "") or (tick_time < 0.8 and tick_word != "")
 
 
 func _learn(i: int) -> void:
@@ -230,6 +304,7 @@ func _learn(i: int) -> void:
 		0: jump_taught = true
 		1: double_taught = true
 		2: summoner_taught = true
+		3: fire_taught = true
 	Assets.set_pref(FLAGS[i], 1)
 
 
@@ -272,6 +347,11 @@ func draw(ci: CanvasItem, world: GameWorld) -> void:
 		var chev := PackedVector2Array([top + Vector2(-5, -4), top, top + Vector2(5, -4)])
 		ci.draw_polyline(chev, Ui.INK, 3.4)
 		ci.draw_polyline(chev, Color.WHITE, 1.8)
+	elif fire_ball(world) != null:
+		var fb := fire_ball(world)
+		_ring(ci, fb.circle_center, 8.0, Ui.RED)
+		if not h.jumped:
+			_tap_glyph(ci, h.position + Vector2(16, -9), 1)
 	elif jump_taught and not summoner_taught and s.summoner.is_visible and s.summoner.alive and s.summoner.position.x < Geo.view_width:
 		var c := s.summoner.circle_center
 		_ring(ci, c, 11.0, Ui.RED)
@@ -284,11 +364,13 @@ func draw(ci: CanvasItem, world: GameWorld) -> void:
 		_dotted(ci, shown_arc, Color(Ui.GOLD, a), 3)
 	if miss_time < 1.3:
 		var a := 1.0 - maxf(0, miss_time - 0.8) / 0.5
-		_dotted(ci, _parabola(miss_from, miss_to, 30.0), Color(1, 1, 1, 0.85 * a))
-		var x := miss_to + Vector2(0, -4)
-		ci.draw_line(x + Vector2(-3.5, -3.5), x + Vector2(3.5, 3.5), Color(Ui.RED, a), 1.8)
-		ci.draw_line(x + Vector2(-3.5, 3.5), x + Vector2(3.5, -3.5), Color(Ui.RED, a), 1.8)
-		if miss_word != "":  # the why, at the enemy that got past
+		if miss_arc:
+			_dotted(ci, _parabola(miss_from, miss_to, 30.0), Color(1, 1, 1, 0.85 * a))
+			var x := miss_to + Vector2(0, -4)
+			ci.draw_line(x + Vector2(-3.5, -3.5), x + Vector2(3.5, 3.5), Color(Ui.RED, a), 1.8)
+			ci.draw_line(x + Vector2(-3.5, 3.5), x + Vector2(3.5, -3.5), Color(Ui.RED, a), 1.8)
+		if miss_word != "" and miss_time < MISS_WORD_TIME:  # the why, at the enemy that got past
+			a = 1.0 - maxf(0, miss_time - (MISS_WORD_TIME - 0.2)) / 0.2
 			var mw := String(TranslationServer.translate(miss_word))
 			var half := Ui.text_width(mw, 8) / 2 + 6
 			var mp := miss_to + Vector2(0, -22 - 4 * minf(miss_time / 0.3, 1))
