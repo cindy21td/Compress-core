@@ -36,6 +36,10 @@ var menu_button := UiButton.new(Rect2(104, 80, 74, 22), "Title", Ui.Icon.HOME)
 var cues_button := UiButton.new(Rect2(164, 116, 16, 16), "?")  # replays the in-run lessons
 var coach := Coach.new()
 var cues_flash := 99.0
+var rating := RatingPolicy.new()
+var rating_title := false  # on the title, reached by tapping Title on the score board
+var rating_tries := 0  # times the title asked (RatingAsk no-ops off iOS release)
+const RATING_DELAY := 0.8  # the title settles before the prompt
 
 # Presentation state
 var game_over_time := 0.0
@@ -96,6 +100,7 @@ func _ready() -> void:
 	vignette.gradient.set_color(1, Color(0, 0, 0, 0.45))
 	vignette.gradient.add_point(0.6, Color(0, 0, 0, 0))
 	coach.load_flags()
+	rating.begin_session()
 
 
 func _add_view(painter: Callable) -> Node2D:
@@ -146,6 +151,8 @@ func _physics_process(delta: float) -> void:
 		Screen.MENU:
 			backdrop.update(delta, 0, 0)
 			cues_flash += delta
+			if rating_title and screen_time >= RATING_DELAY:
+				_ask_for_rating()
 		Screen.GAME:
 			if not paused:
 				_update_game(delta)
@@ -342,6 +349,23 @@ func _show_banner(text: String, color: Color) -> void:
 func _set_screen(s: Screen) -> void:
 	screen = s
 	screen_time = 0.0
+	rating_title = false
+
+
+## The run that just ended may make the rating ask due (RatingPolicy).
+func _note_run_end() -> void:
+	rating.note_run_end(world.total_score, world.previous_best, world.bosses_defeated, coach.teaching())
+
+
+## On the title after a good run, never on the score board itself. Marked
+## asked only once StoreKit really got the request (iOS release builds).
+func _ask_for_rating() -> void:
+	rating_title = false
+	if not rating.should_ask():
+		return
+	rating_tries += 1
+	if RatingAsk.request():
+		rating.mark_asked()
 
 
 func prepare_transition(color: Color, duration: float) -> void:
@@ -502,9 +526,12 @@ func _touch_up(p: Vector2) -> void:
 		_hero_click()
 	if world.is_game_over() and game_over_time > GAME_OVER_INPUT_DELAY:
 		if replay_button.touch_up(p) or p == KEY_TAP:
+			_note_run_end()
 			_restart()
 		elif menu_button.touch_up(p):
+			_note_run_end()
 			_to_menu()
+			rating_title = true
 
 
 func _hero_click() -> void:

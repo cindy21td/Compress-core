@@ -35,6 +35,7 @@ var slowmo_time := 0.0
 var double_time := 0.0
 var magnet_time := 0.0
 var bosses_defeated := 0
+var previous_best := 0  # the high score from before this run, set when it ends
 
 var invincible := false  # demo/testing only: collisions don't end the run
 
@@ -131,7 +132,8 @@ func _update_running(delta: float) -> void:
 			Assets.set_pref("rateValue", rate_val + 1)
 
 		total_score = floori(distance / 200.0) + score
-		if total_score > Assets.get_pref("highScore"):
+		previous_best = Assets.get_pref("highScore")
+		if total_score > previous_best:
 			Assets.set_pref("highScore", total_score)
 			state = State.HIGHSCORE
 

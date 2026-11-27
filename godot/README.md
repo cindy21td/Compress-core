@@ -27,14 +27,20 @@ The port also adds a presentation layer:
 - **Font:** [Fredoka One](assets/fonts/OFL.txt) (SIL Open Font License).
 
 ## Differences from the original
-- The Rate button and prompt are gone, since the store listing no longer exists. Ads are gone too.
+- The old Rate button and "rate me" bubble are gone, and ads are gone too. From 1.3 the game asks for a rating at most once, through Apple's own prompt (see below).
 - The window keeps a 3:2 aspect ratio with letterboxing.
 - Game logic runs at a fixed 60 ticks per second, so the frame-counted distance stays comparable.
 - High score and the sound setting are saved to `user://compress.cfg`.
+
+## Rating prompt (1.3)
+`scripts/rating_policy.gd` decides, `scripts/rating_ask.gd` asks. At most once ever (saved in `user://rating.cfg`), never in the first session or while the in-run lessons are still teaching, and only after a good run: a new best of at least 40 or a Devourer win. The ask is never made on the score board: it waits until the player taps Title, then fires on the title screen. Apple decides whether the prompt shows (at most three times a year, never in TestFlight).
+
+The call goes through a small GDExtension of our own, `addons/rating_ask/` (iOS framework plus a no-op macOS stub for the editor and tests). Source and build script: `native/rating_ask/` (`native/rating_ask/build.sh`, needs Xcode; the built binaries are committed). It is a no-op off iOS and in debug builds.
 
 ## Test
 `tests/playtest.tscn` plays the whole game and checks state along the way: menu, sound toggle, tutorial, jump, pause, a 46-second invincible demo run through the stages, the Pig, a power-up pickup, two boss fights (one won, one where it drops), a real death with a shield that absorbs the first hit, the score screen, replay, and pause → Menu. Pass a folder to also save screenshots:
 
 ```
 godot --path . res://tests/playtest.tscn -- /tmp/shots   # optional folder for screenshots
+godot --headless --path . res://tests/rating_test.tscn   # rating policy, wrapper and title wiring
 ```
