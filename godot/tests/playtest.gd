@@ -245,6 +245,9 @@ func _run() -> void:
 		for k in ["replay", "menu", "chips"]:
 			if (g2[k] as Rect2).intersects(kr2):
 				hit.append(k)
+		for k in ["replay", "menu"]:
+			if (g2[k] as Rect2).intersects(g2.total):
+				hit.append(k + " over the total")
 		_check(hit.is_empty(), "buttons and chips clear an airborne killer at %s %s %s" % [str(spot), str(hit), str(g2)])
 	main.killer_rect = saved_k
 	main._layout_game_over()
@@ -354,7 +357,7 @@ func _teaching() -> void:
 		await _wait(0.03)
 		t += 0.03
 	await _wait(0.25)
-	_check(c.double_ask(w) and c.lesson_text() == tr("Tap to jump"), "after one demo flight it asks for the first tap (%s)" % c.lesson_text())
+	_check(c.double_ask(w) and c.lesson_text() == tr("Tap, then tap again"), "after one demo flight it asks for both taps (%s)" % c.lesson_text())
 	main._touch_down(Vector2(-1, -1))
 	main._touch_up(Vector2(-1, -1))
 	t = 0.0
@@ -499,6 +502,7 @@ func _fit_check() -> void:
 	var lessons := ["Tap to jump", "Tap to jump on it", "Land on it", "Watch: double jump", "Tap again to go higher",
 		"Jump the fire", "Stop the ghost"]
 	lessons.append_array(Coach.INTROS.values())
+	lessons.append("Tap, then tap again")
 	var words := ["Tap a little sooner", "Land on its head", "Landed on it", "Stopped it", "Double jump", "Cleared it", "Jump the fire"]
 	var killers := ["Hit by a wizard", "Hit by a knight", "Hit by a ghost", "Hit by a pig", "Caught by the Devourer"]
 	var banners := ["STAGE %d", "RUSH", "THE DEVOURER", "DEVOURER DOWN +%d", "SHIELD", "SLOW-MO", "DOUBLE POINTS", "SOUL MAGNET"]

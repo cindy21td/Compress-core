@@ -223,8 +223,7 @@ func _check_rush() -> void:
 
 
 func start() -> void:
-	if distance == 0:
-		scroller.on_restart()  # spawn from this screen's edge (the pool was built at 204 wide)
+	scroller.on_restart()  # a fresh pool from this screen's edge (it was built at 204 wide)
 	state = State.RUNNING
 	Assets.loop_music("theme", 0.3)
 

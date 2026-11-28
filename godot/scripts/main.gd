@@ -1076,23 +1076,22 @@ func _layout_game_over() -> void:
 				break
 		if done:
 			break
-	if not done:  # each button on its own: the first free place, Again first
-		var blocked: Array[Rect2] = [k, hero_r, pill]
-		for pair in [[replay_button, [26.0, 104.0, lo, hi - 74, 64.0]], [menu_button, [104.0, 26.0, hi - 74, lo, 64.0]]]:
-			var btn: UiButton = pair[0]
-			var placed := false
-			for y in [80.0, 104.0, 27.0]:
-				for x in pair[1]:
-					var r := Rect2(Vector2(x, y), btn.rect.size)
-					if r.position.x < lo or r.end.x > hi:
-						continue
-					if blocked.all(func(b): return not b.has_area() or not r.grow(2).intersects(b)):
-						btn.rect.position = r.position
-						blocked.append(r)
-						placed = true
-						break
-				if placed:
-					break
+	var tw0 := Ui.text_width(str(world.total_score), 24)
+	var total0 := Rect2(WIDTH / 2 - tw0 / 2 - 22, 18, tw0 + 44, 34)  # the total and its HIGH SCORE stamp
+	if not done:  # every pair of free places, nearest the usual row first
+		var blocked: Array[Rect2] = [k, hero_r, pill, total0]
+		var spots: Array[Rect2] = []
+		for y in [80.0, 104.0, 55.0, 27.0]:
+			for x in [26.0, 104.0, lo, hi - 74, 64.0, 46.0, 84.0]:
+				var r := Rect2(Vector2(x, y), replay_button.rect.size)
+				if r.position.x >= lo and r.end.x <= hi and blocked.all(func(o): return not o.has_area() or not r.grow(2).intersects(o)):
+					spots.append(r)
+		for i in spots.size():
+			for j in spots.size():
+				if i != j and not spots[i].grow(2).intersects(spots[j]) and not done:
+					replay_button.rect.position = spots[i].position
+					menu_button.rect.position = spots[j].position
+					done = true
 	chips_y = 54.0
 	var cw := _chips_width()
 	var tw := Ui.text_width(str(world.total_score), 24)

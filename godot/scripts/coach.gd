@@ -62,6 +62,13 @@ enum Phase { STOMP, DOUBLE, FIRE, BREATHER, FREE }
 const BREATHER := 2.5  # s of empty track after the fire lesson
 var breather := 0.0
 var ground_demo_time := 0.0
+# A player who only single-taps must not be stuck on an empty track: after a
+# few single jumps (or 15 s) the double-jump lesson lets go.
+const DOUBLE_TRIES := 4
+const DOUBLE_MAX_TIME := 15.0
+var double_tries := 0
+var double_phase_time := 0.0
+var _was_airborne := false
 const GROUND_DEMO := 0.9  # one flight of the echo along both arcs
 # First sight of the later things: one short line each, once per install.
 const INTROS := {
@@ -125,6 +132,9 @@ func start_run() -> void:
 	line_alpha = 0.0
 	breather = 0.0
 	ground_demo_time = 0.0
+	double_tries = 0
+	double_phase_time = 0.0
+	_was_airborne = false
 	intro_queue.clear()
 	intro_key = ""
 	intro_time = 0.0
@@ -171,6 +181,13 @@ func update(delta: float, world: GameWorld) -> bool:
 	elif not arc.is_empty():
 		arc.clear()
 	breather = maxf(breather - delta, 0.0)
+	if phase() == Phase.DOUBLE and h.alive:
+		double_phase_time += delta
+		if _was_airborne and not h.jumped and not h.double_jumped:
+			double_tries += 1  # landed from a single jump
+		if double_tries >= DOUBLE_TRIES or double_phase_time >= DOUBLE_MAX_TIME:
+			_learn(1)  # not saved as mastered in spirit, but the run moves on
+	_was_airborne = h.jumped
 	var ph := phase()
 	# Nothing can hurt the hero while a lesson has the screen.
 	world.harmless = ph in [Phase.STOMP, Phase.DOUBLE] or opening_grace
@@ -416,7 +433,7 @@ func _wanted_line(world: GameWorld) -> String:
 	if ground_demo(world):
 		return "Watch: double jump"
 	if double_ask(world):
-		return "Tap to jump"
+		return "Tap, then tap again"
 	if double_cue(world):
 		return "Tap again to go higher" if double_demoed else "Watch: double jump"
 	if fire_ball(world) != null:
