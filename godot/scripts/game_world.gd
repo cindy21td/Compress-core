@@ -16,6 +16,8 @@ signal boss_slammed
 signal powerup_collected(kind: PowerUp.Kind)
 signal shield_broken
 
+var killer: Object = null  # what ended the run (marked on the score screen)
+
 const MAX_COMBO_MULTIPLIER := 4
 const BOSS_HIT_POINTS := 2
 const BOSS_DEFEAT_BONUS := 20
@@ -24,6 +26,7 @@ const SLOWMO_TIME := 4.5
 const DOUBLE_TIME := 8.0
 const MAGNET_TIME := 8.0
 const SHIELD_GRACE := 1.2
+const MIN_HIGH_SCORE := 10  # below this a run is too short to call a best
 
 var combo := 0  # stomps since last touching the ground
 var best_combo := 0
@@ -39,6 +42,16 @@ var invincible := false  # demo/testing only: collisions don't end the run
 const RUSH_DURATION := 60
 
 var state := State.MENU
+var harmless := false  # set by the Coach: enemies walk past until the first stomp
+var learning := false  # set by the Coach until the jump is learned: no rush, no Devourer
+# Set by the Coach while a lesson has the screen: which kinds may show, how
+# many at once; any other enemy still on screen can't hurt.
+var limit_kinds := false
+var allowed_kinds: Array = []
+var max_enemies := 3
+var summoner_harmless := false  # set by the Coach: the first ghost can't kill until taught
+var fire_harmless := false  # set by the Coach: the first wizard can't kill yet
+var wizard_spared := false  # its fireball (or body) went through the hero while harmless
 var hero := Hero.new(30, 104, 25, 25)
 var scroller: ScrollHandler
 var renderer  # main.gd: prepare_transition(), show_rate_prompt()
@@ -72,6 +85,10 @@ func _update_running(delta: float) -> void:
 	_tick_powerups(delta)
 	scroller.pig_unlocked = get_distance() >= PIG_UNLOCK_DISTANCE
 	scroller.magnet = magnet_time > 0
+	scroller.calm = learning
+	scroller.limit_kinds = limit_kinds
+	scroller.allowed_kinds = allowed_kinds
+	scroller.max_enemies = max_enemies
 
 	var was_jumping := hero.jumped
 	hero.update(delta)
@@ -97,10 +114,20 @@ func _update_running(delta: float) -> void:
 		scroller.powerup.is_visible = false
 
 	var hit: Object = null if invincible or grace > 0 else scroller.colliding(hero)
+	if hit and harmless:
+		hit = null
+	if hit is Enemy and limit_kinds and not allowed_kinds.has((hit as Enemy).type):
+		hit = null  # left over from before the lesson: it walks through
+	if hit is Summoner and summoner_harmless:
+		hit = null  # the first ghost goes through the hero; "Jump on it" teaches it
+	if hit is Wizard and fire_harmless:
+		wizard_spared = true
+		hit = null
 	if hit and shield:
 		_break_shield(hit)
 		hit = null
 	if hit:
+		killer = hit
 		Assets.stop_theme()
 		scroller.stop()
 		hero.alive = false
@@ -118,7 +145,8 @@ func _update_running(delta: float) -> void:
 			Assets.set_pref("rateValue", rate_val + 1)
 
 		total_score = floori(distance / 200.0) + score
-		if total_score > Assets.get_pref("highScore"):
+		# No stamp for a run that never really started (no stomp, or a few points).
+		if total_score >= MIN_HIGH_SCORE and score > 0 and total_score > Assets.get_pref("highScore"):
 			Assets.set_pref("highScore", total_score)
 			state = State.HIGHSCORE
 
@@ -192,12 +220,18 @@ func _check_rush() -> void:
 		scroller.change_stage(ScrollHandler.RunningState.NORMAL)
 		rand_rush_number = _roll_rush()
 		rush_distance = 0
-	elif rush_distance == 0 and d != 0 and d % rand_rush_number == 0:
+	elif rush_distance == 0 and not learning and d != 0 and d % rand_rush_number == 0:
 		scroller.change_stage(ScrollHandler.RunningState.RUSH)
 		rush_distance = d
 
 
 func start() -> void:
+	# The lesson's spawn rules go to the scroller before the fresh pool is drawn,
+	# so the pool holds only what the lesson allows from the first frame.
+	scroller.limit_kinds = limit_kinds
+	scroller.allowed_kinds = allowed_kinds
+	scroller.max_enemies = max_enemies
+	scroller.on_restart()  # a fresh pool from this screen's edge (it was built at 204 wide)
 	state = State.RUNNING
 	Assets.loop_music("theme", 0.3)
 

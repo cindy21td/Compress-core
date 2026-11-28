@@ -24,6 +24,13 @@ var bg_back: Background
 
 var boss := Boss.new()
 var boss_cooldown := 0.0  # seconds before another boss can be summoned
+var calm := false  # first lesson still running: no Devourer
+# Set by the Coach while a lesson runs: only these kinds, at most this many.
+var limit_kinds := false
+var allowed_kinds: Array = []
+var max_enemies := 3
+var no_summoner := false  # set by the Coach: the ghost waits for the free run (+3 s)
+var owed := 0  # spawns skipped (nothing allowed was free), paid back after
 var powerup := PowerUp.new()
 var powerup_timer := 12.0
 var pig_unlocked := false
@@ -61,8 +68,19 @@ func show_random_enemy() -> void:
 	var pool := hidden
 	if not pig_unlocked:
 		pool = hidden.filter(func(e): return e != pig)
+	if limit_kinds:  # a lesson: one kind, one at a time (or none)
+		pool = pool.filter(func(e): return allowed_kinds.has(e.type))
+		if _live_count() >= max_enemies:
+			pool = []
+	if no_summoner:
+		pool = pool.filter(func(e): return e != summoner)
+	if pool.is_empty():
+		owed += 1
+		return
 	var e: Enemy = pool[randi_range(0, pool.size() - 1)]
 	hidden.erase(e)
+	if e == summoner:
+		e.position.x = maxf(e.position.x, Geo.view_width)  # enters from the edge, never mid-screen
 	e.set_is_visible(true)
 
 
@@ -77,6 +95,18 @@ func update(delta: float) -> void:
 	boss_summoned = false
 	boss_hits.clear()
 	boss_landed = false
+
+	if no_summoner and summoner.is_visible and summoner.alive and summoner.position.x >= Geo.view_width:
+		summoner.reset_enemy(-10, true)  # not on screen yet: back to the pool
+		hidden.append(summoner)
+		owed += 1
+	if limit_kinds:
+		_limit()
+	elif owed > 0:
+		var n := mini(owed, 3)
+		owed = 0
+		for i in n:
+			show_random_enemy()
 
 	for e in enemies:
 		_update_enemy(delta, e)
@@ -101,9 +131,34 @@ func update(delta: float) -> void:
 
 	powerup.update(delta)
 	powerup_timer -= delta
-	if powerup_timer <= 0 and not powerup.is_visible:
+	if powerup_timer <= 0 and not powerup.is_visible and not limit_kinds:
 		powerup.spawn(randi() % 4 as PowerUp.Kind)
 		powerup_timer = randf_range(POWERUP_INTERVAL.x, POWERUP_INTERVAL.y)
+
+
+func _live_count() -> int:
+	var n := 0
+	for e in enemies:
+		if e.is_visible and e.alive:
+			n += 1
+	return n
+
+
+## During a lesson: enemies of other kinds, or past the limit, that haven't
+## come on screen yet go back to the pool; an allowed one fills a free place.
+func _limit() -> void:
+	var live := enemies.filter(func(e): return e.is_visible and e.alive)
+	live.sort_custom(func(a, b): return a.position.x < b.position.x)
+	var kept := 0
+	for e in live:
+		if allowed_kinds.has(e.type) and kept < max_enemies:
+			kept += 1
+		elif e.position.x >= Geo.view_width:
+			e.reset_enemy(0 if e.type == Enemy.Type.WIZARD else (-10 if e.type == Enemy.Type.SUMMONER else ran_vel_x()), true)
+			hidden.append(e)
+			owed += 1
+	if kept < max_enemies:
+		show_random_enemy()
 
 
 func _update_enemy(delta: float, e: Enemy) -> void:
@@ -116,7 +171,7 @@ func _update_enemy(delta: float, e: Enemy) -> void:
 				e.reset_enemy(0, false)
 			Enemy.Type.SUMMONER:
 				# An escaped Summoner calls in the Devourer.
-				if e.alive and not boss.active() and boss_cooldown <= 0:
+				if e.alive and not calm and not boss.active() and boss_cooldown <= 0:
 					boss.summon()
 					boss_summoned = true
 				e.reset_enemy(-10, false)
@@ -148,6 +203,7 @@ func on_restart() -> void:
 	powerup.is_visible = false
 	powerup_timer = 12.0
 	magnet = false
+	owed = 0
 	hidden = enemies.duplicate()
 	for i in 3:
 		show_random_enemy()

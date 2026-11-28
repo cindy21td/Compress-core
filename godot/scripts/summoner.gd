@@ -5,8 +5,8 @@ extends Enemy
 
 func _init(w: int, h: int, scroll_speed: float) -> void:
 	super(w, h, scroll_speed, Type.SUMMONER)
-	position.x = randi_range(204, 235)
-	position.y = randi_range(50, 112)
+	position.x = randi_range(int(Geo.view_width), int(Geo.view_width) + 31)
+	position.y = randi_range(56, 112)
 
 
 func update(delta: float) -> void:
@@ -16,10 +16,10 @@ func update(delta: float) -> void:
 
 
 func reset_enemy(new_vel_x: float, start_over: bool) -> void:
-	position.y = randi_range(50, 112)
+	position.y = randi_range(56, 112)
 	velocity.x = -59 - new_vel_x
 	alive = true
-	position.x = randi_range(204, 235)
+	position.x = randi_range(int(Geo.view_width), int(Geo.view_width) + 31)
 	is_scrolled_left = false
 	is_visible = false
 	if start_over:

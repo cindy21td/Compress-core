@@ -78,7 +78,7 @@ func set_is_visible(check: bool) -> void:
 
 func ran_pos_x() -> float:
 	curr_pos = Enemy.take_slot(slots, curr_pos)
-	return 204 + curr_pos * 5
+	return Geo.view_width + curr_pos * 5
 
 
 func ran_pos_y() -> float:

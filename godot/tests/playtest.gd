@@ -8,11 +8,82 @@ extends Node
 var main: Node2D
 var failures := 0
 var shot_dir := ""
+var shot_locale := "en"
+# Build 10 first-minute rules, checked every frame (see _process).
+var guard := false
+var guard_bad: Array[String] = []
+var hud_bad: Array[String] = []
+var ghost_bad: Array[String] = []  # build 12: no ghost before the free run has had its 3 s
+const HAZARD_PX := 90.0  # no live enemy this close while the double jump is taught
+
+
+func _bad(list: Array[String], what: String) -> void:
+	if list.size() < 6 and not list.has(what):
+		list.append(what)
+
+
+func _process(_d: float) -> void:
+	if main == null or main.screen != main.Screen.GAME:
+		return
+	var w: GameWorld = main.world
+	var c: Coach = main.coach
+	if w.state != GameWorld.State.RUNNING:
+		return
+	var vw := Geo.view_width
+	var on := w.scroller.enemies.filter(func(e): return e.is_visible and e.alive and e.position.x < vw)
+	var g := w.scroller.summoner
+	if (c.phase() != Coach.Phase.FREE or c.free_time < Coach.SUMMONER_DELAY) and g.is_visible and g.alive and g.position.x < vw:
+		_bad(ghost_bad, "ghost on screen %.1f s into the free run (phase %d)" % [c.free_time, c.phase()])
+	if guard:
+		match c.phase():
+			Coach.Phase.STOMP:
+				if on.size() > 1 or on.any(func(e): return e.type != Enemy.Type.KNIGHT):
+					_bad(guard_bad, "stomp lesson: %d on screen" % on.size())
+				if not w.harmless:
+					_bad(guard_bad, "stomp lesson: not harmless")
+			Coach.Phase.DOUBLE:
+				for e in on:
+					if absf(e.position.x - w.hero.position.x) < HAZARD_PX and not w.harmless:
+						_bad(guard_bad, "double lesson: live enemy within %d px" % HAZARD_PX)
+				if c.line == "Watch: double jump" and c.line_alpha > 0.0 and not c.screen_clear(w):
+					_bad(guard_bad, "Watch shown with enemies on screen")
+			Coach.Phase.FIRE:
+				if on.any(func(e): return e.type != Enemy.Type.WIZARD):
+					_bad(guard_bad, "fire lesson: another kind on screen")
+				if on.filter(func(e): return e.type == Enemy.Type.WIZARD).size() > 1:
+					_bad(guard_bad, "fire lesson: two wizards")
+			Coach.Phase.BREATHER:
+				if on.any(func(e): return e.position.x > vw - 24):
+					_bad(guard_bad, "breather: an enemy came on")
+	# HUD lanes: nothing crosses the counter or each other; banners clear of enemies.
+	var r: Dictionary = main.hud_rects()
+	var keys := r.keys()
+	for i in keys.size():
+		for j in range(i + 1, keys.size()):
+			if (r[keys[i]] as Rect2).intersects(r[keys[j]]):
+				_bad(hud_bad, "%s x %s" % [keys[i], keys[j]])
+	if r.has("banner"):
+		for e in on:
+			var er := Rect2(e.position - Vector2(main.ui_view.position.x, 0), Vector2(e.width, e.height))
+			if (r.banner as Rect2).intersects(er):
+				_bad(hud_bad, "banner over an enemy (y %.0f)" % e.position.y)
+
+
+static func _lum(c: Color) -> float:
+	var f := func(v: float) -> float: return v / 12.92 if v <= 0.04045 else pow((v + 0.055) / 1.055, 2.4)
+	return 0.2126 * f.call(c.r) + 0.7152 * f.call(c.g) + 0.0722 * f.call(c.b)
+
+
+static func contrast(a: Color, b: Color) -> float:
+	var la := _lum(a)
+	var lb := _lum(b)
+	return (maxf(la, lb) + 0.05) / (minf(la, lb) + 0.05)
 
 
 func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
 	shot_dir = args[0] if args.size() > 0 else ""
+	shot_locale = args[1] if args.size() > 1 else "en"  # second arg: screens in another language
 	main = load("res://main.tscn").instantiate()
 	add_child(main)
 	await _run()
@@ -66,6 +137,7 @@ func _run() -> void:
 	var w: GameWorld = main.world
 	_check(Assets._sounds.size() == Assets.SOUND_FILES.size(), "all sounds loaded")
 	_check(main.screen == main.Screen.SPLASH, "starts on splash")
+	_fit_check()
 	await _wait(1.0)
 	await _shot("01_splash")
 	await _wait(1.3)
@@ -73,19 +145,23 @@ func _run() -> void:
 	await _shot("02_menu")
 
 	var muted: bool = Assets.muted
-	await _click(main.sound_button.rect.get_center())
+	await _click(main.sound_button.rect.get_center() + main.ui_view.position)
 	_check(Assets.muted != muted, "sound button toggles mute")
-	await _click(main.sound_button.rect.get_center())
+	await _click(main.sound_button.rect.get_center() + main.ui_view.position)
 	_check(Assets.muted == muted, "sound button toggles back")
 
+	# Lessons replay from the title's "?" button.
+	await _click(main.cues_button.rect.get_center() + main.ui_view.position)
+	_check(not main.coach.jump_taught and not main.coach.double_taught and Assets.get_pref("taughtJump") == 0, "? button replays the lessons")
 	await _click(Vector2(100, 60))
-	_check(main.screen == main.Screen.GAME and w.state == GameWorld.State.READY, "tap on menu -> ready")
-	await _wait(1.6)
-	await _shot("03_tutorial")
+	_check(main.screen == main.Screen.GAME and w.state == GameWorld.State.RUNNING, "tap on title -> running (no ready card)")
+	guard = true
+	await _teaching()
+	await _ghost_lesson()
+	guard = false
+	_check(guard_bad.is_empty(), "each lesson has the screen to itself %s" % str(guard_bad))
 
 	w.invincible = true  # random enemies must not end the scripted steps early
-	await _click(Vector2(100, 60))
-	_check(w.state == GameWorld.State.RUNNING, "tap -> running")
 	await _click(Vector2(100, 60))
 	_check(w.hero.jumped, "tap -> jump")
 	await _wait(0.12)
@@ -93,14 +169,18 @@ func _run() -> void:
 	await _wait(1.5)
 	_check(not w.hero.jumped and is_equal_approx(w.hero.position.y, 104.0), "hero lands on ground")
 
-	await _click(main.pause_button.rect.get_center())
+	await _click(main.pause_button.rect.get_center() + main.ui_view.position)
 	_check(main.paused, "pause button pauses")
 	var d := w.distance
 	await _wait(0.3)
 	_check(w.distance == d, "world frozen while paused")
 	await _shot("05_paused")
-	await _click(main.resume_button.rect.get_center())
+	await _click(main.resume_button.rect.get_center() + main.ui_view.position)
 	_check(not main.paused, "resume button resumes")
+	main.propagate_notification(Node.NOTIFICATION_APPLICATION_PAUSED)
+	_check(main.paused, "leaving the app pauses the run")
+	await _click(main.resume_button.rect.get_center() + main.ui_view.position)
+	_check(not main.paused, "resume after returning")
 
 	# Long demo run: still invincible, so it reaches later stages.
 	var shots := {6.0: "06_running", 24.0: "07_stage2", 44.0: "09_stage3"}
@@ -137,30 +217,266 @@ func _run() -> void:
 		await _wait(0.05)
 		t += 0.05
 	_check(w.is_game_over(), "hero eventually dies")
+	_check(main.killer_name != "", "game over names the killer (%s)" % main.killer_name)
 	_check(broke[0], "shield absorbed a hit before death")
+	# Build 12: the score screen takes taps at once (a guard of at most 0.4 s, real time).
+	_check(main.GAME_OVER_INPUT_DELAY <= 0.4, "score-screen tap guard is at most 0.4 s (%.2f)" % main.GAME_OVER_INPUT_DELAY)
+	while main.game_over_real_time() < 0.4:
+		await get_tree().process_frame
+	_check(main.game_over_input_ready() and main.game_over_button_alpha() >= 1.0, "Again and Title are drawn and take taps 0.4 s after death (%.2f s)" % main.game_over_real_time())
+	for b in [main.menu_button, main.replay_button]:
+		main._touch_down(b.rect.get_center())
+		_check(b.pressed, "%s responds to a tap 0.4 s after death" % b.label)
+		main._touch_down(Vector2(-1, -1))  # slide off: nothing fires
+		main._touch_up(Vector2(-1, -1))
+	_check(w.is_game_over(), "sliding off the buttons keeps the score screen")
 	await _wait(0.3)
 	await _shot("10_game_over_anim")
 	await _wait(1.6)
 	await _shot("11_game_over")
+	if main.killer_rect.has_area():
+		var lw := 70.0
+		var px: float = main._killer_pill_x(lw) + main.ui_view.position.x
+		var kr := maxf(main.killer_rect.size.x, main.killer_rect.size.y) * 0.62 + 2
+		var kc: Vector2 = main.killer_rect.get_center()
+		var clear := px > kc.x + kr or px + lw < kc.x - kr
+		var hx := w.hero.position.x
+		clear = clear and (px > hx + w.hero.width or px + lw < hx)
+		_check(clear, "the killer's pill sits clear of the ring and the hero (pill x %.0f, ring %.0f, hero %.0f)" % [px, kc.x, hx])
+	var kc_r: Rect2 = main.killer_clear_rect()
+	var gor: Dictionary = main.game_over_rects()
+	var covered := []
+	for k in gor:
+		if k != "pill" and kc_r.has_area() and (gor[k] as Rect2).intersects(kc_r):
+			covered.append(k)
+	_check(covered.is_empty(), "the killer stays in view on the score screen %s" % str(covered))
+	# An airborne killer where the buttons usually go: the buttons move.
+	var saved_k: Rect2 = main.killer_rect
+	for spot in [main.REPLAY_AT + Vector2(20, 2), main.MENU_AT + Vector2(30, 4), Vector2(150, 58), Vector2(110, 70)]:
+		main.killer_rect = Rect2(spot + Vector2(main.ui_view.position.x, 0), Vector2(20, 20))
+		main._layout_game_over()
+		var kr2: Rect2 = main.killer_clear_rect()
+		var hit := []
+		var g2: Dictionary = main.game_over_rects()
+		for k in ["replay", "menu", "chips"]:
+			if (g2[k] as Rect2).intersects(kr2):
+				hit.append(k)
+		for k in ["replay", "menu"]:
+			if (g2[k] as Rect2).intersects(g2.total):
+				hit.append(k + " over the total")
+		_check(hit.is_empty(), "buttons and chips clear an airborne killer at %s %s %s" % [str(spot), str(hit), str(g2)])
+	main.killer_rect = saved_k
+	main._layout_game_over()
+	var cr := contrast(main.KILLER_HINT, main.KILLER_PILL)
+	_check(cr >= 4.5, "gold hint on the red pill reads at %.2f:1 (>= 4.5)" % cr)
 	_check(w.total_score == floori(w.distance / 200.0) + w.score, "total score formula")
 	_check(Assets.get_pref("highScore") >= w.total_score, "high score saved")
 
-	await _click(main.replay_button.rect.get_center())
-	_check(w.state == GameWorld.State.READY, "replay button -> ready")
-	_check(w.score == 0 and w.distance == 0 and w.hero.alive, "state reset on replay")
+	await _click(main.replay_button.rect.get_center() + main.ui_view.position)
+	_check(w.state == GameWorld.State.RUNNING, "replay button -> running")
+	_check(w.score == 0 and w.distance < 30 and w.hero.alive, "state reset on replay (run restarts at once)")
 	_check(main.backdrop.stage == 0, "back to first stage")
 	var visible := 0
 	for e in w.scroller.enemies:
 		if e.is_visible:
 			visible += 1
 	_check(visible == 3, "three enemies active after restart")
+	_check(main.coach.opening_grace and w.harmless, "a returning player's run opens with a grace until the first tap (grace %s harmless %s jumped %s d %d)" % [main.coach.opening_grace, w.harmless, w.hero.jumped, w.distance])
 
-	await _click(Vector2(100, 60))
-	await _click(main.pause_button.rect.get_center())
-	await _click(main.pause_menu_button.rect.get_center())
+	await _click(main.pause_button.rect.get_center() + main.ui_view.position)
+	await _click(main.pause_menu_button.rect.get_center() + main.ui_view.position)
 	_check(main.screen == main.Screen.MENU and w.state == GameWorld.State.MENU, "pause -> menu returns to title")
+	var shows: Dictionary = main.coach.intro_shows
+	_check(shows.values().all(func(n): return n == 1), "each first-sight line shows once %s" % str(shows))
+	for k in Coach.INTROS:
+		_check(shows.get(k, 0) == 1 or Assets.get_pref(k) == 0, "%s shown once when first seen" % k)
+	print("     first-sight lines shown: ", shows.keys())
+	_check(hud_bad.is_empty(), "lesson pill, counter, words and banners never overlap; banners clear of enemies %s" % str(hud_bad))
 	await _wait(0.3)
 	await _shot("12_menu_with_best")
+
+
+## W5: the run teaches itself. The first enemy slows the world and walks past
+## harmlessly with a miss drawn; the first stomp is the jump lesson; a tap at
+## the top of a jump is the double-jump lesson. The first cue waits for the first tap.
+var knights_only := true
+
+
+func _check_knights_only(w: GameWorld) -> void:
+	for e in w.scroller.enemies:
+		if e.is_visible and e.type != Enemy.Type.KNIGHT:
+			knights_only = false
+		for p in e.get_projectiles():
+			if p.is_visible:
+				knights_only = false
+
+
+func _teaching() -> void:
+	var w: GameWorld = main.world
+	var c: Coach = main.coach
+	var t := 0.0
+	while not c.slow(w) and t < 8.0:
+		await _wait(0.05)
+		t += 0.05
+	_check(c.slow(w) and Engine.time_scale < 0.6, "first enemy slows the world (%.2f)" % Engine.time_scale)
+	_check(c.jump_cue(w), "ring cue on the hero before the first enemy")
+	await _shot("03_jump_cue")
+	# The first cue waits: the world holds with the knight just ahead until the first tap.
+	t = 0.0
+	while not c.waiting(w) and t < 10.0:
+		_check_knights_only(w)
+		await _wait(0.05)
+		t += 0.05
+	_check(c.waiting(w), "the first knight waits for the first tap")
+	var d0 := w.distance
+	await _wait(1.0)
+	_check(c.waiting(w) and w.distance == d0 and w.hero.alive, "the world holds until the tap (%d -> %d)" % [d0, w.distance])
+	_check(c.lesson_text() == tr("Tap to jump on it"), "the hold says what to do (%s)" % c.lesson_text())
+	var rm := c.reduce_motion
+	_check(c.wait_ripple_radius(w) > 0.0, "the hold draws a second tap ring (Reduce Motion %s)" % rm)
+	c.reduce_motion = false  # the headless display may report Reduce Motion on
+	var r1: float = c.wait_ripple_radius(w)
+	await _wait(0.3)
+	var r2: float = c.wait_ripple_radius(w)
+	c.reduce_motion = rm
+	_check(r1 > 0.0 and r2 > 0.0 and absf(r1 - r2) > 0.5, "the hold shows a tap ring rippling out (%.1f -> %.1f), not a still screen" % [r1, r2])
+	_check(knights_only, "only knights on screen during the first lesson")
+	var ring_edge := w.hero.body_center.x + 13.0 + 2.0 + 1.6
+	_check(c.target != null and c.target.position.x > ring_edge + 2, "the waiting knight stands clear of the hero's ring (%.0f > %.0f)" % [c.target.position.x if c.target else 0.0, ring_edge])
+	await _shot("03b_waiting")
+	main._touch_down(Vector2(-1, -1))
+	main._touch_up(Vector2(-1, -1))
+	# Poll every frame, so the arc check below sees the first frame after the
+	# stomp (a 2868-wide windowed run renders slowly; a timer step could skip
+	# past the arc's 0.9 s of game time).
+	var t_ms := Time.get_ticks_msec()
+	while not c.jump_taught and Time.get_ticks_msec() - t_ms < 3000 / Engine.time_scale:
+		await get_tree().process_frame
+	var arc_seen := c.arc_time
+	_check(c.jump_taught, "a tap at the hold lands on the knight")
+	w.invincible = true
+	t = 0.0
+	while not c.jump_taught and t < 20.0:
+		_autoplay()
+		await _wait(0.03)
+		t += 0.03
+	_check(c.jump_taught and Assets.get_pref("taughtJump") == 1, "first stomp teaches the jump (saved)")
+	_check(arc_seen < 0.9 and c.shown_arc.size() > 2, "first stomp draws its arc (%.2f s in)" % arc_seen)  # 0.9: how long the arc shows
+	await _shot("03c_first_stomp")
+	_check(c.phase() == Coach.Phase.DOUBLE and w.max_enemies == 0, "the double-jump lesson clears the track")
+	t = 0.0
+	while not c.ground_demo(w) and t < 15.0:
+		await _wait(0.03)
+		t += 0.03
+	_check(c.ground_demo(w) and c.screen_clear(w), "the double jump is demonstrated from the ground, on a clear screen")
+	await _wait(0.2)
+	_check(c.lesson_text() == tr("Watch: double jump"), "the demo is labelled (%s)" % c.lesson_text())
+	_check(c.high_powerup and w.scroller.powerup.is_visible and w.scroller.powerup.position.y < 56 \
+		and w.scroller.powerup.center().y - (PowerUp.RADIUS + 5 + 2 + 1.5) > main._lane_y() + 14.0,
+		"a pickup floats out of one jump's reach, its ring clear of the lesson pill, while the double jump is taught (y %.0f)" % w.scroller.powerup.position.y)
+	await _wait(0.25)
+	await _shot("03d0_double_demo")
+	t = 0.0
+	while not c.double_demoed and t < 5.0:
+		await _wait(0.03)
+		t += 0.03
+	await _wait(0.25)
+	_check(c.double_ask(w) and c.lesson_text() == tr("Tap, then tap again"), "after one demo flight it asks for both taps (%s)" % c.lesson_text())
+	main._touch_down(Vector2(-1, -1))
+	main._touch_up(Vector2(-1, -1))
+	t = 0.0
+	while not c.double_cue(w) and t < 3.0:
+		await _wait(0.02)
+		t += 0.02
+	_check(c.double_cue(w) and c.slow(w), "double-jump ring at the top of the jump, slowed")
+	await _wait(0.1)
+	var wt := 0.0
+	while c.double_cue(w) and c.lesson_text() == "" and wt < 0.6:  # a tick from a random stomp may be speaking
+		await _wait(0.03)
+		wt += 0.03
+	_check(c.double_cue(w) and c.lesson_text() == tr("Tap again to go higher"), "the next jump asks, in the air (%s|%s|%.2f|%.2f)" % [c.lesson_text(), c.line, c.miss_time, c.tick_time])
+	await _shot("03d_double_cue")
+	main._touch_down(Vector2(-1, -1))
+	main._touch_up(Vector2(-1, -1))
+	_check(c.double_taught and Assets.get_pref("taughtDouble") == 1, "first double jump taught (saved)")
+	_check(not c.slow(w) and not c.jump_cue(w), "no jump cue once learned")
+	await _wait(1.5)
+	# The first wizard: its fireball is ringed and slowed before it can kill.
+	var s := w.scroller
+	var wz: Wizard = s.wizards[0]
+	c.fire_taught = false  # a random wizard may have taught it during the demo
+	Assets.set_pref("taughtFire", 0)
+	for o in s.wizards:  # the scroller may have sent one already: the test's wizard replaces it
+		if o != wz and o.is_visible:
+			o.reset_enemy(0, true)
+			s.hidden.append(o)
+	s.hidden.erase(wz)
+	wz.reset_enemy(0, false)
+	wz.set_is_visible(true)
+	wz.position.x = 150
+	t = 0.0
+	while c.fire_ball(w) == null and t < 4.0:
+		await _wait(0.05)
+		t += 0.05
+	_check(c.fire_ball(w) != null and w.fire_harmless, "first wizard's fireball is the fire lesson")
+	t = 0.0
+	while not c.slow(w) and t < 6.0:
+		await _wait(0.03)
+		t += 0.03
+	_check(c.slow(w) and c.lesson_text() == tr("Jump the fire"), "fireball slows the world and says Jump the fire (%s)" % c.lesson_text())
+	await _shot("03e_fire_lesson")
+	t = 0.0
+	while not c.fire_taught and t < 8.0:
+		await _wait(0.05)
+		t += 0.05
+	_check(c.fire_taught and Assets.get_pref("taughtFire") == 1, "fire lesson learned once the fireball passes (saved)")
+	await _wait(1.0)
+	w.invincible = false
+
+
+## Build 12: the ghost gets a fair entrance. None in the breather or the first
+## 3 s of the free run; the first one says "Jump on it" and can't kill.
+func _ghost_lesson() -> void:
+	var w: GameWorld = main.world
+	var c: Coach = main.coach
+	var s := w.scroller
+	w.invincible = true  # the free run's knights must not end the wait
+	var t := 0.0
+	while c.phase() != Coach.Phase.FREE and t < 8.0:
+		await _wait(0.03)
+		t += 0.03
+	var g := s.summoner
+	_check(c.phase() == Coach.Phase.FREE and s.no_summoner and not (g.is_visible and g.position.x < Geo.view_width),
+		"no ghost right after the breather (free run %.2f s)" % c.free_time)
+	t = 0.0
+	while s.no_summoner and t < 8.0:
+		await _wait(0.05)
+		t += 0.05
+	_check(not s.no_summoner and c.free_time >= Coach.SUMMONER_DELAY, "the ghost may come once the free run has had %.0f s" % Coach.SUMMONER_DELAY)
+	_check(not c.summoner_taught and w.summoner_harmless, "the first ghost can't kill until it is taught")
+	for e in s.enemies:  # the ghost alone on the track
+		if e.is_visible and e != g:
+			e.reset_enemy(0, true)
+			s.hidden.append(e)
+	if not g.is_visible:
+		s.hidden.erase(g)
+		g.reset_enemy(-10, false)
+		g.set_is_visible(true)
+	g.position = Vector2(Geo.view_width - 1, 92)
+	await _wait(0.4)
+	_check(c.ghost_cue(w) and c.lesson_text() == tr("Jump on it"), "the first ghost is taught with the stomp cue (%s)" % c.lesson_text())
+	await _shot("03f_ghost")
+	w.invincible = false
+	g.position = w.hero.body_center - Vector2(9, 10)  # walk straight into it
+	for i in 4:
+		await get_tree().physics_frame
+	_check(w.hero.alive and w.state == GameWorld.State.RUNNING, "the first ghost goes through the hero")
+	w.invincible = true
+	g.reset_enemy(-10, true)
+	s.hidden.append(g)
+	await _wait(0.2)
+	_check(c.summoner_taught, "the ghost is taught once it has gone")
+	w.invincible = false
 
 
 func _play_for(seconds: float, until := func(): return false) -> float:
@@ -247,3 +563,40 @@ func _gameplay_extras() -> void:
 	_check(not s.boss.active(), "boss leaves after landing")
 	await _play_for(0.5)
 	_check(Assets.current_music == "theme", "theme music returns")
+
+
+## Every translation fits its box at the longest language (checked per locale).
+func _fit_check() -> void:
+	var cols := ["en", "es", "pt_BR", "fr", "de", "ja", "ko", "zh_Hans"]
+	var lessons := ["Tap to jump", "Tap to jump on it", "Land on it", "Watch: double jump", "Tap again to go higher",
+		"Jump the fire", "Jump on it"]
+	lessons.append_array(Coach.INTROS.values())
+	lessons.append("Tap, then tap again")
+	var words := ["Tap a little sooner", "Land on its head", "Landed on it", "Stopped it", "Double jump", "Cleared it", "Jump the fire"]
+	var killers := ["Hit by a wizard", "Hit by a knight", "Hit by a ghost", "Hit by a pig", "Caught by the Devourer"]
+	var banners := ["STAGE %d", "RUSH", "THE DEVOURER", "DEVOURER DOWN +%d", "SHIELD", "SLOW-MO", "DOUBLE POINTS", "SOUL MAGNET"]
+	var bad := []
+	var widest := {}
+	for loc in cols:
+		TranslationServer.set_locale(loc)
+		var tx := func(k: String) -> String: return String(TranslationServer.translate(k))
+		_check(loc == "en" or tx.call("Tap to jump") != "Tap to jump", "translation loaded for %s" % loc)
+		for k in lessons:
+			if Ui.text_width(tx.call(k), 7.5) + 14 > main.WIDTH - 24: bad.append([loc, k])
+		for k in words:
+			if Ui.text_width(tx.call(k), 8) + 12 > main.WIDTH - 40: bad.append([loc, k])
+		for k in killers:
+			var hint := "Stomp to push it back" if k == "Caught by the Devourer" else ("Jump the fire" if k == "Hit by a wizard" else "Jump on it")
+			var lw := maxf(Ui.text_width(tx.call(k), 7.5), Ui.text_width(tx.call(hint), 6.5)) + 14
+			widest[loc] = maxf(widest.get(loc, 0.0), lw)
+			if lw > main.WIDTH - 8: bad.append([loc, k])
+		for k in banners:
+			if Ui.text_width(tx.call(k) % 2 if "%d" in k else tx.call(k), 11) + 24 > main.WIDTH - 8: bad.append([loc, k])
+		for b in [main.replay_button, main.menu_button, main.resume_button, main.restart_button, main.pause_menu_button]:
+			var h: float = b.rect.size.y
+			if Ui.text_width(tx.call(b.label), h * 0.42) + h * 0.6 > b.rect.size.x - 4: bad.append([loc, b.label])
+		if Ui.text_width(tx.call("TAP TO START"), 9.0 * 1.04) + 19 > main.WIDTH - 16: bad.append([loc, "TAP TO START"])
+		if Ui.text_width(tx.call("PAUSED"), 9) > 96: bad.append([loc, "PAUSED"])
+	TranslationServer.set_locale(shot_locale)
+	print("     widest killer pill per locale: ", widest)
+	_check(bad.is_empty(), "every string fits at every locale %s" % str(bad))

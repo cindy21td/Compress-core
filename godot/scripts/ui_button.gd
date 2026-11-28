@@ -47,12 +47,13 @@ func draw(ci: CanvasItem, scale := 1.0, alpha := 1.0) -> void:
 		return
 	Ui.panel(ci, r, fill, 4.0, 1.0, 0.5 if pressed else 1.5)
 	var h := r.size.y
-	if label == "":
+	var txt := String(TranslationServer.translate(label))
+	if txt == "":
 		Ui.icon(ci, icon, r.get_center(), h * 0.55)
 	elif icon == Ui.Icon.NONE:
-		Ui.text(ci, label, Vector2(r.get_center().x, r.get_center().y - h * 0.26), h * 0.42, Ui.INK, HORIZONTAL_ALIGNMENT_CENTER, Color(0, 0, 0, 0))
+		Ui.text(ci, txt, Vector2(r.get_center().x, r.get_center().y - h * 0.26), h * 0.42, Ui.INK, HORIZONTAL_ALIGNMENT_CENTER, Color(0, 0, 0, 0))
 	else:
-		var tw := Ui.text_width(label, h * 0.42)
+		var tw := Ui.text_width(txt, h * 0.42)
 		var x0 := r.get_center().x - (tw + h * 0.6) / 2
 		Ui.icon(ci, icon, Vector2(x0 + h * 0.25, r.get_center().y), h * 0.5)
-		Ui.text(ci, label, Vector2(x0 + h * 0.6, r.get_center().y - h * 0.26), h * 0.42, Ui.INK, HORIZONTAL_ALIGNMENT_LEFT, Color(0, 0, 0, 0))
+		Ui.text(ci, txt, Vector2(x0 + h * 0.6, r.get_center().y - h * 0.26), h * 0.42, Ui.INK, HORIZONTAL_ALIGNMENT_LEFT, Color(0, 0, 0, 0))
