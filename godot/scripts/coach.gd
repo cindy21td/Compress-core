@@ -66,6 +66,14 @@ var ground_demo_time := 0.0
 # few single jumps (or 15 s) the double-jump lesson lets go.
 const DOUBLE_TRIES := 4
 const DOUBLE_MAX_TIME := 15.0
+# No lesson can stall: each one lets go after a few tries or a time limit
+# (not saved as learned, so the next run teaches it again).
+const HOLD_MAX := 6.0  # s the first knight waits for a tap before walking on
+const STOMP_MAX_TIME := 20.0  # s of the stomp lesson after the hold
+const FIRE_MAX_TIME := 20.0  # s of the fire lesson
+var hold_time := 0.0
+var stomp_phase_time := 0.0
+var fire_phase_time := 0.0
 var double_tries := 0
 var double_phase_time := 0.0
 var _was_airborne := false
@@ -134,10 +142,34 @@ func start_run() -> void:
 	ground_demo_time = 0.0
 	double_tries = 0
 	double_phase_time = 0.0
+	hold_time = 0.0
+	stomp_phase_time = 0.0
+	fire_phase_time = 0.0
 	_was_airborne = false
 	intro_queue.clear()
 	intro_key = ""
 	intro_time = 0.0
+
+
+## The current lesson's rules on the world: what may spawn and what can hurt.
+## Called every frame and once before the run starts, so the first pool
+## already obeys the lesson (no wizard slips in on the first frame).
+func apply_phase(world: GameWorld) -> void:
+	var ph := phase()
+	# Nothing can hurt the hero while a lesson has the screen.
+	world.harmless = ph in [Phase.STOMP, Phase.DOUBLE] or opening_grace
+	world.learning = ph != Phase.FREE
+	world.limit_kinds = ph != Phase.FREE
+	match ph:
+		Phase.STOMP:
+			world.allowed_kinds = [Enemy.Type.KNIGHT]
+			world.max_enemies = 1  # the first target is a single knight
+		Phase.FIRE:
+			world.allowed_kinds = [Enemy.Type.WIZARD]
+			world.max_enemies = 1
+		_:
+			world.allowed_kinds = []
+			world.max_enemies = 0 if ph != Phase.FREE else 3
 
 
 func phase() -> Phase:
@@ -186,23 +218,20 @@ func update(delta: float, world: GameWorld) -> bool:
 		if _was_airborne and not h.jumped and not h.double_jumped:
 			double_tries += 1  # landed from a single jump
 		if double_tries >= DOUBLE_TRIES or double_phase_time >= DOUBLE_MAX_TIME:
-			_learn(1)  # not saved as mastered in spirit, but the run moves on
+			_learn(1, false)  # not mastered, but the run moves on
+	if phase() == Phase.STOMP and h.alive:
+		if waiting(world):
+			hold_time += delta
+		else:
+			stomp_phase_time += delta
+		if spared >= MAX_SPARED or stomp_phase_time >= STOMP_MAX_TIME:
+			_learn(0, false)
+	if phase() == Phase.FIRE and h.alive:
+		fire_phase_time += delta
+		if fire_phase_time >= FIRE_MAX_TIME:
+			_learn(3, false)
 	_was_airborne = h.jumped
-	var ph := phase()
-	# Nothing can hurt the hero while a lesson has the screen.
-	world.harmless = ph in [Phase.STOMP, Phase.DOUBLE] or opening_grace
-	world.learning = ph != Phase.FREE
-	world.limit_kinds = ph != Phase.FREE
-	match ph:
-		Phase.STOMP:
-			world.allowed_kinds = [Enemy.Type.KNIGHT]
-			world.max_enemies = 1  # the first target is a single knight
-		Phase.FIRE:
-			world.allowed_kinds = [Enemy.Type.WIZARD]
-			world.max_enemies = 1
-		_:
-			world.allowed_kinds = []
-			world.max_enemies = 0 if ph != Phase.FREE else 3
+	apply_phase(world)
 	world.fire_harmless = fire_wizard(world) != null
 	var was_fire := fire_taught
 	_update_fire(world)
@@ -363,7 +392,7 @@ func _update_high_powerup(world: GameWorld) -> void:
 ## The first cue of a run waits for the player: the world holds still with the
 ## knight just ahead until the first tap.
 func waiting(world: GameWorld) -> bool:
-	if jump_taught or tapped or target == null or world.hero.jumped or not world.hero.alive:
+	if jump_taught or tapped or hold_time >= HOLD_MAX or target == null or world.hero.jumped or not world.hero.alive:
 		return false
 	var a := _ahead(world)
 	return a > 0 and a <= HOLD_OFFSET - target.velocity.x * STOMP_LEAD
@@ -468,13 +497,17 @@ func reacting() -> bool:
 	return (miss_time < MISS_WORD_TIME and miss_word != "") or (tick_time < 0.9 and tick_word != "")
 
 
-func _learn(i: int) -> void:
+## save = false: the lesson let go on its try/time limit; the next run asks again.
+func _learn(i: int, save := true) -> void:
 	match i:
 		0: jump_taught = true
 		1: double_taught = true
 		2: summoner_taught = true
-		3: fire_taught = true
-	Assets.set_pref(FLAGS[i], 1)
+		3:
+			fire_taught = true
+			breather = BREATHER  # however the fire lesson ends, 2.5 s of empty track follow
+	if save:
+		Assets.set_pref(FLAGS[i], 1)
 
 
 func _tick(pos: Vector2, word: String) -> void:

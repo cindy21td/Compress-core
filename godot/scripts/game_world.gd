@@ -223,6 +223,11 @@ func _check_rush() -> void:
 
 
 func start() -> void:
+	# The lesson's spawn rules go to the scroller before the fresh pool is drawn,
+	# so the pool holds only what the lesson allows from the first frame.
+	scroller.limit_kinds = limit_kinds
+	scroller.allowed_kinds = allowed_kinds
+	scroller.max_enemies = max_enemies
 	scroller.on_restart()  # a fresh pool from this screen's edge (it was built at 204 wide)
 	state = State.RUNNING
 	Assets.loop_music("theme", 0.3)

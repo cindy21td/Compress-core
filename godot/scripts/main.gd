@@ -384,6 +384,7 @@ func _start_run() -> void:
 
 func _go() -> void:
 	coach.start_run()
+	coach.apply_phase(world)
 	world.start()
 	world.hero.on_click()
 
@@ -515,6 +516,7 @@ func _touch_up(p: Vector2) -> void:
 		_set_paused(true)
 		return
 	if world.state == GameWorld.State.READY:
+		coach.apply_phase(world)
 		world.start()
 	if world.state == GameWorld.State.RUNNING:
 		_hero_click()
@@ -1078,20 +1080,39 @@ func _layout_game_over() -> void:
 			break
 	var tw0 := Ui.text_width(str(world.total_score), 24)
 	var total0 := Rect2(WIDTH / 2 - tw0 / 2 - 22, 18, tw0 + 44, 34)  # the total and its HIGH SCORE stamp
-	if not done:  # every pair of free places, nearest the usual row first
-		var blocked: Array[Rect2] = [k, hero_r, pill, total0]
+	# Any free pair on a fine grid, nearest the usual places first. The killer,
+	# its pill and the total always stay clear; the hero's body only if it can.
+	for blocked: Array in [[k, hero_r, pill, total0], [k, pill, total0]]:
+		if done:
+			break
+		var size := replay_button.rect.size
 		var spots: Array[Rect2] = []
-		for y in [80.0, 104.0, 55.0, 27.0]:
-			for x in [26.0, 104.0, lo, hi - 74, 64.0, 46.0, 84.0]:
-				var r := Rect2(Vector2(x, y), replay_button.rect.size)
-				if r.position.x >= lo and r.end.x <= hi and blocked.all(func(o): return not o.has_area() or not r.grow(2).intersects(o)):
+		var y := 4.0
+		while y + size.y <= HEIGHT - 4 - safe_b:
+			var x := lo
+			while x + size.x <= hi:
+				var r := Rect2(Vector2(x, y), size)
+				if blocked.all(func(o): return not o.has_area() or not r.intersects(o)):
 					spots.append(r)
-		for i in spots.size():
-			for j in spots.size():
-				if i != j and not spots[i].grow(2).intersects(spots[j]) and not done:
-					replay_button.rect.position = spots[i].position
-					menu_button.rect.position = spots[j].position
+				x += 3.0
+			y += 3.0
+		var by_replay := spots.duplicate()
+		by_replay.sort_custom(func(a, b): return a.position.distance_squared_to(REPLAY_AT) < b.position.distance_squared_to(REPLAY_AT))
+		var by_menu := spots.duplicate()
+		by_menu.sort_custom(func(a, b): return a.position.distance_squared_to(MENU_AT) < b.position.distance_squared_to(MENU_AT))
+		var best_cost := INF
+		for i in mini(by_replay.size(), 60):
+			var a: Rect2 = by_replay[i]
+			for b: Rect2 in by_menu:
+				if a.grow(2).intersects(b):
+					continue
+				var cost := a.position.distance_to(REPLAY_AT) + b.position.distance_to(MENU_AT)
+				if cost < best_cost:
+					best_cost = cost
+					replay_button.rect.position = a.position
+					menu_button.rect.position = b.position
 					done = true
+				break  # the nearest free menu place for this replay place
 	chips_y = 54.0
 	var cw := _chips_width()
 	var tw := Ui.text_width(str(world.total_score), 24)
