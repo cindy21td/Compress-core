@@ -181,6 +181,8 @@ func _update_game(delta: float) -> void:
 
 	running = world.state == GameWorld.State.RUNNING
 	_tick_first_sight(delta)
+	coach.update_intros(delta, world, banner_time >= 1.6 and pending_banner.is_empty())
+	coach.word_top = _banner_rect().end.y + 2 if banner_time <= 1.6 else 27.0
 	_apply_slowmo(running)
 	var ground_speed := -world.scroller.bg_front.velocity.x if running and hit_stop <= 0 and not coach.waiting(world) else 0.0
 	backdrop.update(delta, ground_speed, world.get_distance())
@@ -207,7 +209,7 @@ func _update_game(delta: float) -> void:
 		pending_banner[2] += delta
 		if pending_banner[2] > 3.0 or not running:
 			pending_banner = []  # stale: dropped
-		elif coach.lesson_text() == "" and coach.line_alpha <= 0.0:
+		elif coach.lesson_text() == "" and coach.line_alpha <= 0.0 and not coach.reacting():
 			_show_banner(pending_banner[0], pending_banner[1])
 	if world.is_game_over():
 		game_over_time += delta
@@ -337,6 +339,7 @@ func _on_death() -> void:
 				for p in (k as Wizard).projectiles:
 					if p.collides(world.hero):
 						killer_hint = "Jump the fire"
+	_layout_game_over()
 	fx.death(world.hero.body_center)
 	game_over_time = 0.0
 	stamp_buzzed = false
@@ -345,7 +348,7 @@ func _on_death() -> void:
 
 func _show_banner(text: String, color: Color) -> void:
 	# One message at a time: a banner never shares the screen with a lesson line.
-	if coach.lesson_text() != "":
+	if coach.lesson_text() != "" or coach.reacting():
 		pending_banner = [text, color, 0.0]
 		return
 	pending_banner = []
@@ -898,11 +901,7 @@ func _draw_hud(ci: CanvasItem) -> void:
 		var k := Ui.ease_out_quad(la)  # size; contrast stays full until the very end
 		var pa := clampf(la * 4.0, 0, 1)
 		var lw := (Ui.text_width(lesson, 7.5) + 14) * k
-		var boss_bar := world.scroller.boss.phase in [Boss.Phase.CHASE, Boss.Phase.DROP]
-		var ly := 42.0 if boss_bar else 31.0
-		if coach.high_powerup and not boss_bar:
-			ly = 23.0  # stays clear of the double-jump pickup floating below it
-		var lr := Rect2(cx - lw / 2, ly + 7 * (1 - k), lw, 14 * k)
+		var lr := Rect2(cx - lw / 2, _lane_y() + 7 * (1 - k), lw, 14 * k)
 		Ui.panel(ci, lr, Color(Ui.INK, pa), 7 * k, 0, 0)
 		Ui.text(ci, lesson, Vector2(cx, lr.position.y + 2.6 * k), 7.5 * k, Color(1, 1, 1, pa), HORIZONTAL_ALIGNMENT_CENTER, Color(0, 0, 0, 0))
 
@@ -933,7 +932,7 @@ func _draw_hud(ci: CanvasItem) -> void:
 	# Boss health bar
 	var b := world.scroller.boss
 	if b.phase in [Boss.Phase.CHASE, Boss.Phase.DROP]:
-		var bar := Rect2(cx - 48, 24, 96, 9)
+		var bar := Rect2(cx - 48, BOSS_BAR_Y, 96, 9)
 		var danger := clampf((b.position.x + b.width - 40) / (Boss.DROP_AT - 40), 0, 1)
 		var flash := danger > 0.75 and fmod(screen_time, 0.3) < 0.15
 		Ui.panel(ci, bar.grow(1.5), Ui.RED if flash else Ui.INK, 4, 0, 1.5)
@@ -950,6 +949,43 @@ func _draw_hud(ci: CanvasItem) -> void:
 			ci.draw_rect(bar.grow(2.5), Ui.RED if flash else Color.WHITE, false, 1.0)
 
 
+# HUD lanes (UI space): score 2-16, distance 15-24, then one lane for the
+# lesson pill or a banner (never both), all above the flyers (y >= 56).
+const COUNTER_Y := 15.0
+const BOSS_BAR_Y := 26.0
+func _boss_bar_up() -> bool:
+	return world.scroller.boss.phase in [Boss.Phase.CHASE, Boss.Phase.DROP]
+
+
+func _lane_y() -> float:
+	return 38.0 if _boss_bar_up() else 27.0
+
+
+func _banner_rect() -> Rect2:
+	var w := Ui.text_width(banner_text, 10) + 22
+	return Rect2(WIDTH / 2 - w / 2, 37.0 if _boss_bar_up() else 27.0, w, 18)
+
+
+## What the HUD shows right now (UI space), for the layout checks.
+func hud_rects() -> Dictionary:
+	var out := {}
+	var d := "%d m" % world.get_distance()
+	var dw := Ui.text_width(d, 7)
+	out.counter = Rect2(WIDTH / 2 - dw / 2, COUNTER_Y, dw, 9)
+	var lesson := coach.lesson_text()
+	if world.state == GameWorld.State.RUNNING and lesson != "" and banner_time >= 1.6 and screen_time >= TITLE_LIFT:
+		var lw := Ui.text_width(lesson, 7.5) + 14
+		out.pill = Rect2(WIDTH / 2 - lw / 2, _lane_y(), lw, 14)
+	if banner_time <= 1.6:
+		out.banner = _banner_rect()
+	var wr := coach.word_rect()
+	if wr.has_area():
+		out.word = Rect2(wr.position - Vector2(ui_view.position.x, 0), wr.size)
+	if _boss_bar_up():
+		out.boss_bar = Rect2(WIDTH / 2 - 48, BOSS_BAR_Y, 96, 9).grow(1.5)
+	return out
+
+
 func _draw_banner(ci: CanvasItem) -> void:
 	const DURATION := 1.6
 	if banner_time > DURATION:
@@ -960,12 +996,124 @@ func _draw_banner(ci: CanvasItem) -> void:
 		x = lerpf(WIDTH, 0, Ui.ease_out_back(t / 0.3))
 	elif t > DURATION - 0.3:
 		x = lerpf(0, -WIDTH, Ui.ease_in_out_quad((t - DURATION + 0.3) / 0.3))
-	var w := Ui.text_width(banner_text, 11) + 24
-	var r := Rect2(WIDTH / 2 - w / 2 + x, 36, w, 20)
+	var r := _banner_rect()
+	r.position.x += x
 	Ui.panel(ci, r, banner_color, 4, 1.2, 2)
 	var fg := Color.WHITE if banner_color == Ui.RED else Ui.INK
-	Ui.text(ci, banner_text, Vector2(r.get_center().x, r.position.y + 3.6), 11, fg, HORIZONTAL_ALIGNMENT_CENTER,
+	Ui.text(ci, banner_text, Vector2(r.get_center().x, r.position.y + 3.0), 10, fg, HORIZONTAL_ALIGNMENT_CENTER,
 		Ui.INK if fg == Color.WHITE else Color.WHITE, 0.12)
+
+
+# The killer's pill: a deeper red so the gold hint reads at >= 4.5:1.
+const KILLER_PILL := Color(0.6, 0.12, 0.08)
+const KILLER_HINT := Color(1, 0.84, 0.36)
+var chips_dx := 0.0
+var chips_y := 54.0
+
+
+func _chips_width() -> float:
+	var w := Ui.text_width("%d m" % world.get_distance(), 7.5) + 14.0
+	if world.best_combo >= 2:
+		w += 4 + Ui.text_width(String(TranslationServer.translate("Combo")) + " x%d" % mini(world.best_combo, GameWorld.MAX_COMBO_MULTIPLIER), 7.5) + 14.0
+	return w
+const REPLAY_AT := Vector2(26, 80)
+const MENU_AT := Vector2(104, 80)
+
+
+## The killer's ring in UI space (with its margin).
+func killer_clear_rect() -> Rect2:
+	if not killer_rect.has_area():
+		return Rect2()
+	var r := maxf(killer_rect.size.x, killer_rect.size.y) * 0.62 + 4
+	var c := killer_rect.get_center() - Vector2(ui_view.position.x, 0)
+	return Rect2(c - Vector2(r, r), Vector2(2 * r, 2 * r))
+
+
+## Score-screen rects (UI space), for the layout checks.
+func game_over_rects() -> Dictionary:
+	var out := {"replay": replay_button.rect, "menu": menu_button.rect}
+	var tw := Ui.text_width(str(world.total_score), 24)
+	out.total = Rect2(WIDTH / 2 - tw / 2, 22, tw, 30)
+	var cw := _chips_width()
+	out.chips = Rect2(WIDTH / 2 - cw / 2 + chips_dx, chips_y, cw, 15)
+	if killer_name != "":
+		var label := String(TranslationServer.translate(killer_name))
+		var hint := String(TranslationServer.translate(killer_hint)) if killer_hint != "" else ""
+		var lw := maxf(Ui.text_width(label, 7.5), Ui.text_width(hint, 6.5)) + 14
+		out.pill = Rect2(_killer_pill_x(lw), 109 if hint != "" else 118, lw, 23.0 if hint != "" else 14.0)
+	return out
+
+
+## Buttons and chips go where they leave the killer (and the hero) in view:
+## the usual row first, then shifted sideways, then lower.
+func _layout_game_over() -> void:
+	replay_button.rect.position = REPLAY_AT
+	menu_button.rect.position = MENU_AT
+	chips_dx = 0.0
+	var k := killer_clear_rect()
+	if not k.has_area():
+		return
+	var h := world.hero
+	var hero_r := Rect2(h.position - Vector2(ui_view.position.x, 0), Vector2(h.width, h.height))
+	var lo := 4.0 - pad
+	var hi := WIDTH + pad - 4
+	var pill: Rect2 = game_over_rects().get("pill", Rect2())
+	var done := false
+	for y in [80.0, 104.0, 58.0]:
+		for dx in [0.0, -22.0, 22.0, -44.0, 44.0, -66.0, 66.0, -90.0, 90.0]:
+			var a := Rect2(REPLAY_AT + Vector2(dx, y - 80), replay_button.rect.size)
+			var b := Rect2(MENU_AT + Vector2(dx, y - 80), menu_button.rect.size)
+			if a.position.x < lo or b.end.x > hi:
+				continue
+			var ok := true
+			for r in [a, b]:
+				if r.intersects(k) or r.intersects(hero_r) or (pill.has_area() and r.intersects(pill)):
+					ok = false
+			if ok:
+				replay_button.rect.position = a.position
+				menu_button.rect.position = b.position
+				done = true
+				break
+		if done:
+			break
+	if not done:  # each button on its own: the first free place, Again first
+		var blocked: Array[Rect2] = [k, hero_r, pill]
+		for pair in [[replay_button, [26.0, 104.0, lo, hi - 74, 64.0]], [menu_button, [104.0, 26.0, hi - 74, lo, 64.0]]]:
+			var btn: UiButton = pair[0]
+			var placed := false
+			for y in [80.0, 104.0, 27.0]:
+				for x in pair[1]:
+					var r := Rect2(Vector2(x, y), btn.rect.size)
+					if r.position.x < lo or r.end.x > hi:
+						continue
+					if blocked.all(func(b): return not b.has_area() or not r.grow(2).intersects(b)):
+						btn.rect.position = r.position
+						blocked.append(r)
+						placed = true
+						break
+				if placed:
+					break
+	chips_y = 54.0
+	var cw := _chips_width()
+	var tw := Ui.text_width(str(world.total_score), 24)
+	var total_r := Rect2(WIDTH / 2 - tw / 2, 22, tw, 30)
+	chips_dx = 0.0
+	var found := false
+	for mind_hero in [true, false]:  # the killer matters more than the hero's body
+		for y in [54.0, 70.0, 36.0, 4.0]:
+			for dx in [0.0, -50.0, 50.0, -75.0, 75.0]:
+				var c := Rect2(WIDTH / 2 - cw / 2 + dx, y, cw, 15)
+				if c.position.x >= lo and c.end.x <= hi and not c.intersects(k) and not c.intersects(total_r) \
+						and not c.intersects(replay_button.rect) and not c.intersects(menu_button.rect) \
+						and not (mind_hero and c.intersects(hero_r)):
+					chips_dx = dx
+					chips_y = y
+					found = true
+					break
+			if found:
+				break
+		if found:
+			break
 
 
 func _draw_game_over(ci: CanvasItem) -> void:
@@ -975,7 +1123,7 @@ func _draw_game_over(ci: CanvasItem) -> void:
 
 	# Five things (principle 12): the total counting up, the HIGH SCORE stamp
 	# on it, one stats line, Run again and Menu.
-	ci.draw_rect(_full(ci), Color(0, 0, 0, 0.35 * clampf(t / 0.4, 0, 1)))
+	# No grey wash: the killer stays in full colour (the text is outlined).
 	var counted := roundi(total * Ui.ease_out_quad(clampf((t - 0.4) / 0.7, 0, 1)))
 	var cx := WIDTH / 2
 	Ui.text(ci, str(counted), Vector2(cx, 22 + drop * 0.3), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, Ui.INK, 0.16)
@@ -990,9 +1138,9 @@ func _draw_game_over(ci: CanvasItem) -> void:
 			var w := Ui.text_width(c[0], 7.5) + 14.0
 			widths.append(w)
 			total_w += w + 4
-		var x := cx - (total_w - 4) / 2
+		var x := cx - (total_w - 4) / 2 + chips_dx
 		for i in chips.size():
-			var r := Rect2(x, 54, widths[i], 15)
+			var r := Rect2(x, chips_y, widths[i], 15)
 			Ui.panel(ci, r, chips[i][1], 7, 1, 1)
 			Ui.text(ci, chips[i][0], Vector2(r.get_center().x, r.position.y + 3.0), 7.5, Ui.INK, HORIZONTAL_ALIGNMENT_CENTER, Color(0, 0, 0, 0))
 			x += widths[i] + 4
@@ -1019,10 +1167,10 @@ func _draw_game_over(ci: CanvasItem) -> void:
 		var lw := maxf(Ui.text_width(label, 7.5), Ui.text_width(hint, 6.5)) + 14
 		var ph := 23.0 if hint != "" else 14.0
 		var pill := Rect2(_killer_pill_x(lw), 109 if hint != "" else 118, lw, ph)
-		Ui.panel(ci, pill, Color(Ui.RED, ka), 7, 1, 1)
+		Ui.panel(ci, pill, Color(KILLER_PILL, ka), 7, 1, 1)
 		Ui.text(ci, label, Vector2(pill.get_center().x, pill.position.y + 2.6), 7.5, Color(1, 1, 1, ka), HORIZONTAL_ALIGNMENT_CENTER, Color(Ui.INK, ka), 0.18)
 		if hint != "":
-			Ui.text(ci, hint, Vector2(pill.get_center().x, pill.position.y + 12.6), 6.5, Color(Ui.GOLD.lightened(0.25), ka), HORIZONTAL_ALIGNMENT_CENTER, Color(Ui.INK, ka), 0.18)
+			Ui.text(ci, hint, Vector2(pill.get_center().x, pill.position.y + 12.6), 6.5, Color(KILLER_HINT, ka), HORIZONTAL_ALIGNMENT_CENTER, Color(Ui.INK, ka), 0.18)
 
 	# Buttons fade in once input is accepted.
 	if t > GAME_OVER_INPUT_DELAY:

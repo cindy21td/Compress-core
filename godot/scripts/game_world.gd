@@ -44,8 +44,11 @@ const RUSH_DURATION := 60
 var state := State.MENU
 var harmless := false  # set by the Coach: enemies walk past until the first stomp
 var learning := false  # set by the Coach until the jump is learned: no rush, no Devourer
-var knights_only := false  # set by the Coach: knights only until both jumps are learned
-var one_wizard := false  # set by the Coach: one wizard at a time until the fire is learned
+# Set by the Coach while a lesson has the screen: which kinds may show, how
+# many at once; any other enemy still on screen can't hurt.
+var limit_kinds := false
+var allowed_kinds: Array = []
+var max_enemies := 3
 var fire_harmless := false  # set by the Coach: the first wizard can't kill yet
 var wizard_spared := false  # its fireball (or body) went through the hero while harmless
 var hero := Hero.new(30, 104, 25, 25)
@@ -82,8 +85,9 @@ func _update_running(delta: float) -> void:
 	scroller.pig_unlocked = get_distance() >= PIG_UNLOCK_DISTANCE
 	scroller.magnet = magnet_time > 0
 	scroller.calm = learning
-	scroller.knights_only = knights_only
-	scroller.one_wizard = one_wizard
+	scroller.limit_kinds = limit_kinds
+	scroller.allowed_kinds = allowed_kinds
+	scroller.max_enemies = max_enemies
 
 	var was_jumping := hero.jumped
 	hero.update(delta)
@@ -111,6 +115,8 @@ func _update_running(delta: float) -> void:
 	var hit: Object = null if invincible or grace > 0 else scroller.colliding(hero)
 	if hit and harmless:
 		hit = null
+	if hit is Enemy and limit_kinds and not allowed_kinds.has((hit as Enemy).type):
+		hit = null  # left over from before the lesson: it walks through
 	if hit is Wizard and fire_harmless:
 		wizard_spared = true
 		hit = null
@@ -217,6 +223,8 @@ func _check_rush() -> void:
 
 
 func start() -> void:
+	if distance == 0:
+		scroller.on_restart()  # spawn from this screen's edge (the pool was built at 204 wide)
 	state = State.RUNNING
 	Assets.loop_music("theme", 0.3)
 

@@ -9,6 +9,71 @@ var main: Node2D
 var failures := 0
 var shot_dir := ""
 var shot_locale := "en"
+# Build 10 first-minute rules, checked every frame (see _process).
+var guard := false
+var guard_bad: Array[String] = []
+var hud_bad: Array[String] = []
+const HAZARD_PX := 90.0  # no live enemy this close while the double jump is taught
+
+
+func _bad(list: Array[String], what: String) -> void:
+	if list.size() < 6 and not list.has(what):
+		list.append(what)
+
+
+func _process(_d: float) -> void:
+	if main == null or main.screen != main.Screen.GAME:
+		return
+	var w: GameWorld = main.world
+	var c: Coach = main.coach
+	if w.state != GameWorld.State.RUNNING:
+		return
+	var vw := Geo.view_width
+	var on := w.scroller.enemies.filter(func(e): return e.is_visible and e.alive and e.position.x < vw)
+	if guard:
+		match c.phase():
+			Coach.Phase.STOMP:
+				if on.size() > 1 or on.any(func(e): return e.type != Enemy.Type.KNIGHT):
+					_bad(guard_bad, "stomp lesson: %d on screen" % on.size())
+				if not w.harmless:
+					_bad(guard_bad, "stomp lesson: not harmless")
+			Coach.Phase.DOUBLE:
+				for e in on:
+					if absf(e.position.x - w.hero.position.x) < HAZARD_PX and not w.harmless:
+						_bad(guard_bad, "double lesson: live enemy within %d px" % HAZARD_PX)
+				if c.line == "Watch: double jump" and c.line_alpha > 0.0 and not c.screen_clear(w):
+					_bad(guard_bad, "Watch shown with enemies on screen")
+			Coach.Phase.FIRE:
+				if on.any(func(e): return e.type != Enemy.Type.WIZARD):
+					_bad(guard_bad, "fire lesson: another kind on screen")
+				if on.filter(func(e): return e.type == Enemy.Type.WIZARD).size() > 1:
+					_bad(guard_bad, "fire lesson: two wizards")
+			Coach.Phase.BREATHER:
+				if on.any(func(e): return e.position.x > vw - 24):
+					_bad(guard_bad, "breather: an enemy came on")
+	# HUD lanes: nothing crosses the counter or each other; banners clear of enemies.
+	var r: Dictionary = main.hud_rects()
+	var keys := r.keys()
+	for i in keys.size():
+		for j in range(i + 1, keys.size()):
+			if (r[keys[i]] as Rect2).intersects(r[keys[j]]):
+				_bad(hud_bad, "%s x %s" % [keys[i], keys[j]])
+	if r.has("banner"):
+		for e in on:
+			var er := Rect2(e.position - Vector2(main.ui_view.position.x, 0), Vector2(e.width, e.height))
+			if (r.banner as Rect2).intersects(er):
+				_bad(hud_bad, "banner over an enemy (y %.0f)" % e.position.y)
+
+
+static func _lum(c: Color) -> float:
+	var f := func(v: float) -> float: return v / 12.92 if v <= 0.04045 else pow((v + 0.055) / 1.055, 2.4)
+	return 0.2126 * f.call(c.r) + 0.7152 * f.call(c.g) + 0.0722 * f.call(c.b)
+
+
+static func contrast(a: Color, b: Color) -> float:
+	var la := _lum(a)
+	var lb := _lum(b)
+	return (maxf(la, lb) + 0.05) / (minf(la, lb) + 0.05)
 
 
 func _ready() -> void:
@@ -86,7 +151,10 @@ func _run() -> void:
 	_check(not main.coach.jump_taught and not main.coach.double_taught and Assets.get_pref("taughtJump") == 0, "? button replays the lessons")
 	await _click(Vector2(100, 60))
 	_check(main.screen == main.Screen.GAME and w.state == GameWorld.State.RUNNING, "tap on title -> running (no ready card)")
+	guard = true
 	await _teaching()
+	guard = false
+	_check(guard_bad.is_empty(), "each lesson has the screen to itself %s" % str(guard_bad))
 
 	w.invincible = true  # random enemies must not end the scripted steps early
 	await _click(Vector2(100, 60))
@@ -159,6 +227,29 @@ func _run() -> void:
 		var hx := w.hero.position.x
 		clear = clear and (px > hx + w.hero.width or px + lw < hx)
 		_check(clear, "the killer's pill sits clear of the ring and the hero (pill x %.0f, ring %.0f, hero %.0f)" % [px, kc.x, hx])
+	var kc_r: Rect2 = main.killer_clear_rect()
+	var gor: Dictionary = main.game_over_rects()
+	var covered := []
+	for k in gor:
+		if k != "pill" and kc_r.has_area() and (gor[k] as Rect2).intersects(kc_r):
+			covered.append(k)
+	_check(covered.is_empty(), "the killer stays in view on the score screen %s" % str(covered))
+	# An airborne killer where the buttons usually go: the buttons move.
+	var saved_k: Rect2 = main.killer_rect
+	for spot in [main.REPLAY_AT + Vector2(20, 2), main.MENU_AT + Vector2(30, 4), Vector2(150, 58), Vector2(110, 70)]:
+		main.killer_rect = Rect2(spot + Vector2(main.ui_view.position.x, 0), Vector2(20, 20))
+		main._layout_game_over()
+		var kr2: Rect2 = main.killer_clear_rect()
+		var hit := []
+		var g2: Dictionary = main.game_over_rects()
+		for k in ["replay", "menu", "chips"]:
+			if (g2[k] as Rect2).intersects(kr2):
+				hit.append(k)
+		_check(hit.is_empty(), "buttons and chips clear an airborne killer at %s %s %s" % [str(spot), str(hit), str(g2)])
+	main.killer_rect = saved_k
+	main._layout_game_over()
+	var cr := contrast(main.KILLER_HINT, main.KILLER_PILL)
+	_check(cr >= 4.5, "gold hint on the red pill reads at %.2f:1 (>= 4.5)" % cr)
 	_check(w.total_score == floori(w.distance / 200.0) + w.score, "total score formula")
 	_check(Assets.get_pref("highScore") >= w.total_score, "high score saved")
 
@@ -171,11 +262,17 @@ func _run() -> void:
 		if e.is_visible:
 			visible += 1
 	_check(visible == 3, "three enemies active after restart")
-	_check(main.coach.opening_grace and w.harmless, "a returning player's run opens with a grace until the first tap")
+	_check(main.coach.opening_grace and w.harmless, "a returning player's run opens with a grace until the first tap (grace %s harmless %s jumped %s d %d)" % [main.coach.opening_grace, w.harmless, w.hero.jumped, w.distance])
 
 	await _click(main.pause_button.rect.get_center() + main.ui_view.position)
 	await _click(main.pause_menu_button.rect.get_center() + main.ui_view.position)
 	_check(main.screen == main.Screen.MENU and w.state == GameWorld.State.MENU, "pause -> menu returns to title")
+	var shows: Dictionary = main.coach.intro_shows
+	_check(shows.values().all(func(n): return n == 1), "each first-sight line shows once %s" % str(shows))
+	for k in Coach.INTROS:
+		_check(shows.get(k, 0) == 1 or Assets.get_pref(k) == 0, "%s shown once when first seen" % k)
+	print("     first-sight lines shown: ", shows.keys())
+	_check(hud_bad.is_empty(), "lesson pill, counter, words and banners never overlap; banners clear of enemies %s" % str(hud_bad))
 	await _wait(0.3)
 	await _shot("12_menu_with_best")
 
@@ -239,30 +336,32 @@ func _teaching() -> void:
 	_check(c.jump_taught and Assets.get_pref("taughtJump") == 1, "first stomp teaches the jump (saved)")
 	_check(arc_seen < 0.9 and c.shown_arc.size() > 2, "first stomp draws its arc (%.2f s in)" % arc_seen)  # 0.9: how long the arc shows
 	await _shot("03c_first_stomp")
+	_check(c.phase() == Coach.Phase.DOUBLE and w.max_enemies == 0, "the double-jump lesson clears the track")
 	t = 0.0
-	while not c.double_cue(w) and t < 15.0:
-		_check_knights_only(w)
-		if not w.hero.jumped and c.arc_time > 1.0:
-			main._touch_down(Vector2(-1, -1))
-			main._touch_up(Vector2(-1, -1))
+	while not c.ground_demo(w) and t < 15.0:
 		await _wait(0.03)
 		t += 0.03
-	_check(c.double_cue(w), "double-jump ring at the top of a jump")
-	_check(knights_only, "still knights only while the double jump is taught")
-	_check(c.high_powerup and w.scroller.powerup.is_visible and w.scroller.powerup.position.y < 50 \
-		and w.scroller.powerup.center().y - (PowerUp.RADIUS + 5 + 2 + 1.5) > 37.0,
+	_check(c.ground_demo(w) and c.screen_clear(w), "the double jump is demonstrated from the ground, on a clear screen")
+	await _wait(0.2)
+	_check(c.lesson_text() == tr("Watch: double jump"), "the demo is labelled (%s)" % c.lesson_text())
+	_check(c.high_powerup and w.scroller.powerup.is_visible and w.scroller.powerup.position.y < 56 \
+		and w.scroller.powerup.center().y - (PowerUp.RADIUS + 5 + 2 + 1.5) > main._lane_y() + 14.0,
 		"a pickup floats out of one jump's reach, its ring clear of the lesson pill, while the double jump is taught (y %.0f)" % w.scroller.powerup.position.y)
-	_check(c.slow(w), "the double-jump demo runs slowed")
-	_check(c.line == "Watch: double jump" and not c.double_demoed, "the first cue only demonstrates, labelled (%s)" % c.line)
-	await _wait(0.12)
+	await _wait(0.25)
 	await _shot("03d0_double_demo")
 	t = 0.0
-	while not (c.double_cue(w) and c.double_demoed) and t < 15.0:
-		if not w.hero.jumped and c.arc_time > 1.0:
-			main._touch_down(Vector2(-1, -1))
-			main._touch_up(Vector2(-1, -1))
+	while not c.double_demoed and t < 5.0:
 		await _wait(0.03)
 		t += 0.03
+	await _wait(0.25)
+	_check(c.double_ask(w) and c.lesson_text() == tr("Tap to jump"), "after one demo flight it asks for the first tap (%s)" % c.lesson_text())
+	main._touch_down(Vector2(-1, -1))
+	main._touch_up(Vector2(-1, -1))
+	t = 0.0
+	while not c.double_cue(w) and t < 3.0:
+		await _wait(0.02)
+		t += 0.02
+	_check(c.double_cue(w) and c.slow(w), "double-jump ring at the top of the jump, slowed")
 	await _wait(0.1)
 	var wt := 0.0
 	while c.double_cue(w) and c.lesson_text() == "" and wt < 0.6:  # a tick from a random stomp may be speaking
@@ -280,6 +379,10 @@ func _teaching() -> void:
 	var wz: Wizard = s.wizards[0]
 	c.fire_taught = false  # a random wizard may have taught it during the demo
 	Assets.set_pref("taughtFire", 0)
+	for o in s.wizards:  # the scroller may have sent one already: the test's wizard replaces it
+		if o != wz and o.is_visible:
+			o.reset_enemy(0, true)
+			s.hidden.append(o)
 	s.hidden.erase(wz)
 	wz.reset_enemy(0, false)
 	wz.set_is_visible(true)
@@ -395,7 +498,8 @@ func _fit_check() -> void:
 	var cols := ["en", "es", "pt_BR", "fr", "de", "ja", "ko", "zh_Hans"]
 	var lessons := ["Tap to jump", "Tap to jump on it", "Land on it", "Watch: double jump", "Tap again to go higher",
 		"Jump the fire", "Stop the ghost"]
-	var words := ["Tap sooner", "Land on top", "Landed on it", "Stopped it", "Double jump", "Cleared it", "Jump the fire"]
+	lessons.append_array(Coach.INTROS.values())
+	var words := ["Tap a little sooner", "Land on its head", "Landed on it", "Stopped it", "Double jump", "Cleared it", "Jump the fire"]
 	var killers := ["Hit by a wizard", "Hit by a knight", "Hit by a ghost", "Hit by a pig", "Caught by the Devourer"]
 	var banners := ["STAGE %d", "RUSH", "THE DEVOURER", "DEVOURER DOWN +%d", "SHIELD", "SLOW-MO", "DOUBLE POINTS", "SOUL MAGNET"]
 	var bad := []

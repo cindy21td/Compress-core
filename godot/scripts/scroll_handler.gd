@@ -25,8 +25,10 @@ var bg_back: Background
 var boss := Boss.new()
 var boss_cooldown := 0.0  # seconds before another boss can be summoned
 var calm := false  # first lesson still running: no Devourer
-var knights_only := false  # set by the Coach until the jump and double jump are learned
-var one_wizard := false  # set by the Coach until the fire is learned: wizards come one at a time
+# Set by the Coach while a lesson runs: only these kinds, at most this many.
+var limit_kinds := false
+var allowed_kinds: Array = []
+var max_enemies := 3
 var owed := 0  # spawns skipped (nothing allowed was free), paid back after
 var powerup := PowerUp.new()
 var powerup_timer := 12.0
@@ -65,10 +67,10 @@ func show_random_enemy() -> void:
 	var pool := hidden
 	if not pig_unlocked:
 		pool = hidden.filter(func(e): return e != pig)
-	if knights_only:  # the first lessons meet one kind of enemy: the knight
-		pool = pool.filter(func(e): return e.type == Enemy.Type.KNIGHT)
-	elif one_wizard and wizards.any(func(w): return w.is_visible):
-		pool = pool.filter(func(e): return e.type != Enemy.Type.WIZARD)
+	if limit_kinds:  # a lesson: one kind, one at a time (or none)
+		pool = pool.filter(func(e): return allowed_kinds.has(e.type))
+		if _live_count() >= max_enemies:
+			pool = []
 	if pool.is_empty():
 		owed += 1
 		return
@@ -89,16 +91,12 @@ func update(delta: float) -> void:
 	boss_hits.clear()
 	boss_landed = false
 
-	if knights_only:
-		# Wizards and the ghost wait until both jumps are learned (no fire yet).
-		for e in enemies:
-			if e.is_visible and e.type != Enemy.Type.KNIGHT:
-				e.reset_enemy(0 if e.type == Enemy.Type.WIZARD else (-10 if e.type == Enemy.Type.SUMMONER else ran_vel_x()), true)
-				hidden.append(e)
-				show_random_enemy()
-	else:
-		while owed > 0:
-			owed -= 1
+	if limit_kinds:
+		_limit()
+	elif owed > 0:
+		var n := mini(owed, 3)
+		owed = 0
+		for i in n:
 			show_random_enemy()
 
 	for e in enemies:
@@ -124,9 +122,34 @@ func update(delta: float) -> void:
 
 	powerup.update(delta)
 	powerup_timer -= delta
-	if powerup_timer <= 0 and not powerup.is_visible:
+	if powerup_timer <= 0 and not powerup.is_visible and not limit_kinds:
 		powerup.spawn(randi() % 4 as PowerUp.Kind)
 		powerup_timer = randf_range(POWERUP_INTERVAL.x, POWERUP_INTERVAL.y)
+
+
+func _live_count() -> int:
+	var n := 0
+	for e in enemies:
+		if e.is_visible and e.alive:
+			n += 1
+	return n
+
+
+## During a lesson: enemies of other kinds, or past the limit, that haven't
+## come on screen yet go back to the pool; an allowed one fills a free place.
+func _limit() -> void:
+	var live := enemies.filter(func(e): return e.is_visible and e.alive)
+	live.sort_custom(func(a, b): return a.position.x < b.position.x)
+	var kept := 0
+	for e in live:
+		if allowed_kinds.has(e.type) and kept < max_enemies:
+			kept += 1
+		elif e.position.x >= Geo.view_width:
+			e.reset_enemy(0 if e.type == Enemy.Type.WIZARD else (-10 if e.type == Enemy.Type.SUMMONER else ran_vel_x()), true)
+			hidden.append(e)
+			owed += 1
+	if kept < max_enemies:
+		show_random_enemy()
 
 
 func _update_enemy(delta: float, e: Enemy) -> void:

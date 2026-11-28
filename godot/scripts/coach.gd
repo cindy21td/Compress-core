@@ -54,6 +54,28 @@ var double_cue_time := 0.0  # how long the double-jump cue has been showing
 var double_demoed := false  # the first cue only demonstrates; the next one asks
 const DEMO_TIME := 0.35  # one flight of the ghost along the second arc
 var _summoner_was := false
+# The first minute is one sequence (build 10): each lesson has the screen to
+# itself. Stomp: one knight, harmless. Double jump: a clear track, the hero's
+# echo demonstrates it from the ground. Fire: one wizard, nothing else. Then a
+# breather before the run opens up.
+enum Phase { STOMP, DOUBLE, FIRE, BREATHER, FREE }
+const BREATHER := 2.5  # s of empty track after the fire lesson
+var breather := 0.0
+var ground_demo_time := 0.0
+const GROUND_DEMO := 0.9  # one flight of the echo along both arcs
+# First sight of the later things: one short line each, once per install.
+const INTROS := {
+	"introPig": "Pigs hop. Land on them",
+	"introRush": "Rush: knights run faster",
+	"introOrb": "Grab orbs for powers",
+	"introCombo": "Stomp again before landing",
+	"introBoss": "Stomps send souls at it",
+}
+const INTRO_TIME := 2.2
+var intro_queue: Array[String] = []
+var intro_key := ""
+var intro_time := 0.0
+var intro_shows := {}  # key -> times shown (playtest: each exactly once)
 # One short line per first lesson (Crane 2026-11-25: glyphs + 2-3 words).
 # Source strings are the msgids of i18n/strings.csv.
 var line := ""
@@ -72,7 +94,7 @@ func load_flags() -> void:
 
 ## From the title's "?" button: every lesson runs again on the next run.
 func replay() -> void:
-	for f in FLAGS + ["seenOrb", "seenBoss"]:
+	for f in FLAGS + ["seenOrb", "seenBoss"] + INTROS.keys():
 		Assets.set_pref(f, 0)
 	load_flags()
 
@@ -101,6 +123,32 @@ func start_run() -> void:
 	_summoner_was = false
 	line = ""
 	line_alpha = 0.0
+	breather = 0.0
+	ground_demo_time = 0.0
+	intro_queue.clear()
+	intro_key = ""
+	intro_time = 0.0
+
+
+func phase() -> Phase:
+	if not jump_taught:
+		return Phase.STOMP
+	if not double_taught:
+		return Phase.DOUBLE
+	if not fire_taught:
+		return Phase.FIRE
+	return Phase.BREATHER if breather > 0.0 else Phase.FREE
+
+
+## No live enemy and no fireball on screen.
+func screen_clear(world: GameWorld) -> bool:
+	for e in world.scroller.enemies:
+		if e.is_visible and e.alive and e.position.x < Geo.view_width:
+			return false
+		for p in e.get_projectiles():
+			if p.is_visible and p.position.x < Geo.view_width:
+				return false
+	return true
 
 
 func teaching() -> bool:
@@ -122,12 +170,31 @@ func update(delta: float, world: GameWorld) -> bool:
 		arc.append(h.position + Vector2(16, 21))
 	elif not arc.is_empty():
 		arc.clear()
-	world.harmless = (not jump_taught and spared < MAX_SPARED) or opening_grace
-	world.learning = not jump_taught
-	world.knights_only = not jump_taught or not double_taught
-	world.one_wizard = not fire_taught
+	breather = maxf(breather - delta, 0.0)
+	var ph := phase()
+	# Nothing can hurt the hero while a lesson has the screen.
+	world.harmless = ph in [Phase.STOMP, Phase.DOUBLE] or opening_grace
+	world.learning = ph != Phase.FREE
+	world.limit_kinds = ph != Phase.FREE
+	match ph:
+		Phase.STOMP:
+			world.allowed_kinds = [Enemy.Type.KNIGHT]
+			world.max_enemies = 1  # the first target is a single knight
+		Phase.FIRE:
+			world.allowed_kinds = [Enemy.Type.WIZARD]
+			world.max_enemies = 1
+		_:
+			world.allowed_kinds = []
+			world.max_enemies = 0 if ph != Phase.FREE else 3
 	world.fire_harmless = fire_wizard(world) != null
+	var was_fire := fire_taught
 	_update_fire(world)
+	if not was_fire and fire_taught:
+		breather = BREATHER
+	if ground_demo(world):
+		ground_demo_time += delta
+		if ground_demo_time >= GROUND_DEMO:
+			double_demoed = true
 	if double_cue(world):
 		double_cue_time += delta
 	else:
@@ -159,7 +226,7 @@ func update(delta: float, world: GameWorld) -> bool:
 		miss_to = target.circle_center - Vector2(0, target.circle_radius)
 		miss_time = 0.0
 		# The why, in the player's terms: no tap at all, or a jump that came down off it.
-		miss_word = "Land on top" if target_jumped else "Tap sooner"
+		miss_word = "Land on its head" if target_jumped else "Tap a little sooner"
 		miss_arc = true
 		target = null
 	if target == null:
@@ -264,7 +331,7 @@ func slow(world: GameWorld) -> bool:
 
 ## While the double jump is being taught, a pickup floats up where one jump
 ## can't reach: the second tap has something to go for.
-const HIGH_PICKUP_Y := 48.0  # centre ~54, ring clear of the lesson pill (y 23-37); one jump's body tops out ~71 (reach 13), two reach ~16
+const HIGH_PICKUP_Y := 52.0  # centre ~54, ring clear of the lesson pill (y 27-41); one jump's body tops out ~71 (reach 13), two reach ~16
 func _update_high_powerup(world: GameWorld) -> void:
 	var p := world.scroller.powerup
 	if not jump_taught or double_taught or world.state != GameWorld.State.RUNNING:
@@ -293,7 +360,22 @@ func jump_cue(world: GameWorld) -> bool:
 func double_cue(world: GameWorld) -> bool:
 	var h := world.hero
 	return jump_taught and not double_taught and arc_time > 0.9 and h.alive \
-		and h.jumped and not h.double_jumped and h.velocity.y > -70
+		and h.jumped and not h.double_jumped and h.velocity.y > -70 and screen_clear(world)
+
+
+## The double-jump lesson opens with the hero's echo flying both arcs from the
+## ground, on a clear track, before anything is asked.
+func ground_demo(world: GameWorld) -> bool:
+	var h := world.hero
+	return jump_taught and not double_taught and not double_demoed and arc_time > 0.9 \
+		and h.alive and not h.jumped and world.state == GameWorld.State.RUNNING and screen_clear(world)
+
+
+## After the demo, on the ground: ask for the first of the two taps.
+func double_ask(world: GameWorld) -> bool:
+	var h := world.hero
+	return jump_taught and not double_taught and double_demoed and h.alive and not h.jumped \
+		and world.state == GameWorld.State.RUNNING and screen_clear(world)
 
 
 ## First success of a lesson; true if this stomp taught something.
@@ -331,10 +413,16 @@ func _wanted_line(world: GameWorld) -> String:
 		if h.jumped and target != null:
 			return "Land on it"
 		return "Tap to jump on it" if target != null else "Tap to jump"
+	if ground_demo(world):
+		return "Watch: double jump"
+	if double_ask(world):
+		return "Tap to jump"
 	if double_cue(world):
 		return "Tap again to go higher" if double_demoed else "Watch: double jump"
 	if fire_ball(world) != null:
 		return "Jump the fire"
+	if intro_key != "":
+		return INTROS[intro_key]
 	if not summoner_taught and not double_cue(world) and s.summoner.is_visible and s.summoner.alive and s.summoner.position.x < Geo.view_width:
 		return "Stop the ghost"
 	return ""
@@ -360,7 +448,7 @@ func lesson_text() -> String:
 
 
 func reacting() -> bool:
-	return (miss_time < MISS_WORD_TIME and miss_word != "") or (tick_time < 0.8 and tick_word != "")
+	return (miss_time < MISS_WORD_TIME and miss_word != "") or (tick_time < 0.9 and tick_word != "")
 
 
 func _learn(i: int) -> void:
@@ -389,6 +477,28 @@ func draw(ci: CanvasItem, world: GameWorld) -> void:
 	var h := world.hero
 	var s := world.scroller
 	if jump_cue(world) or (opening_grace and h.alive and not h.jumped and _nearest_ahead(world) < CUE_WINDOW):
+		_ring(ci, h.body_center, 13.0)
+		_tap_glyph(ci, h.position + Vector2(16, -9), 1)
+	elif ground_demo(world):
+		# The echo jumps from the hero's feet and taps again at the top.
+		var f0 := h.position + Vector2(16, 21)
+		var top := f0 + Vector2(26, -44)
+		var path := PackedVector2Array()
+		for i in 13:  # first jump: rises and slows toward the top
+			var k := i / 12.0
+			path.append(Vector2(lerpf(f0.x, top.x, k), lerpf(f0.y, top.y, 1.0 - (1.0 - k) * (1.0 - k))))
+		var second := _parabola(top, f0 + Vector2(70, 0), 22.0)
+		for p in second:
+			path.append(p)
+		_dotted(ci, path, Color(1, 1, 1, 0.75))
+		var k2 := fmod(ground_demo_time, GROUND_DEMO + 0.2) / GROUND_DEMO
+		if k2 <= 1.0:
+			var gi := int(round(k2 * (path.size() - 1)))
+			Assets.draw_sprite(ci, Assets.hero_jump, Rect2(path[gi] + Vector2(-16, -21), Vector2(h.width, h.height)), Color(1, 1, 1, 0.6))
+			if gi >= 12:
+				_tap_glyph(ci, top + Vector2(0, -14), 2)
+		_tap_glyph(ci, h.position + Vector2(16, -9), 1)
+	elif double_ask(world):
 		_ring(ci, h.body_center, 13.0)
 		_tap_glyph(ci, h.position + Vector2(16, -9), 1)
 	elif double_cue(world):
@@ -438,6 +548,7 @@ func draw(ci: CanvasItem, world: GameWorld) -> void:
 			var mw := String(TranslationServer.translate(miss_word))
 			var half := Ui.text_width(mw, 8) / 2 + 6
 			var mp := miss_to + Vector2(0, -22 - 4 * minf(miss_time / 0.3, 1))
+			mp.y = maxf(mp.y, word_top)
 			mp.x = clampf(mp.x, half + 16, Geo.view_width - half - 16)  # clear of the notch side
 			Ui.text(ci, mw, mp, 8, Color(Ui.RED.lightened(0.15), a), HORIZONTAL_ALIGNMENT_CENTER, Color(Ui.INK, a), 0.22)
 	if tick_time < 0.9:
@@ -449,8 +560,54 @@ func draw(ci: CanvasItem, world: GameWorld) -> void:
 		if tick_word != "":
 			var tw := String(TranslationServer.translate(tick_word))
 			var th := Ui.text_width(tw, 8) / 2 + 6
-			var tp := Vector2(clampf(p.x, th + 16, Geo.view_width - th - 16), p.y - 17)
+			var tp := Vector2(clampf(p.x, th + 16, Geo.view_width - th - 16), maxf(p.y - 17, word_top))
 			Ui.text(ci, tw, tp, 8, Color(Ui.GOLD.lightened(0.2), a), HORIZONTAL_ALIGNMENT_CENTER, Color(Ui.INK, a), 0.22)
+
+
+## Where the miss or tick word is drawn now (world space), for the layout checks.
+var word_top := 27.0  # words stay under the distance counter (and a banner: set by main)
+func word_rect() -> Rect2:
+	var word := ""
+	var p := Vector2.ZERO
+	if miss_word != "" and miss_time < MISS_WORD_TIME:
+		word = String(TranslationServer.translate(miss_word))
+		p = miss_to + Vector2(0, -22 - 4 * minf(miss_time / 0.3, 1))
+	elif tick_word != "" and tick_time < 0.9:
+		word = String(TranslationServer.translate(tick_word))
+		p = tick_pos + Vector2(0, -6 * minf(tick_time / 0.3, 1) - 17)
+	else:
+		return Rect2()
+	var half := Ui.text_width(word, 8) / 2 + 6
+	p.x = clampf(p.x, half + 16, Geo.view_width - half - 16)
+	p.y = maxf(p.y, word_top)
+	return Rect2(p.x - half + 6, p.y, 2 * half - 12, 10)
+
+
+## First sight of the pig, a rush, an orb, a combo and the Devourer: queue
+## its line; lines show one at a time in the lesson pill, once per install.
+func update_intros(delta: float, world: GameWorld, can_show: bool) -> void:
+	if world.state != GameWorld.State.RUNNING or phase() != Phase.FREE:
+		return
+	var s := world.scroller
+	var seen := {
+		"introPig": s.pig.is_visible and s.pig.alive and s.pig.position.x < Geo.view_width - 8,
+		"introRush": s.state == ScrollHandler.RunningState.RUSH,
+		"introOrb": s.powerup.is_visible and not high_powerup and s.powerup.center().x < Geo.view_width - 8,
+		"introCombo": world.combo >= 2,
+		"introBoss": s.boss.phase == Boss.Phase.CHASE,
+	}
+	for k in seen:
+		if seen[k] and Assets.get_pref(k) == 0 and k != intro_key and not intro_queue.has(k):
+			intro_queue.append(k)
+	if intro_key != "":
+		intro_time += delta
+		if intro_time >= INTRO_TIME:
+			intro_key = ""
+	elif can_show and not intro_queue.is_empty() and line_alpha <= 0.0:
+		intro_key = intro_queue.pop_front()
+		intro_time = 0.0
+		Assets.set_pref(intro_key, 1)
+		intro_shows[intro_key] = intro_shows.get(intro_key, 0) + 1
 
 
 func _ring(ci: CanvasItem, c: Vector2, r: float, color := Color.WHITE) -> void:

@@ -75,4 +75,4 @@ func ran_pos_x() -> float:
 
 
 func ran_pos_y() -> float:
-	return randi_range(50, 81)
+	return randi_range(56, 81)  # under the banner lane (y <= 55)

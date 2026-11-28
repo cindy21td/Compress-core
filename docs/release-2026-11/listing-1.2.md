@@ -52,7 +52,7 @@ For US indexing; no build needed. Screenshots fall back to en-US. Description, p
 ```
 Run Hero Run! is an offline one-tap side-scrolling runner, first released in 2015. This update rebuilds it for current iPhones (full-screen landscape on both sides, safe areas respected) and adds the Devourer boss, combos, power-ups and new stages.
 
-How to play: tap anywhere on the title to start. The first run teaches the controls in place: a ring and a short line ("Tap to jump", "Land on it", "Tap again in the air", "Stop the ghost"), every miss says why ("Tap sooner", "Land on top"), and the first enemies are harmless until you land a stomp. The "?" button on the title replays these lessons. If the grey floating ghost leaves the screen alive, the Devourer boss appears (usually within 1–2 minutes). Game over names what hit you. Pause is at the top right; the game also pauses when the app goes to the background.
+How to play: tap anywhere on the title to start. The first run teaches the controls in place: a ring and a short line ("Tap to jump", "Land on it", "Tap again in the air", "Stop the ghost"), every miss says how to fix it ("Tap a little sooner", "Land on its head"); each lesson (stomp, double jump, fire) has the screen to itself and nothing can hurt you during it. The "?" button on the title replays these lessons. If the grey floating ghost leaves the screen alive, the Devourer boss appears (usually within 1–2 minutes). Game over names what hit you. Pause is at the top right; the game also pauses when the app goes to the background.
 
 No accounts, ads, in-app purchases or network use; no data is collected. It is the only action game on the account; the account's other apps (for example Tellday, Pour Plan, Endcard) are trackers and tools.
 ```
