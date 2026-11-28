@@ -78,6 +78,14 @@ var double_tries := 0
 var double_phase_time := 0.0
 var _was_airborne := false
 const GROUND_DEMO := 0.9  # one flight of the echo along both arcs
+# Build 12: the ghost gets a fair entrance. None comes on until the free run
+# has had SUMMONER_DELAY s of track; the first one (not yet taught) can't hurt,
+# says "Jump on it" with the stomp mark, and slows the world as it closes in.
+const SUMMONER_DELAY := 3.0
+var free_time := 0.0  # s of the free run so far
+# While the first knight holds for the first tap, a ring ripples out from the
+# hero once a second, so the held screen reads as waiting, not frozen.
+const WAIT_RIPPLE := 1.0
 # First sight of the later things: one short line each, once per install.
 const INTROS := {
 	"introPig": "Pigs hop. Land on them",
@@ -146,6 +154,7 @@ func start_run() -> void:
 	stomp_phase_time = 0.0
 	fire_phase_time = 0.0
 	_was_airborne = false
+	free_time = 0.0
 	intro_queue.clear()
 	intro_key = ""
 	intro_time = 0.0
@@ -158,6 +167,8 @@ func apply_phase(world: GameWorld) -> void:
 	var ph := phase()
 	# Nothing can hurt the hero while a lesson has the screen.
 	world.harmless = ph in [Phase.STOMP, Phase.DOUBLE] or opening_grace
+	world.summoner_harmless = not summoner_taught  # the first ghost is taught, not fatal
+	world.scroller.no_summoner = ph != Phase.FREE or free_time < SUMMONER_DELAY
 	world.learning = ph != Phase.FREE
 	world.limit_kinds = ph != Phase.FREE
 	match ph:
@@ -213,6 +224,8 @@ func update(delta: float, world: GameWorld) -> bool:
 	elif not arc.is_empty():
 		arc.clear()
 	breather = maxf(breather - delta, 0.0)
+	if phase() == Phase.FREE:
+		free_time += delta
 	if phase() == Phase.DOUBLE and h.alive:
 		double_phase_time += delta
 		if _was_airborne and not h.jumped and not h.double_jumped:
@@ -372,7 +385,25 @@ func slow(world: GameWorld) -> bool:
 	var fb := fire_ball(world)
 	if fb and fb.is_moving and not world.hero.jumped and fb.position.x - world.hero.position.x < SLOW_WINDOW:
 		return true  # the first fireball closes in at half speed
+	if ghost_cue(world) and not world.hero.jumped and world.scroller.summoner.position.x - world.hero.position.x < SLOW_WINDOW:
+		return true  # the first ghost closes in at half speed
 	return double_cue(world)  # the double-jump demo plays in slow motion too
+
+
+## The first ghost (not yet taught) is on screen: ring, stomp mark, "Jump on it".
+func ghost_cue(world: GameWorld) -> bool:
+	var g := world.scroller.summoner
+	return jump_taught and not summoner_taught and world.hero.alive and g.is_visible and g.alive \
+		and g.position.x < Geo.view_width
+
+
+## Radius of the waiting ripple this frame (0 when the hold isn't on).
+func wait_ripple_radius(world: GameWorld) -> float:
+	if not waiting(world):
+		return 0.0
+	if reduce_motion:
+		return 21.0  # a still second ring
+	return 14.0 + 16.0 * fmod(t, WAIT_RIPPLE) / WAIT_RIPPLE
 
 
 ## While the double jump is being taught, a pickup floats up where one jump
@@ -467,10 +498,10 @@ func _wanted_line(world: GameWorld) -> String:
 		return "Tap again to go higher" if double_demoed else "Watch: double jump"
 	if fire_ball(world) != null:
 		return "Jump the fire"
+	if ghost_cue(world):
+		return "Jump on it"  # before any intro line: the ghost is the lesson on screen
 	if intro_key != "":
 		return INTROS[intro_key]
-	if not summoner_taught and not double_cue(world) and s.summoner.is_visible and s.summoner.alive and s.summoner.position.x < Geo.view_width:
-		return "Stop the ghost"
 	return ""
 
 
@@ -529,6 +560,11 @@ func draw(ci: CanvasItem, world: GameWorld) -> void:
 	if jump_cue(world) or (opening_grace and h.alive and not h.jumped and _nearest_ahead(world) < CUE_WINDOW):
 		_ring(ci, h.body_center, 13.0)
 		_tap_glyph(ci, h.position + Vector2(16, -9), 1)
+		var rr := wait_ripple_radius(world)
+		if rr > 0.0:
+			var ra := 1.0 if reduce_motion else 1.0 - (rr - 14.0) / 16.0
+			ci.draw_arc(h.body_center, rr, 0, TAU, 48, Color(Ui.INK, 0.8 * ra), 3.0)
+			ci.draw_arc(h.body_center, rr, 0, TAU, 48, Color(1, 1, 1, ra), 1.6)
 	elif ground_demo(world):
 		# The echo jumps from the hero's feet and taps again at the top.
 		var f0 := h.position + Vector2(16, 21)
@@ -576,12 +612,16 @@ func draw(ci: CanvasItem, world: GameWorld) -> void:
 		_ring(ci, fb.circle_center, 8.0, Ui.RED)
 		if not h.jumped:
 			_tap_glyph(ci, h.position + Vector2(16, -9), 1)
-	elif jump_taught and not summoner_taught and s.summoner.is_visible and s.summoner.alive and s.summoner.position.x < Geo.view_width:
+	elif ghost_cue(world):
+		# The same stomp mark the first knight had: land here.
 		var c := s.summoner.circle_center
-		_ring(ci, c, 11.0, Ui.RED)
-		var tip := c + Vector2(-19 - 3 * _pulse(5), 0)
-		ci.draw_line(tip + Vector2(8, 0), tip + Vector2(1, 0), Ui.RED, 1.6)
-		ci.draw_colored_polygon(PackedVector2Array([tip, tip + Vector2(4, -3.5), tip + Vector2(4, 3.5)]), Ui.RED)
+		_ring(ci, c, 11.0)
+		var top := c - Vector2(0, 11 + 4 + 2 * _pulse(5))
+		var chev := PackedVector2Array([top + Vector2(-5, -4), top, top + Vector2(5, -4)])
+		ci.draw_polyline(chev, Ui.INK, 3.4)
+		ci.draw_polyline(chev, Color.WHITE, 1.8)
+		if not h.jumped:
+			_tap_glyph(ci, h.position + Vector2(16, -9), 1)
 
 	if arc_time < 0.9 and shown_arc.size() > 2:
 		var a := 1.0 - arc_time / 0.9

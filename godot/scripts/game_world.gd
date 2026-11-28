@@ -49,6 +49,7 @@ var learning := false  # set by the Coach until the jump is learned: no rush, no
 var limit_kinds := false
 var allowed_kinds: Array = []
 var max_enemies := 3
+var summoner_harmless := false  # set by the Coach: the first ghost can't kill until taught
 var fire_harmless := false  # set by the Coach: the first wizard can't kill yet
 var wizard_spared := false  # its fireball (or body) went through the hero while harmless
 var hero := Hero.new(30, 104, 25, 25)
@@ -117,6 +118,8 @@ func _update_running(delta: float) -> void:
 		hit = null
 	if hit is Enemy and limit_kinds and not allowed_kinds.has((hit as Enemy).type):
 		hit = null  # left over from before the lesson: it walks through
+	if hit is Summoner and summoner_harmless:
+		hit = null  # the first ghost goes through the hero; "Jump on it" teaches it
 	if hit is Wizard and fire_harmless:
 		wizard_spared = true
 		hit = null

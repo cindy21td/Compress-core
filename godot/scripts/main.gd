@@ -11,7 +11,9 @@ const HEIGHT := 136.0
 const TITLE_LIFT := 0.5  # s: the title is gone before the first lesson line shows
 const GROUND_Y := 127.5  # where feet meet the ground strip
 const SPLASH_TIME := 2.0
-const GAME_OVER_INPUT_DELAY := 0.6
+# Build 12: the score screen takes taps almost at once. The guard is real
+# time (not game time), so a slow device frame rate can't stretch it.
+const GAME_OVER_INPUT_DELAY := 0.3
 const KEY_TAP := Vector2(-10000, -10000)  # a keyboard tap: no button under it
 
 var screen := Screen.SPLASH
@@ -40,6 +42,7 @@ var cues_flash := 99.0
 
 # Presentation state
 var game_over_time := 0.0
+var game_over_ms := 0  # Time.get_ticks_msec() when the score screen showed
 var score_pop := 1.0  # seconds since the score last changed
 var shown_score := 0
 var banner_text := ""
@@ -342,6 +345,7 @@ func _on_death() -> void:
 	_layout_game_over()
 	fx.death(world.hero.body_center)
 	game_over_time = 0.0
+	game_over_ms = Time.get_ticks_msec()
 	stamp_buzzed = false
 	_buzz(80)
 
@@ -480,7 +484,7 @@ func _touch_down(p: Vector2) -> void:
 					b.touch_down(p)
 			elif world.state == GameWorld.State.RUNNING:
 				pause_button.touch_down(p)
-			elif world.is_game_over() and game_over_time > GAME_OVER_INPUT_DELAY:
+			elif world.is_game_over() and game_over_input_ready():
 				replay_button.touch_down(p)
 				menu_button.touch_down(p)
 
@@ -520,7 +524,7 @@ func _touch_up(p: Vector2) -> void:
 		world.start()
 	if world.state == GameWorld.State.RUNNING:
 		_hero_click()
-	if world.is_game_over() and game_over_time > GAME_OVER_INPUT_DELAY:
+	if world.is_game_over() and game_over_input_ready():
 		if replay_button.touch_up(p) or p == KEY_TAP:
 			_restart()
 		elif menu_button.touch_up(p):
@@ -1192,11 +1196,24 @@ func _draw_game_over(ci: CanvasItem) -> void:
 		if hint != "":
 			Ui.text(ci, hint, Vector2(pill.get_center().x, pill.position.y + 12.6), 6.5, Color(KILLER_HINT, ka), HORIZONTAL_ALIGNMENT_CENTER, Color(Ui.INK, ka), 0.18)
 
-	# Buttons fade in once input is accepted.
-	if t > GAME_OVER_INPUT_DELAY:
-		var a := clampf((t - GAME_OVER_INPUT_DELAY) / 0.25, 0, 1)
-		replay_button.draw(ci, 1.0, a)
-		menu_button.draw(ci, 1.0, a)
+	# Buttons show at once and are fully drawn when they take taps (real time).
+	var a := game_over_button_alpha()
+	replay_button.draw(ci, 1.0, a)
+	menu_button.draw(ci, 1.0, a)
+
+
+## Seconds of real time since the score screen showed.
+func game_over_real_time() -> float:
+	return (Time.get_ticks_msec() - game_over_ms) / 1000.0
+
+
+## Again and Title take taps after a short guard against a tap meant for the hero.
+func game_over_input_ready() -> bool:
+	return game_over_real_time() >= GAME_OVER_INPUT_DELAY
+
+
+func game_over_button_alpha() -> float:
+	return lerpf(0.45, 1.0, clampf(game_over_real_time() / GAME_OVER_INPUT_DELAY, 0, 1))
 
 
 func _draw_pause(ci: CanvasItem) -> void:

@@ -13,6 +13,7 @@ var shot_locale := "en"
 var guard := false
 var guard_bad: Array[String] = []
 var hud_bad: Array[String] = []
+var ghost_bad: Array[String] = []  # build 12: no ghost before the free run has had its 3 s
 const HAZARD_PX := 90.0  # no live enemy this close while the double jump is taught
 
 
@@ -30,6 +31,9 @@ func _process(_d: float) -> void:
 		return
 	var vw := Geo.view_width
 	var on := w.scroller.enemies.filter(func(e): return e.is_visible and e.alive and e.position.x < vw)
+	var g := w.scroller.summoner
+	if (c.phase() != Coach.Phase.FREE or c.free_time < Coach.SUMMONER_DELAY) and g.is_visible and g.alive and g.position.x < vw:
+		_bad(ghost_bad, "ghost on screen %.1f s into the free run (phase %d)" % [c.free_time, c.phase()])
 	if guard:
 		match c.phase():
 			Coach.Phase.STOMP:
@@ -153,6 +157,7 @@ func _run() -> void:
 	_check(main.screen == main.Screen.GAME and w.state == GameWorld.State.RUNNING, "tap on title -> running (no ready card)")
 	guard = true
 	await _teaching()
+	await _ghost_lesson()
 	guard = false
 	_check(guard_bad.is_empty(), "each lesson has the screen to itself %s" % str(guard_bad))
 
@@ -214,6 +219,17 @@ func _run() -> void:
 	_check(w.is_game_over(), "hero eventually dies")
 	_check(main.killer_name != "", "game over names the killer (%s)" % main.killer_name)
 	_check(broke[0], "shield absorbed a hit before death")
+	# Build 12: the score screen takes taps at once (a guard of at most 0.4 s, real time).
+	_check(main.GAME_OVER_INPUT_DELAY <= 0.4, "score-screen tap guard is at most 0.4 s (%.2f)" % main.GAME_OVER_INPUT_DELAY)
+	while main.game_over_real_time() < 0.4:
+		await get_tree().process_frame
+	_check(main.game_over_input_ready() and main.game_over_button_alpha() >= 1.0, "Again and Title are drawn and take taps 0.4 s after death (%.2f s)" % main.game_over_real_time())
+	for b in [main.menu_button, main.replay_button]:
+		main._touch_down(b.rect.get_center())
+		_check(b.pressed, "%s responds to a tap 0.4 s after death" % b.label)
+		main._touch_down(Vector2(-1, -1))  # slide off: nothing fires
+		main._touch_up(Vector2(-1, -1))
+	_check(w.is_game_over(), "sliding off the buttons keeps the score screen")
 	await _wait(0.3)
 	await _shot("10_game_over_anim")
 	await _wait(1.6)
@@ -316,6 +332,14 @@ func _teaching() -> void:
 	await _wait(1.0)
 	_check(c.waiting(w) and w.distance == d0 and w.hero.alive, "the world holds until the tap (%d -> %d)" % [d0, w.distance])
 	_check(c.lesson_text() == tr("Tap to jump on it"), "the hold says what to do (%s)" % c.lesson_text())
+	var rm := c.reduce_motion
+	_check(c.wait_ripple_radius(w) > 0.0, "the hold draws a second tap ring (Reduce Motion %s)" % rm)
+	c.reduce_motion = false  # the headless display may report Reduce Motion on
+	var r1: float = c.wait_ripple_radius(w)
+	await _wait(0.3)
+	var r2: float = c.wait_ripple_radius(w)
+	c.reduce_motion = rm
+	_check(r1 > 0.0 and r2 > 0.0 and absf(r1 - r2) > 0.5, "the hold shows a tap ring rippling out (%.1f -> %.1f), not a still screen" % [r1, r2])
 	_check(knights_only, "only knights on screen during the first lesson")
 	var ring_edge := w.hero.body_center.x + 13.0 + 2.0 + 1.6
 	_check(c.target != null and c.target.position.x > ring_edge + 2, "the waiting knight stands clear of the hero's ring (%.0f > %.0f)" % [c.target.position.x if c.target else 0.0, ring_edge])
@@ -410,6 +434,51 @@ func _teaching() -> void:
 	w.invincible = false
 
 
+## Build 12: the ghost gets a fair entrance. None in the breather or the first
+## 3 s of the free run; the first one says "Jump on it" and can't kill.
+func _ghost_lesson() -> void:
+	var w: GameWorld = main.world
+	var c: Coach = main.coach
+	var s := w.scroller
+	w.invincible = true  # the free run's knights must not end the wait
+	var t := 0.0
+	while c.phase() != Coach.Phase.FREE and t < 8.0:
+		await _wait(0.03)
+		t += 0.03
+	var g := s.summoner
+	_check(c.phase() == Coach.Phase.FREE and s.no_summoner and not (g.is_visible and g.position.x < Geo.view_width),
+		"no ghost right after the breather (free run %.2f s)" % c.free_time)
+	t = 0.0
+	while s.no_summoner and t < 8.0:
+		await _wait(0.05)
+		t += 0.05
+	_check(not s.no_summoner and c.free_time >= Coach.SUMMONER_DELAY, "the ghost may come once the free run has had %.0f s" % Coach.SUMMONER_DELAY)
+	_check(not c.summoner_taught and w.summoner_harmless, "the first ghost can't kill until it is taught")
+	for e in s.enemies:  # the ghost alone on the track
+		if e.is_visible and e != g:
+			e.reset_enemy(0, true)
+			s.hidden.append(e)
+	if not g.is_visible:
+		s.hidden.erase(g)
+		g.reset_enemy(-10, false)
+		g.set_is_visible(true)
+	g.position = Vector2(Geo.view_width - 1, 92)
+	await _wait(0.4)
+	_check(c.ghost_cue(w) and c.lesson_text() == tr("Jump on it"), "the first ghost is taught with the stomp cue (%s)" % c.lesson_text())
+	await _shot("03f_ghost")
+	w.invincible = false
+	g.position = w.hero.body_center - Vector2(9, 10)  # walk straight into it
+	for i in 4:
+		await get_tree().physics_frame
+	_check(w.hero.alive and w.state == GameWorld.State.RUNNING, "the first ghost goes through the hero")
+	w.invincible = true
+	g.reset_enemy(-10, true)
+	s.hidden.append(g)
+	await _wait(0.2)
+	_check(c.summoner_taught, "the ghost is taught once it has gone")
+	w.invincible = false
+
+
 func _play_for(seconds: float, until := func(): return false) -> float:
 	var t := 0.0
 	while t < seconds and not until.call():
@@ -500,7 +569,7 @@ func _gameplay_extras() -> void:
 func _fit_check() -> void:
 	var cols := ["en", "es", "pt_BR", "fr", "de", "ja", "ko", "zh_Hans"]
 	var lessons := ["Tap to jump", "Tap to jump on it", "Land on it", "Watch: double jump", "Tap again to go higher",
-		"Jump the fire", "Stop the ghost"]
+		"Jump the fire", "Jump on it"]
 	lessons.append_array(Coach.INTROS.values())
 	lessons.append("Tap, then tap again")
 	var words := ["Tap a little sooner", "Land on its head", "Landed on it", "Stopped it", "Double jump", "Cleared it", "Jump the fire"]
